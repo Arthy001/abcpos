@@ -15,40 +15,39 @@ import {
   X,
 } from "lucide-react";
 
-interface IncomeCategoryItem {
+interface MoneyTransferItem {
   id: string;
-  code: string;
-  category: string;
-  addedDate: string;
+  date: string;
+  referenceNumber: string;
+  fromAccount: string;
+  toAccount: string;
+  amount: string;
 }
 
-export default function IncomeCategoriesPage() {
+export default function MoneyTransferPage() {
   const [search, setSearch] = useState<string>("");
-  const [categoryFilter, setCategoryFilter] = useState<string>("all");
-  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
 
-  const sampleCategories: IncomeCategoryItem[] = [
-    { id: "1",  code: "INCA849", category: "Foreign investment",  addedDate: "24 Dec 2024" },
-    { id: "2",  code: "INCA848", category: "Product Export",       addedDate: "10 Dec 2024" },
-    { id: "3",  code: "INCA847", category: "Installation",         addedDate: "27 Nov 2024" },
-    { id: "4",  code: "INCA846", category: "Product Sales",        addedDate: "18 Nov 2024" },
-    { id: "5",  code: "INCA845", category: "Local Sale",           addedDate: "06 Nov 2024" },
-    { id: "6",  code: "INCA844", category: "Service Fees",         addedDate: "25 Oct 2024" },
-    { id: "7",  code: "INCA843", category: "Return/Refund Income", addedDate: "14 Oct 2024" },
-    { id: "8",  code: "INCA842", category: "Foreign investment",   addedDate: "03 Oct 2024" },
-    { id: "9",  code: "INCA841", category: "Product Export",       addedDate: "20 Sep 2024" },
-    { id: "10", code: "INCA840", category: "Return/Refund Income", addedDate: "10 Sep 2024" },
+  const sampleTransfers: MoneyTransferItem[] = [
+    { id: "1", date: "24 Dec 2024", referenceNumber: "#MT842", fromAccount: "3298784309485", toAccount: "4590489498498", amount: "$200" },
+    { id: "2", date: "10 Dec 2024", referenceNumber: "#MT821", fromAccount: "5475878970090", toAccount: "4494048448894", amount: "$50" },
+    { id: "3", date: "27 Nov 2024", referenceNumber: "#MT847", fromAccount: "3255465758698", toAccount: "6599401106468", amount: "$800" },
+    { id: "4", date: "18 Nov 2024", referenceNumber: "#MT874", fromAccount: "4353689870544", toAccount: "1948948498149", amount: "$100" },
+    { id: "5", date: "06 Nov 2024", referenceNumber: "#MT887", fromAccount: "4374356677889", toAccount: "1686941868478", amount: "$700" },
+    { id: "6", date: "25 Oct 2024", referenceNumber: "#MT856", fromAccount: "2343547586900", toAccount: "1658179744894", amount: "$1000" },
+    { id: "7", date: "14 Oct 2024", referenceNumber: "#MT822", fromAccount: "3453647664889", toAccount: "1418454896454", amount: "$1200" },
+    { id: "8", date: "03 Oct 2024", referenceNumber: "#MT844", fromAccount: "3354456565687", toAccount: "4418848484848", amount: "$750" },
+    { id: "9", date: "20 Sep 2024", referenceNumber: "#MT832", fromAccount: "3456565767787", toAccount: "6148484454564", amount: "$450" },
+    { id: "10", date: "10 Sep 2024", referenceNumber: "#MT855", fromAccount: "3434565776768", toAccount: "7781848484894", amount: "$300" },
   ];
 
-  const filteredDisplay = sampleCategories.filter((item) => {
-    const matchesSearch =
-      item.category.toLowerCase().includes(search.toLowerCase()) ||
-      item.code.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || item.category === categoryFilter;
-    return matchesSearch && matchesCategory;
+  const filteredDisplay = sampleTransfers.filter((item) => {
+    return (
+      item.referenceNumber.toLowerCase().includes(search.toLowerCase()) ||
+      item.fromAccount.toLowerCase().includes(search.toLowerCase()) ||
+      item.toAccount.toLowerCase().includes(search.toLowerCase())
+    );
   });
 
   const toggleSelectAll = () => {
@@ -71,8 +70,8 @@ export default function IncomeCategoriesPage() {
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
-            <h1 className="text-lg font-bold text-[#111827] tracking-tight">Income Category</h1>
-            <p className="text-xs text-[#6B7280] mt-0.5">Manage your income category</p>
+            <h1 className="text-lg font-bold text-[#111827] tracking-tight">Money Transfer</h1>
+            <p className="text-xs text-[#6B7280] mt-0.5">Manage Money Transfer List</p>
           </div>
           <div className="flex items-center space-x-2">
             <button title="Export PDF" onClick={() => alert("Exporting PDF...")} className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
@@ -89,57 +88,23 @@ export default function IncomeCategoriesPage() {
             </button>
             <button onClick={() => setShowAddModal(true)} className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all">
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add New</span>
+              <span>Add Money Transfer</span>
             </button>
           </div>
         </div>
 
         {/* Table Card */}
         <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative w-full sm:w-60">
-              <input
-                type="text"
-                placeholder="Search"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
-              />
-              <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)} className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer">
-                  <option value="all">Category</option>
-                  <option>Foreign investment</option>
-                  <option>Product Export</option>
-                  <option>Installation</option>
-                  <option>Product Sales</option>
-                  <option>Local Sale</option>
-                  <option>Service Fees</option>
-                  <option>Return/Refund Income</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
-              <div className="relative">
-                <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer">
-                  <option value="all">Status</option>
-                  <option value="Active">Active</option>
-                  <option value="Inactive">Inactive</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
-              <div className="relative">
-                <select className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer">
-                  <option>Sort By : Last 7 Days</option>
-                  <option>Last 30 Days</option>
-                  <option>Last 3 Months</option>
-                  <option>Last Year</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
-            </div>
+          {/* Search */}
+          <div className="relative w-full sm:w-60">
+            <input
+              type="text"
+              placeholder="Search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
+            />
+            <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
           </div>
 
           {/* Table */}
@@ -148,11 +113,18 @@ export default function IncomeCategoriesPage() {
               <thead className="border-b border-[#F1F3F5] bg-white">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
-                    <input type="checkbox" checked={selectedIds.length > 0 && selectedIds.length === filteredDisplay.length} onChange={toggleSelectAll} className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer" />
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length > 0 && selectedIds.length === filteredDisplay.length}
+                      onChange={toggleSelectAll}
+                      className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer"
+                    />
                   </th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Code</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Category</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Added Date</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Date</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Reference Number</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">From Account</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">To Account</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Amount</th>
                   <th className="py-3 px-4 text-right font-bold text-[#111827]"></th>
                 </tr>
               </thead>
@@ -162,11 +134,18 @@ export default function IncomeCategoriesPage() {
                   return (
                     <tr key={item.id} className={`hover:bg-[#F9FAFB] transition-colors ${isSelected ? "bg-[#FFF8F2]" : ""}`}>
                       <td className="py-3.5 px-3 text-center">
-                        <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(item.id)} className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer" />
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(item.id)}
+                          className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer"
+                        />
                       </td>
-                      <td className="py-3.5 px-4 font-mono text-[#64748B]">{item.code}</td>
-                      <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.category}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">{item.addedDate}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">{item.date}</td>
+                      <td className="py-3.5 px-4 font-mono text-[#64748B]">{item.referenceNumber}</td>
+                      <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.fromAccount}</td>
+                      <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.toAccount}</td>
+                      <td className="py-3.5 px-4 font-semibold text-[#1E293B]">{item.amount}</td>
                       <td className="py-3.5 px-4 text-right">
                         <div className="flex items-center justify-end space-x-1.5">
                           <button title="Edit" className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-orange-50 text-[#94A3B8] hover:text-[#FE9F43] flex items-center justify-center bg-white">
@@ -204,28 +183,42 @@ export default function IncomeCategoriesPage() {
           </div>
         </div>
 
-        {/* Add Income Category Modal */}
+        {/* Add Modal */}
         {showAddModal && (
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900">Add Income Category</h3>
+                <h3 className="text-base font-bold text-gray-900">Add Money Transfer</h3>
                 <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <form onSubmit={(e) => { e.preventDefault(); alert("Income category created!"); setShowAddModal(false); }} className="space-y-4 text-xs">
-                <div className="space-y-1">
-                  <label className="font-bold text-gray-700">Category Name *</label>
-                  <input type="text" required placeholder="e.g. Service Fees" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+              <form onSubmit={(e) => { e.preventDefault(); alert("Transfer created!"); setShowAddModal(false); }} className="space-y-4 text-xs">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-700">Reference Number *</label>
+                    <input type="text" required placeholder="e.g. #MT856" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-700">Date *</label>
+                    <input type="date" required className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                  </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700">Description</label>
-                  <textarea rows={3} placeholder="Enter short description..." className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                  <label className="font-bold text-gray-700">From Account *</label>
+                  <input type="text" required placeholder="e.g. 3298784309485" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700">To Account *</label>
+                  <input type="text" required placeholder="e.g. 4590489498498" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700">Amount ($) *</label>
+                  <input type="number" required placeholder="200" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
                 </div>
                 <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
                   <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">Cancel</button>
-                  <button type="submit" className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white font-bold rounded-xl shadow-sm active:scale-95 transition-all">Create Category</button>
+                  <button type="submit" className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white font-bold rounded-xl shadow-sm active:scale-95 transition-all">Create Transfer</button>
                 </div>
               </form>
             </div>
