@@ -38,6 +38,14 @@ import {
   getStores,
 } from "../controllers/warehouse.controller.js";
 import {
+  getStockTransfers,
+  createStockTransfer,
+  deleteStockTransfer,
+  getStockAdjustments,
+  createStockAdjustment,
+  deleteStockAdjustment,
+} from "../controllers/stock.controller.js";
+import {
   getProducts,
   getProductById,
   createProduct,
@@ -96,6 +104,16 @@ router.delete("/variant-attributes/:id", deleteVariantAttribute);
 // Warehouses & Stores
 router.get("/warehouses", getWarehouses);
 router.get("/stores", getStores);
+
+// Stock Transfers
+router.get("/stock-transfers", getStockTransfers);
+router.post("/stock-transfers", createStockTransfer);
+router.delete("/stock-transfers/:id", deleteStockTransfer);
+
+// Stock Adjustments
+router.get("/stock-adjustments", getStockAdjustments);
+router.post("/stock-adjustments", createStockAdjustment);
+router.delete("/stock-adjustments/:id", deleteStockAdjustment);
 
 // Products
 router.get("/products", getProducts);

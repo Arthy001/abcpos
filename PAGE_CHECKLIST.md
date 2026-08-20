@@ -76,17 +76,6 @@
 
 ## 📦 กลุ่มที่ 2: การจัดการคลังและสต็อก (Stock Management)
 
-- [ ] **9. Manage Stock**
-  - **Route**: `/stock/manage`
-  - **Backend**: `GET /api/stock`
-  - **สิ่งที่ต้องการ**: ตารางตรวจนับสินค้าคงคลังแยกตามสาขาและคลัง
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
-
-- [ ] **10. Stock Adjustment**
-  - **Route**: `/stock/adjustment`
-  - **Backend**: `POST /api/stock/adjustments`
-  - **สิ่งที่ต้องการ**: ฟอร์มปรับปรุงสต็อก (บวกเพิ่ม/ลดสต็อก กรณีชำรุด/สูญหาย)
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
 
 - [ ] **11. Stock Transfer**
   - **Route**: `/stock/transfer`

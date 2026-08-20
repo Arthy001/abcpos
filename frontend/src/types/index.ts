@@ -88,6 +88,34 @@ export interface Store {
   status: "ACTIVE" | "INACTIVE";
 }
 
+export interface StockTransfer {
+  id: string;
+  fromWarehouse: string;
+  toWarehouse: string;
+  noOfProducts: number;
+  quantityTransferred: number;
+  refNumber: string;
+  date: string;
+  status: "COMPLETED" | "PENDING" | "CANCELLED";
+  notes?: string | null;
+  createdAt: string;
+}
+
+export interface StockAdjustment {
+  id: string;
+  warehouse: string;
+  store: string;
+  productName: string;
+  productImage?: string | null;
+  date: string;
+  personName: string;
+  personAvatar?: string | null;
+  qty: number;
+  type: "ADDITION" | "SUBTRACTION";
+  notes?: string | null;
+  createdAt: string;
+}
+
 export interface Product {
   id: string;
   name: string;

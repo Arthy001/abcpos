@@ -49,10 +49,19 @@ import {
   CreditCard as PaymentIcon,
   HelpCircle,
   ChevronRight,
+  ChevronDown,
+  LayoutGrid,
+  Monitor,
+  Undo2,
 } from "lucide-react";
 
 interface SidebarProps {
   isOpen: boolean;
+}
+
+interface SubMenuItem {
+  name: string;
+  href: string;
 }
 
 interface MenuItem {
@@ -60,6 +69,7 @@ interface MenuItem {
   href: string;
   icon: any;
   hasSub?: boolean;
+  subItems?: SubMenuItem[];
 }
 
 interface MenuGroup {
@@ -69,15 +79,24 @@ interface MenuGroup {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const pathname = usePathname();
+  const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({
+    Sales: false,
+    POS: true, // Opened POS in screenshot
+  });
+
+  const toggleSubMenu = (menuName: string) => {
+    setOpenSubMenus((prev) => ({
+      ...prev,
+      [menuName]: !prev[menuName],
+    }));
+  };
 
   const menuGroups: MenuGroup[] = [
     {
       title: "Main",
       items: [
-        { name: "Dashboard", href: "/", icon: LayoutDashboard, hasSub: true },
-        { name: "Super Admin", href: "/admin", icon: Shield, hasSub: true },
-        { name: "Application", href: "/apps", icon: ShoppingCart, hasSub: true },
-        { name: "Layouts", href: "/layouts", icon: Layers, hasSub: true },
+        { name: "Dashboard", href: "/", icon: LayoutDashboard },
+        { name: "Super Admin", href: "/admin", icon: Shield },
       ],
     },
     {
@@ -108,11 +127,35 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     {
       title: "Sales",
       items: [
-        { name: "Sales List", href: "/sales", icon: Receipt },
+        {
+          name: "Sales",
+          href: "/sales",
+          icon: LayoutGrid,
+          hasSub: true,
+          subItems: [
+            { name: "Online Orders", href: "/sales/online-orders" },
+            { name: "POS Orders", href: "/sales/pos-orders" },
+          ],
+        },
         { name: "Invoices", href: "/invoices", icon: FileText },
-        { name: "Sales Return", href: "/sales/returns", icon: RotateCcw },
-        { name: "POS Orders", href: "/orders", icon: ShoppingBag },
+        { name: "Sales Return", href: "/sales/returns", icon: Undo2 },
         { name: "Quotation", href: "/quotations", icon: FileCheck },
+        {
+          name: "POS",
+          href: "/pos",
+          icon: Monitor,
+          hasSub: true,
+          subItems: [
+            { name: "POS 1", href: "/pos" },
+            { name: "POS 2", href: "/pos?terminal=2" },
+            { name: "POS 3", href: "/pos?terminal=3" },
+            { name: "POS 4", href: "/pos?terminal=4" },
+            { name: "POS 5", href: "/pos?terminal=5" },
+            { name: "POS 6", href: "/pos?terminal=6" },
+            { name: "POS 7", href: "/pos?terminal=7" },
+            { name: "POS 8", href: "/pos?terminal=8" },
+          ],
+        },
       ],
     },
     {
@@ -120,7 +163,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       items: [
         { name: "Coupons", href: "/promo/coupons", icon: Ticket },
         { name: "Gift Cards", href: "/promo/gift-cards", icon: Gift },
-        { name: "Discount", href: "/promo/discounts", icon: Percent },
+        {
+          name: "Discount",
+          href: "/promo/discounts",
+          icon: Percent,
+          hasSub: true,
+          subItems: [
+            { name: "Discount Plan", href: "/promo/discount-plans" },
+            { name: "Discount", href: "/promo/discounts" },
+          ],
+        },
       ],
     },
     {
@@ -204,23 +256,79 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
             <div className="space-y-0.5">
               {group.items.map((item) => {
                 const Icon = item.icon;
-                const isActive = pathname === item.href;
+                const isItemActive =
+                  pathname === item.href ||
+                  (item.subItems && item.subItems.some((sub) => pathname === sub.href));
+                const isSubMenuOpen = !!openSubMenus[item.name];
+
+                if (item.hasSub && item.subItems && isOpen) {
+                  return (
+                    <div key={item.name} className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => toggleSubMenu(item.name)}
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
+                          isItemActive || isSubMenuOpen
+                            ? "bg-[#FFF5ED] text-[#FE9F43] font-bold"
+                            : "text-[#374151] hover:bg-gray-50 hover:text-gray-900"
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2.5">
+                          <Icon
+                            className={`w-4 h-4 flex-shrink-0 ${
+                              isItemActive || isSubMenuOpen ? "text-[#FE9F43]" : "text-gray-500"
+                            }`}
+                          />
+                          <span className="truncate">{item.name}</span>
+                        </div>
+                        {isSubMenuOpen ? (
+                          <ChevronDown className="w-3.5 h-3.5 text-[#FE9F43]" />
+                        ) : (
+                          <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
+                        )}
+                      </button>
+
+                      {/* Expandable Sub-items list with bullets matching screenshot */}
+                      {isSubMenuOpen && (
+                        <div className="pl-6 pr-1 space-y-1 pt-1">
+                          {item.subItems.map((sub) => {
+                            const isSubActive = pathname === sub.href;
+                            return (
+                              <Link
+                                key={sub.href}
+                                href={sub.href}
+                                className={`flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-xs font-normal transition-all ${
+                                  isSubActive
+                                    ? "text-[#FE9F43] font-bold"
+                                    : "text-[#4B5563] hover:text-[#111827] hover:bg-gray-50"
+                                }`}
+                              >
+                                <span className="text-gray-400 text-sm leading-none">•</span>
+                                <span className="truncate">{sub.name}</span>
+                              </Link>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
 
                 return (
                   <Link
                     key={item.href}
                     href={item.href}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg font-medium text-xs transition-all ${
-                      isActive
+                    className={`flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
+                      isItemActive
                         ? "bg-[#FFF5ED] text-[#FE9F43] font-bold"
-                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                        : "text-[#374151] hover:bg-gray-50 hover:text-gray-900"
                     } ${!isOpen ? "justify-center px-0 py-2.5" : ""}`}
                     title={!isOpen ? item.name : undefined}
                   >
                     <div className="flex items-center space-x-2.5">
                       <Icon
                         className={`w-4 h-4 flex-shrink-0 ${
-                          isActive ? "text-[#FE9F43]" : "text-gray-500"
+                          isItemActive ? "text-[#FE9F43]" : "text-gray-500"
                         }`}
                       />
                       {isOpen && <span className="truncate">{item.name}</span>}

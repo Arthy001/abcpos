@@ -10,6 +10,8 @@ import {
   Warranty,
   Warehouse,
   Store,
+  StockTransfer,
+  StockAdjustment,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -63,6 +65,84 @@ export async function createProductApi(payload: {
     throw new Error(data.message || "Failed to create product");
   }
   return data.data;
+}
+
+// ==================== STOCK TRANSFERS ====================
+export async function fetchStockTransfers(params?: {
+  fromWarehouse?: string;
+  toWarehouse?: string;
+  search?: string;
+}): Promise<StockTransfer[]> {
+  const query = new URLSearchParams();
+  if (params?.fromWarehouse && params.fromWarehouse !== "all") query.set("fromWarehouse", params.fromWarehouse);
+  if (params?.toWarehouse && params.toWarehouse !== "all") query.set("toWarehouse", params.toWarehouse);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/stock-transfers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function createStockTransferApi(payload: {
+  fromWarehouse: string;
+  toWarehouse: string;
+  noOfProducts: number;
+  quantityTransferred: number;
+  refNumber?: string;
+  date?: string;
+  notes?: string;
+}): Promise<StockTransfer> {
+  const res = await fetch(`${API_BASE_URL}/stock-transfers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create stock transfer");
+  return await res.json();
+}
+
+export async function deleteStockTransferApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/stock-transfers/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete stock transfer");
+}
+
+// ==================== STOCK ADJUSTMENTS ====================
+export async function fetchStockAdjustments(params?: {
+  warehouse?: string;
+  search?: string;
+}): Promise<StockAdjustment[]> {
+  const query = new URLSearchParams();
+  if (params?.warehouse && params.warehouse !== "all") query.set("warehouse", params.warehouse);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/stock-adjustments?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function createStockAdjustmentApi(payload: {
+  warehouse: string;
+  store: string;
+  productName: string;
+  productImage?: string;
+  date?: string;
+  personName?: string;
+  qty: number;
+  type?: "ADDITION" | "SUBTRACTION";
+  notes?: string;
+}): Promise<StockAdjustment> {
+  const res = await fetch(`${API_BASE_URL}/stock-adjustments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create stock adjustment");
+  return await res.json();
+}
+
+export async function deleteStockAdjustmentApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/stock-adjustments/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete stock adjustment");
 }
 
 // ==================== WARRANTIES ====================
