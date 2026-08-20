@@ -22,6 +22,22 @@ import {
   deleteUnit,
 } from "../controllers/unit.controller.js";
 import {
+  getWarranties,
+  createWarranty,
+  updateWarranty,
+  deleteWarranty,
+} from "../controllers/warranty.controller.js";
+import {
+  getVariantAttributes,
+  createVariantAttribute,
+  updateVariantAttribute,
+  deleteVariantAttribute,
+} from "../controllers/variant.controller.js";
+import {
+  getWarehouses,
+  getStores,
+} from "../controllers/warehouse.controller.js";
+import {
   getProducts,
   getProductById,
   createProduct,
@@ -64,6 +80,22 @@ router.get("/units", getUnits);
 router.post("/units", createUnit);
 router.put("/units/:id", updateUnit);
 router.delete("/units/:id", deleteUnit);
+
+// Warranties
+router.get("/warranties", getWarranties);
+router.post("/warranties", createWarranty);
+router.put("/warranties/:id", updateWarranty);
+router.delete("/warranties/:id", deleteWarranty);
+
+// Variant Attributes
+router.get("/variant-attributes", getVariantAttributes);
+router.post("/variant-attributes", createVariantAttribute);
+router.put("/variant-attributes/:id", updateVariantAttribute);
+router.delete("/variant-attributes/:id", deleteVariantAttribute);
+
+// Warehouses & Stores
+router.get("/warehouses", getWarehouses);
+router.get("/stores", getStores);
 
 // Products
 router.get("/products", getProducts);

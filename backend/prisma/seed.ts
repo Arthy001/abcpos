@@ -13,9 +13,13 @@ async function main() {
   await prisma.category.deleteMany();
   await prisma.brand.deleteMany();
   await prisma.unit.deleteMany();
+  await prisma.warranty.deleteMany();
+  await prisma.variantAttribute.deleteMany();
+  await prisma.warehouse.deleteMany();
+  await prisma.store.deleteMany();
   await prisma.customer.deleteMany();
 
-  // 1. Create Brands matching screenshot
+  // 1. Create Brands
   const brandsData = [
     { name: "Lenovo", slug: "lenovo", status: "ACTIVE" },
     { name: "Beats", slug: "beats", status: "ACTIVE" },
@@ -33,7 +37,7 @@ async function main() {
     await prisma.brand.create({ data: b });
   }
 
-  // 2. Create Units matching screenshot
+  // 2. Create Units
   const unitsData = [
     { name: "Kilograms", shortName: "kg", status: "ACTIVE" },
     { name: "Liters", shortName: "L", status: "ACTIVE" },
@@ -50,7 +54,62 @@ async function main() {
     await prisma.unit.create({ data: u });
   }
 
-  // 3. Create Categories matching screenshots
+  // 3. Create Warranties matching Screenshot
+  const warrantiesData = [
+    { name: "Replacement Warranty", description: "Covers replacement of faulty items", duration: "2 Year", status: "ACTIVE" },
+    { name: "On-Site Warranty", description: "Product repairs done at the customer's location", duration: "1 Year", status: "ACTIVE" },
+    { name: "Accidental Protection Plan", description: "Coverage for accidental damage", duration: "6 Months", status: "ACTIVE" },
+    { name: "Labor-Only Warranty", description: "Covers only labor costs, not parts", duration: "6 Months", status: "ACTIVE" },
+    { name: "No-Cost Repairs", description: "No charge for repairs during warranty period", duration: "3 Months", status: "ACTIVE" },
+    { name: "Accidental Damage", description: "Coverage for unexpected damage", duration: "6 Months", status: "ACTIVE" },
+    { name: "Wear & Tear Warranty", description: "Covers specific product aging issues", duration: "1 Year", status: "ACTIVE" },
+    { name: "Money-Back Guarantee", description: "Refund within a specified period", duration: "3 Months", status: "ACTIVE" },
+    { name: "Water Damage Warranty", description: "Coverage for water-related issues", duration: "6 Months", status: "ACTIVE" },
+    { name: "Power Surge Protection", description: "Covers damage from power surges", duration: "6 Months", status: "ACTIVE" },
+  ];
+
+  for (const w of warrantiesData) {
+    await prisma.warranty.create({ data: w });
+  }
+
+  // 4. Create Variant Attributes matching Screenshot
+  const variantsData = [
+    { name: "Size", values: "XS, S, M, L, XL", status: "ACTIVE" },
+    { name: "Color", values: "Red, Blue, Green", status: "ACTIVE" },
+    { name: "Capacity", values: "Small, Medium, Large", status: "ACTIVE" },
+    { name: "Material", values: "Cotton, Leather, Synthetic", status: "ACTIVE" },
+    { name: "Weight", values: "Light, Heavy", status: "ACTIVE" },
+    { name: "Style", values: "Casual, Formal, Sporty", status: "ACTIVE" },
+    { name: "Pattern", values: "Solid, Striped, Printed", status: "ACTIVE" },
+    { name: "Memory", values: "8 GB, 16 GB, 32 GB", status: "ACTIVE" },
+    { name: "Storage", values: "128 GB, 256 GB, 512 GB, 1 TB", status: "ACTIVE" },
+    { name: "Length", values: "Short, Regular, Long", status: "ACTIVE" },
+  ];
+
+  for (const v of variantsData) {
+    await prisma.variantAttribute.create({ data: v });
+  }
+
+  // 5. Create Warehouses & Stores matching Low Stock Screenshot
+  const warehousesData = [
+    "Lavish Warehouse", "Quaint Warehouse", "Traditional Warehouse", "Cool Warehouse",
+    "Overflow Warehouse", "Nova Storage Hub", "Retail Supply Hub", "EdgeWare Solutions",
+    "North Zone Warehouse", "Fulfillment Hub"
+  ];
+  for (const wh of warehousesData) {
+    await prisma.warehouse.create({ data: { name: wh, status: "ACTIVE" } });
+  }
+
+  const storesData = [
+    "Electro Mart", "Quantum Gadgets", "Prime Bazaar", "Gadget World",
+    "Volt Vault", "Elite Retail", "Prime Mart", "NeoTech Store",
+    "Urban Mart", "Travel Mart"
+  ];
+  for (const st of storesData) {
+    await prisma.store.create({ data: { name: st, status: "ACTIVE" } });
+  }
+
+  // 6. Create Categories
   const catComputers = await prisma.category.create({
     data: { name: "Computers", slug: "computers", description: "Laptops, Desktops and Accessories", status: "ACTIVE" },
   });
@@ -63,18 +122,6 @@ async function main() {
     data: { name: "Shoe", slug: "shoe", description: "Sneakers and Formal shoes", status: "ACTIVE" },
   });
 
-  const catCosmetics = await prisma.category.create({
-    data: { name: "Cosmetics", slug: "cosmetics", description: "Beauty and cosmetics", status: "ACTIVE" },
-  });
-
-  const catGroceries = await prisma.category.create({
-    data: { name: "Groceries", slug: "groceries", description: "Fresh food and daily essentials", status: "ACTIVE" },
-  });
-
-  const catFurniture = await prisma.category.create({
-    data: { name: "Furniture", slug: "furniture", description: "Home and office furniture", status: "ACTIVE" },
-  });
-
   const catBags = await prisma.category.create({
     data: { name: "Bags", slug: "bags", description: "Handbags, Travel backpacks", status: "ACTIVE" },
   });
@@ -83,51 +130,36 @@ async function main() {
     data: { name: "Phone", slug: "phone", description: "Smartphones and tablets", status: "ACTIVE" },
   });
 
-  const catAppliances = await prisma.category.create({
-    data: { name: "Appliances", slug: "appliances", description: "Home appliances", status: "ACTIVE" },
+  const catFurniture = await prisma.category.create({
+    data: { name: "Furniture", slug: "furniture", description: "Home and office furniture", status: "ACTIVE" },
   });
 
-  const catClothing = await prisma.category.create({
-    data: { name: "Clothing", slug: "clothing", description: "Apparel and garments", status: "ACTIVE" },
-  });
-
-  // 4. Create Sub Categories matching Screenshot 2
+  // 7. Create Sub Categories
   const subCategories = [
     { name: "Laptop", slug: "laptop", categoryId: catComputers.id, code: "CT001", description: "Efficient Productivity", status: "ACTIVE" },
     { name: "Desktop", slug: "desktop", categoryId: catComputers.id, code: "CT002", description: "Compact Design", status: "ACTIVE" },
     { name: "Sneakers", slug: "sneakers", categoryId: catShoe.id, code: "CT003", description: "Dynamic Grip", status: "ACTIVE" },
-    { name: "Formals", slug: "formals", categoryId: catShoe.id, code: "CT004", description: "Stylish Comfort", status: "ACTIVE" },
-    { name: "Wearables", slug: "wearables", categoryId: catElectronics.id, code: "CT005", description: "Seamless Connectivity", status: "ACTIVE" },
-    { name: "Speakers", slug: "speakers", categoryId: catElectronics.id, code: "CT006", description: "Reliable Sound", status: "ACTIVE" },
-    { name: "Handbags", slug: "handbags", categoryId: catBags.id, code: "CT007", description: "Compact Carry", status: "ACTIVE" },
-    { name: "Travel", slug: "travel", categoryId: catBags.id, code: "CT008", description: "Travel Ready", status: "ACTIVE" },
-    { name: "Sofa", slug: "sofa", categoryId: catFurniture.id, code: "CT009", description: "Cozy Comfort", status: "ACTIVE" },
-    { name: "Chair", slug: "chair", categoryId: catFurniture.id, code: "CT0010", description: "Stylish Comfort", status: "ACTIVE" },
   ];
 
   for (const sub of subCategories) {
     await prisma.subCategory.create({ data: sub });
   }
 
-  // 5. Create Customers
+  // 8. Create Customers
   await prisma.customer.create({
     data: { name: "Walk-in Customer", phone: "080-000-0000", email: "walkin@example.com" },
   });
 
-  await prisma.customer.create({
-    data: { name: "Somchai Prasert", phone: "089-123-4567", email: "somchai@gmail.com", points: 120 },
-  });
-
-  // 6. Create Sample Products with Manufacturing and Expiry dates
+  // 9. Create Products
   const sampleProducts = [
     {
-      name: "Lenovo 3rd Generation",
+      name: "Lenovo IdeaPad 3",
       sku: "PT001",
-      barcode: "885123450001",
+      barcode: "HG3FK",
       price: 600,
       costPrice: 450,
-      stock: 100,
-      minStockAlert: 10,
+      stock: 20,
+      minStockAlert: 15,
       categoryId: catComputers.id,
       image: "/assets/images/product-01.jpg",
       manufacturedDate: new Date("2024-12-24"),
@@ -137,11 +169,11 @@ async function main() {
     {
       name: "Beats Pro",
       sku: "PT002",
-      barcode: "885123450002",
+      barcode: "TEJIU7",
       price: 160,
       costPrice: 100,
-      stock: 140,
-      minStockAlert: 15,
+      stock: 25,
+      minStockAlert: 20,
       categoryId: catElectronics.id,
       image: "/assets/images/product-03.jpg",
       manufacturedDate: new Date("2024-12-10"),
@@ -151,11 +183,11 @@ async function main() {
     {
       name: "Nike Jordan",
       sku: "PT003",
-      barcode: "885123450003",
+      barcode: "32RRR554",
       price: 110,
       costPrice: 70,
-      stock: 300,
-      minStockAlert: 20,
+      stock: 40,
+      minStockAlert: 35,
       categoryId: catShoe.id,
       image: "/assets/images/product-04.jpg",
       manufacturedDate: new Date("2024-11-27"),
@@ -168,7 +200,7 @@ async function main() {
     await prisma.product.create({ data: item });
   }
 
-  console.log("Seeding finished successfully with Brands, Units, Categories, SubCategories, and Products!");
+  console.log("Seeding finished successfully with all modules!");
 }
 
 main()

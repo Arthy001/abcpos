@@ -31,6 +31,16 @@
   - **Backend**: `GET/POST/PUT/DELETE /api/categories`, `GET/POST/PUT/DELETE /api/sub-categories`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางหมวดหมู่และหมวดหมู่ย่อย, รหัส CTxxx, Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไข, จัดการสต็อก)
 
+- [x] **4. Low Stocks & Out of Stocks**
+  - **Route**: `/inventory/low-stock`
+  - **Backend**: `GET /api/products`, `GET /api/warehouses`, `GET /api/stores`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (แท็บ Low Stocks / Out of Stocks, สวิตช์ Notify, Filter คลังสินค้า/สาขา/หมวดหมู่, ตารางแจ้งเตือนจุดสั่งซื้อ Qty Alert, ปุ่ม Send Email)
+
+- [x] **5. Category & Sub Category**
+  - **Route**: `/categories`, `/sub-categories`
+  - **Backend**: `GET/POST/PUT/DELETE /api/categories`, `GET/POST/PUT/DELETE /api/sub-categories`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางหมวดหมู่และหมวดหมู่ย่อย, รหัส CTxxx, Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไข, จัดการสต็อก)
+
 - [x] **6. Brands & Units**
   - **Route**: `/brands`, `/units`
   - **Backend**: `GET/POST/PUT/DELETE /api/brands`, `GET/POST/PUT/DELETE /api/units`
@@ -41,11 +51,20 @@
   - **Backend**: `GET /api/products` (Manufactured Date & Expired Date tracking)
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางสินค้าหมดอายุ, วันที่ผลิต, วันหมดอายุ, Filter สินค้าและ Sort By Last 7 Days, Export PDF/Excel)
 
-- [ ] **8. Print Barcode & QR Code**
+- [x] **8. Warranties**
+  - **Route**: `/warranties`
+  - **Backend**: `GET/POST/PUT/DELETE /api/warranties`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางจัดการการรับประกัน, ชื่อ, รายละเอียด, ระยะเวลา, Modal เพิ่ม/แก้ไข)
+
+- [x] **9. Variant Attributes**
+  - **Route**: `/variant-attributes`
+  - **Backend**: `GET/POST/PUT/DELETE /api/variant-attributes`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางจัดการคุณลักษณะสินค้า เช่น Size, Color, Capacity, Values, Modal เพิ่ม/แก้ไข)
+
+- [x] **10. Print Barcode & Print QR Code**
   - **Route**: `/barcode/print`, `/qrcode/print`
-  - **Backend**: Barcode generator logic
-  - **สิ่งที่ต้องการ**: หน้าเลือกสินค้า, กำหนดจำนวนแถว/สติ๊กเกอร์ และสั่งพิมพ์บาร์โค้ด
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **Backend**: Barcode & QR Code generators
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (หน้าเลือก Warehouse/Store, ค้นหาสินค้า, กำหนดจำนวนแถวสติ๊กเกอร์ `[-] qty [+]`, เลือกขนาดกระดาษ, สวิตช์เปิดปิด Store Name/Price/Ref Number, ปุ่ม Generate, Reset และ Print)
 
 - [ ] **8. Expired & Low Stock Products**
   - **Route**: `/inventory/expired`, `/inventory/low-stock`

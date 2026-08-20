@@ -1,0 +1,497 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import { AppLayout } from "@/components/layout/AppLayout";
+import { Product, Category, Warehouse, Store } from "@/types";
+import {
+  fetchProducts,
+  fetchCategories,
+  fetchWarehouses,
+  fetchStores,
+} from "@/lib/api";
+import {
+  Search,
+  FileText,
+  FileSpreadsheet,
+  RotateCcw,
+  ChevronUp,
+  Mail,
+  Edit,
+  Trash2,
+  ChevronDown,
+} from "lucide-react";
+
+export default function LowStockPage() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [activeTab, setActiveTab] = useState<"low" | "out">("low");
+  const [isNotify, setIsNotify] = useState<boolean>(true);
+  const [search, setSearch] = useState<string>("");
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
+  const [selectedStore, setSelectedStore] = useState<string>("all");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [loading, setLoading] = useState<boolean>(true);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+
+  // 10 sample items matching Low Stocks screenshot
+  const sampleLowStockList = [
+    {
+      id: "1",
+      warehouse: "Lavish Warehouse",
+      store: "Electro Mart",
+      name: "Lenovo IdeaPad 3",
+      category: "Computers",
+      sku: "PT001",
+      qty: 20,
+      qtyAlert: 15,
+      productImage: "/assets/images/product-01.jpg",
+    },
+    {
+      id: "2",
+      warehouse: "Quaint Warehouse",
+      store: "Quantum Gadgets",
+      name: "Beats Pro",
+      category: "Electronics",
+      sku: "PT002",
+      qty: 25,
+      qtyAlert: 20,
+      productImage: "/assets/images/product-03.jpg",
+    },
+    {
+      id: "3",
+      warehouse: "Traditional Warehouse",
+      store: "Prime Bazaar",
+      name: "Nike Jordan",
+      category: "Shoe",
+      sku: "PT003",
+      qty: 40,
+      qtyAlert: 35,
+      productImage: "/assets/images/product-04.jpg",
+    },
+    {
+      id: "4",
+      warehouse: "Cool Warehouse",
+      store: "Gadget World",
+      name: "Apple Series 5 Watch",
+      category: "Electronics",
+      sku: "PT004",
+      qty: 50,
+      qtyAlert: 45,
+      productImage: "/assets/images/product-05.jpg",
+    },
+    {
+      id: "5",
+      warehouse: "Overflow Warehouse",
+      store: "Volt Vault",
+      name: "Amazon Echo Dot",
+      category: "Electronics",
+      sku: "PT005",
+      qty: 30,
+      qtyAlert: 25,
+      productImage: "/assets/images/product-06.jpg",
+    },
+    {
+      id: "6",
+      warehouse: "Nova Storage Hub",
+      store: "Elite Retail",
+      name: "Sanford Chair Sofa",
+      category: "Furniture",
+      sku: "PT006",
+      qty: 10,
+      qtyAlert: 8,
+      productImage: "/assets/images/product-07.jpg",
+    },
+    {
+      id: "7",
+      warehouse: "Retail Supply Hub",
+      store: "Prime Mart",
+      name: "Red Premium Satchel",
+      category: "Bags",
+      sku: "PT007",
+      qty: 70,
+      qtyAlert: 60,
+      productImage: "/assets/images/product-08.jpg",
+    },
+    {
+      id: "8",
+      warehouse: "EdgeWare Solutions",
+      store: "NeoTech Store",
+      name: "Iphone 14 Pro",
+      category: "Phone",
+      sku: "PT008",
+      qty: 35,
+      qtyAlert: 30,
+      productImage: "/assets/images/product-09.jpg",
+    },
+    {
+      id: "9",
+      warehouse: "North Zone Warehouse",
+      store: "Urban Mart",
+      name: "Gaming Chair",
+      category: "Furniture",
+      sku: "PT009",
+      qty: 15,
+      qtyAlert: 10,
+      productImage: "/assets/images/product-10.jpg",
+    },
+    {
+      id: "10",
+      warehouse: "Fulfillment Hub",
+      store: "Travel Mart",
+      name: "Borealis Backpack",
+      category: "Bags",
+      sku: "PT010",
+      qty: 45,
+      qtyAlert: 40,
+      productImage: "/assets/images/product-11.jpg",
+    },
+  ];
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [prods, cats, whs, sts] = await Promise.all([
+        fetchProducts({ search }),
+        fetchCategories(),
+        fetchWarehouses(),
+        fetchStores(),
+      ]);
+      setProducts(prods);
+      setCategories(cats);
+      setWarehouses(whs);
+      setStores(sts);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [search]);
+
+  const displayList = sampleLowStockList.filter((item) => {
+    const matchesSearch =
+      item.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.sku.toLowerCase().includes(search.toLowerCase()) ||
+      item.warehouse.toLowerCase().includes(search.toLowerCase());
+    const matchesWarehouse =
+      selectedWarehouse === "all" || item.warehouse === selectedWarehouse;
+    const matchesStore = selectedStore === "all" || item.store === selectedStore;
+    const matchesCategory =
+      selectedCategory === "all" || item.category === selectedCategory;
+    const matchesTab = activeTab === "low" ? item.qty > 0 : item.qty === 0;
+
+    return matchesSearch && matchesWarehouse && matchesStore && matchesCategory && matchesTab;
+  });
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === displayList.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(displayList.map((p) => p.id));
+    }
+  };
+
+  const toggleSelect = (id: string) => {
+    if (selectedIds.includes(id)) {
+      setSelectedIds(selectedIds.filter((item) => item !== id));
+    } else {
+      setSelectedIds([...selectedIds, id]);
+    }
+  };
+
+  return (
+    <AppLayout>
+      <div className="space-y-4 w-full font-sans">
+        {/* Top Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+          <div>
+            <h1 className="text-lg font-bold text-[#111827] tracking-tight">Low Stocks</h1>
+            <p className="text-xs text-[#6B7280] mt-0.5">Manage your low stocks</p>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            {/* PDF Export (Red) */}
+            <button
+              title="Export PDF"
+              onClick={() => alert("Exporting PDF report...")}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#EF4444] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+            >
+              <FileText className="w-3.5 h-3.5 fill-red-50 stroke-red-500" />
+            </button>
+
+            {/* Excel Export (Green) */}
+            <button
+              title="Export Excel"
+              onClick={() => alert("Exporting Excel report...")}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#10B981] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 fill-emerald-50 stroke-emerald-600" />
+            </button>
+
+            {/* Refresh */}
+            <button
+              title="Refresh"
+              onClick={loadData}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+            >
+              <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#FE9F43]" : ""}`} />
+            </button>
+
+            {/* Collapse */}
+            <button
+              title="Collapse"
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+            >
+              <ChevronUp className="w-3.5 h-3.5" />
+            </button>
+
+            {/* Send Email Button (Dark Navy) */}
+            <button
+              onClick={() => alert("Sending Low Stock Alert Emails...")}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#0E1422] hover:bg-[#1E293B] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all"
+            >
+              <Mail className="w-3.5 h-3.5" />
+              <span>Send Email</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Tab Buttons & Notify Toggle Row */}
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setActiveTab("low")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "low"
+                  ? "bg-[#FE9F43] text-white shadow-xs"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              Low Stocks
+            </button>
+            <button
+              onClick={() => setActiveTab("out")}
+              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                activeTab === "out"
+                  ? "bg-[#FE9F43] text-white shadow-xs"
+                  : "bg-white text-gray-600 border border-gray-200 hover:bg-gray-50"
+              }`}
+            >
+              Out of Stocks
+            </button>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <span className="text-xs font-semibold text-gray-700">Notify</span>
+            <button
+              type="button"
+              onClick={() => setIsNotify(!isNotify)}
+              className={`w-9 h-5 flex items-center rounded-full p-0.5 transition-colors ${
+                isNotify ? "bg-[#28C76F]" : "bg-gray-300"
+              }`}
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                  isNotify ? "translate-x-4" : "translate-x-0"
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* Low Stocks Table Card Container */}
+        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
+          {/* Inner Search & 3 Filters Bar */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative w-full sm:w-60">
+              <input
+                type="text"
+                placeholder="Search"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
+              />
+              <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <div className="relative">
+                <select
+                  value={selectedWarehouse}
+                  onChange={(e) => setSelectedWarehouse(e.target.value)}
+                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
+                >
+                  <option value="all">Warehouse</option>
+                  {sampleLowStockList.map((s, idx) => (
+                    <option key={idx} value={s.warehouse}>
+                      {s.warehouse}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
+              </div>
+
+              <div className="relative">
+                <select
+                  value={selectedStore}
+                  onChange={(e) => setSelectedStore(e.target.value)}
+                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
+                >
+                  <option value="all">Store</option>
+                  {sampleLowStockList.map((s, idx) => (
+                    <option key={idx} value={s.store}>
+                      {s.store}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
+              </div>
+
+              <div className="relative">
+                <select
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
+                >
+                  <option value="all">Category</option>
+                  <option value="Computers">Computers</option>
+                  <option value="Electronics">Electronics</option>
+                  <option value="Shoe">Shoe</option>
+                  <option value="Furniture">Furniture</option>
+                  <option value="Bags">Bags</option>
+                  <option value="Phone">Phone</option>
+                </select>
+                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* Clean Table with White Thead */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-[#F1F3F5] text-[#111827] bg-white">
+                <tr>
+                  <th className="py-3 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.length > 0 && selectedIds.length === displayList.length}
+                      onChange={toggleSelectAll}
+                      className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
+                    />
+                  </th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Warehouse</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Store</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Product Name</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Category</th>
+                  <th className="py-3 px-3 font-bold text-[#111827]">SKU</th>
+                  <th className="py-3 px-3 font-bold text-[#111827]">Qty</th>
+                  <th className="py-3 px-3 font-bold text-[#111827]">Qty Alert</th>
+                  <th className="py-3 px-4 text-right font-bold text-[#111827]"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F8F9FA]">
+                {displayList.map((item) => {
+                  const isSelected = selectedIds.includes(item.id);
+
+                  return (
+                    <tr
+                      key={item.id}
+                      className={`hover:bg-[#F9FAFB] transition-colors ${
+                        isSelected ? "bg-[#FFF8F2]" : ""
+                      }`}
+                    >
+                      <td className="py-3.5 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelect(item.id)}
+                          className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
+                        />
+                      </td>
+
+                      <td className="py-3.5 px-4 text-[#64748B]">{item.warehouse}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">{item.store}</td>
+
+                      {/* Product Name with Thumbnail */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center space-x-3">
+                          <img
+                            src={item.productImage}
+                            alt={item.name}
+                            className="w-7 h-7 rounded object-contain bg-gray-50 border border-gray-100 flex-shrink-0"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = "/assets/images/product-01.jpg";
+                            }}
+                          />
+                          <span className="font-normal text-[#1E293B] line-clamp-1">{item.name}</span>
+                        </div>
+                      </td>
+
+                      <td className="py-3.5 px-4 text-[#64748B]">{item.category}</td>
+                      <td className="py-3.5 px-3 text-[#64748B] font-mono">{item.sku}</td>
+                      <td className="py-3.5 px-3 font-semibold text-[#1E293B]">{item.qty}</td>
+                      <td className="py-3.5 px-3 text-red-500 font-semibold">{item.qtyAlert}</td>
+
+                      {/* Actions: Edit, Delete */}
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          <Link
+                            href="/products/add"
+                            title="Edit Product"
+                            className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-orange-50 text-[#94A3B8] hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </Link>
+                          <button
+                            title="Delete Item"
+                            className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-red-50 text-[#94A3B8] hover:text-[#EF4444] flex items-center justify-center transition-colors bg-white"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Table Pagination Footer */}
+          <div className="flex flex-col sm:flex-row items-center justify-between px-1 pt-3 text-xs text-[#64748B] gap-3 border-t border-[#F1F3F5]">
+            <div className="flex items-center space-x-2">
+              <span>Row Per Page</span>
+              <div className="relative">
+                <select className="appearance-none bg-white border border-[#E2E8F0] rounded pl-2.5 pr-6 py-1 text-xs text-[#334155] focus:outline-none cursor-pointer">
+                  <option value="10">10</option>
+                  <option value="25">25</option>
+                  <option value="50">50</option>
+                </select>
+                <ChevronDown className="w-3 h-3 text-[#94A3B8] absolute right-1.5 top-2 pointer-events-none" />
+              </div>
+              <span>Entries</span>
+            </div>
+
+            <div className="flex items-center space-x-1.5">
+              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100 text-[#94A3B8]">
+                &lt;
+              </button>
+              <button className="w-6 h-6 rounded-full bg-[#FE9F43] text-white font-bold flex items-center justify-center text-xs shadow-xs">
+                1
+              </button>
+              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100 text-[#64748B]">
+                &gt;
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AppLayout>
+  );
+}

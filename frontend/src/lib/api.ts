@@ -1,4 +1,16 @@
-import { Brand, Category, DashboardStats, Order, Product, SubCategory, Unit } from "@/types";
+import {
+  Brand,
+  Category,
+  DashboardStats,
+  Order,
+  Product,
+  SubCategory,
+  Unit,
+  VariantAttribute,
+  Warranty,
+  Warehouse,
+  Store,
+} from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -11,9 +23,16 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 }
 
 // ==================== PRODUCTS ====================
-export async function fetchProducts(params?: { categoryId?: string; search?: string }): Promise<Product[]> {
+export async function fetchProducts(params?: {
+  categoryId?: string;
+  warehouseId?: string;
+  storeId?: string;
+  search?: string;
+}): Promise<Product[]> {
   const query = new URLSearchParams();
   if (params?.categoryId && params.categoryId !== "all") query.set("categoryId", params.categoryId);
+  if (params?.warehouseId && params.warehouseId !== "all") query.set("warehouseId", params.warehouseId);
+  if (params?.storeId && params.storeId !== "all") query.set("storeId", params.storeId);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/products?${query.toString()}`, { cache: "no-store" });
@@ -44,6 +63,100 @@ export async function createProductApi(payload: {
     throw new Error(data.message || "Failed to create product");
   }
   return data.data;
+}
+
+// ==================== WARRANTIES ====================
+export async function fetchWarranties(params?: { status?: string; search?: string }): Promise<Warranty[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/warranties?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch warranties");
+  return await res.json();
+}
+
+export async function createWarrantyApi(payload: {
+  name: string;
+  description?: string;
+  duration: string;
+  status?: string;
+}): Promise<Warranty> {
+  const res = await fetch(`${API_BASE_URL}/warranties`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create warranty");
+  return await res.json();
+}
+
+export async function updateWarrantyApi(id: string, payload: Partial<Warranty>): Promise<Warranty> {
+  const res = await fetch(`${API_BASE_URL}/warranties/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update warranty");
+  return await res.json();
+}
+
+export async function deleteWarrantyApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/warranties/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete warranty");
+}
+
+// ==================== VARIANT ATTRIBUTES ====================
+export async function fetchVariantAttributes(params?: { status?: string; search?: string }): Promise<VariantAttribute[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/variant-attributes?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch variant attributes");
+  return await res.json();
+}
+
+export async function createVariantAttributeApi(payload: {
+  name: string;
+  values: string;
+  status?: string;
+}): Promise<VariantAttribute> {
+  const res = await fetch(`${API_BASE_URL}/variant-attributes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create variant attribute");
+  return await res.json();
+}
+
+export async function updateVariantAttributeApi(id: string, payload: Partial<VariantAttribute>): Promise<VariantAttribute> {
+  const res = await fetch(`${API_BASE_URL}/variant-attributes/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update variant attribute");
+  return await res.json();
+}
+
+export async function deleteVariantAttributeApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/variant-attributes/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete variant attribute");
+}
+
+// ==================== WAREHOUSES & STORES ====================
+export async function fetchWarehouses(): Promise<Warehouse[]> {
+  const res = await fetch(`${API_BASE_URL}/warehouses`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function fetchStores(): Promise<Store[]> {
+  const res = await fetch(`${API_BASE_URL}/stores`, { cache: "no-store" });
+  if (!res.ok) return [];
+  return await res.json();
 }
 
 // ==================== BRANDS ====================

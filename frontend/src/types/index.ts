@@ -51,6 +51,43 @@ export interface Unit {
   };
 }
 
+export interface Warranty {
+  id: string;
+  name: string;
+  description?: string | null;
+  duration: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VariantAttribute {
+  id: string;
+  name: string;
+  values: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Warehouse {
+  id: string;
+  name: string;
+  code?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
+export interface Store {
+  id: string;
+  name: string;
+  code?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -71,6 +108,10 @@ export interface Product {
   brand?: Brand | null;
   unitId?: string | null;
   unit?: Unit | null;
+  warehouseId?: string | null;
+  warehouse?: Warehouse | null;
+  storeId?: string | null;
+  store?: Store | null;
   createdAt: string;
   updatedAt: string;
 }
