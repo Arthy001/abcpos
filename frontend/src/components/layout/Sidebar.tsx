@@ -186,8 +186,26 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     {
       title: "Finance & Accounts",
       items: [
-        { name: "Expenses", href: "/finance/expenses", icon: DollarSign },
-        { name: "Income", href: "/finance/income", icon: TrendingUp },
+        {
+          name: "Expenses",
+          href: "/finance/expenses",
+          icon: DollarSign,
+          hasSub: true,
+          subItems: [
+            { name: "Expenses", href: "/finance/expenses" },
+            { name: "Expense Category", href: "/finance/expense-categories" },
+          ],
+        },
+        {
+          name: "Income",
+          href: "/finance/income",
+          icon: TrendingUp,
+          hasSub: true,
+          subItems: [
+            { name: "Income", href: "/finance/income" },
+            { name: "Income Category", href: "/finance/income-categories" },
+          ],
+        },
         { name: "Bank Accounts", href: "/finance/bank-accounts", icon: Building2 },
         { name: "Cash Flow", href: "/finance/cash-flow", icon: Wallet },
         { name: "Account Statement", href: "/finance/account-statement", icon: FileSpreadsheet },
