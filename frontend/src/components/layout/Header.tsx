@@ -17,14 +17,27 @@ import {
   ShoppingBag,
 } from "lucide-react";
 
+import { useThemeStore } from "@/store/useThemeStore";
+
 interface HeaderProps {
   sidebarOpen: boolean;
   onToggleSidebar: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) => {
+  const { topBarColor, isGradientTopBar } = useThemeStore();
+  const isDarkTopBar = topBarColor !== "#ffffff";
+
   return (
-    <header className="h-16 bg-white border-b border-gray-100 sticky top-0 z-40 flex items-center justify-between px-4 lg:px-6">
+    <header
+      style={{
+        background: isGradientTopBar ? topBarColor : undefined,
+        backgroundColor: !isGradientTopBar ? topBarColor : undefined,
+      }}
+      className={`h-16 border-b sticky top-0 z-40 flex items-center justify-between px-4 lg:px-6 transition-colors duration-200 ${
+        !isDarkTopBar ? "bg-white border-gray-100" : "border-white/10 text-white"
+      }`}
+    >
       {/* Left Section: A POS Logo, Circle Toggle Button (<< / >>), Search Bar */}
       <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
         {/* Brand Logo: A POS */}
