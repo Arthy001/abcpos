@@ -31,13 +31,17 @@
   - **Backend**: `GET/POST/PUT/DELETE /api/categories`, `GET/POST/PUT/DELETE /api/sub-categories`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางหมวดหมู่และหมวดหมู่ย่อย, รหัส CTxxx, Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไข, จัดการสต็อก)
 
-- [ ] **6. Brands & Units**
+- [x] **6. Brands & Units**
   - **Route**: `/brands`, `/units`
-  - **Backend**: `GET/POST/PUT/DELETE /api/brands`, `/api/units`
-  - **สิ่งที่ต้องการ**: ตารางจัดการแบรนด์สินค้า และหน่วยนับ (Pcs, Box, Kg, Set)
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **Backend**: `GET/POST/PUT/DELETE /api/brands`, `GET/POST/PUT/DELETE /api/units`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางจัดการแบรนด์และหน่วยนับ, Modal สร้าง/แก้ไข, ความสัมพันธ์กับสินค้า, Export PDF/Excel)
 
-- [ ] **7. Print Barcode & QR Code**
+- [x] **7. Expired Products**
+  - **Route**: `/inventory/expired`
+  - **Backend**: `GET /api/products` (Manufactured Date & Expired Date tracking)
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางสินค้าหมดอายุ, วันที่ผลิต, วันหมดอายุ, Filter สินค้าและ Sort By Last 7 Days, Export PDF/Excel)
+
+- [ ] **8. Print Barcode & QR Code**
   - **Route**: `/barcode/print`, `/qrcode/print`
   - **Backend**: Barcode generator logic
   - **สิ่งที่ต้องการ**: หน้าเลือกสินค้า, กำหนดจำนวนแถว/สติ๊กเกอร์ และสั่งพิมพ์บาร์โค้ด

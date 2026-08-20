@@ -26,6 +26,31 @@ export interface SubCategory {
   updatedAt: string;
 }
 
+export interface Brand {
+  id: string;
+  name: string;
+  slug: string;
+  image?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    products: number;
+  };
+}
+
+export interface Unit {
+  id: string;
+  name: string;
+  shortName: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+  _count?: {
+    products: number;
+  };
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -38,8 +63,14 @@ export interface Product {
   minStockAlert: number;
   image?: string | null;
   status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
+  manufacturedDate?: string | null;
+  expiredDate?: string | null;
   categoryId?: string | null;
   category?: Category | null;
+  brandId?: string | null;
+  brand?: Brand | null;
+  unitId?: string | null;
+  unit?: Unit | null;
   createdAt: string;
   updatedAt: string;
 }

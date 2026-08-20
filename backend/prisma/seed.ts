@@ -11,9 +11,46 @@ async function main() {
   await prisma.product.deleteMany();
   await prisma.subCategory.deleteMany();
   await prisma.category.deleteMany();
+  await prisma.brand.deleteMany();
+  await prisma.unit.deleteMany();
   await prisma.customer.deleteMany();
 
-  // Create Categories matching screenshots
+  // 1. Create Brands matching screenshot
+  const brandsData = [
+    { name: "Lenovo", slug: "lenovo", status: "ACTIVE" },
+    { name: "Beats", slug: "beats", status: "ACTIVE" },
+    { name: "Nike", slug: "nike", status: "ACTIVE" },
+    { name: "Apple", slug: "apple", status: "ACTIVE" },
+    { name: "Amazon", slug: "amazon", status: "ACTIVE" },
+    { name: "Woodmart", slug: "woodmart", status: "ACTIVE" },
+    { name: "Dior", slug: "dior", status: "ACTIVE" },
+    { name: "Lava", slug: "lava", status: "ACTIVE" },
+    { name: "Nilkamal", slug: "nilkamal", status: "ACTIVE" },
+    { name: "The North Face", slug: "the-north-face", status: "ACTIVE" },
+  ];
+
+  for (const b of brandsData) {
+    await prisma.brand.create({ data: b });
+  }
+
+  // 2. Create Units matching screenshot
+  const unitsData = [
+    { name: "Kilograms", shortName: "kg", status: "ACTIVE" },
+    { name: "Liters", shortName: "L", status: "ACTIVE" },
+    { name: "Dozen", shortName: "dz", status: "ACTIVE" },
+    { name: "Pieces", shortName: "pcs", status: "ACTIVE" },
+    { name: "Boxes", shortName: "bx", status: "ACTIVE" },
+    { name: "Tons", shortName: "t", status: "ACTIVE" },
+    { name: "Grams", shortName: "g", status: "ACTIVE" },
+    { name: "Meters", shortName: "m", status: "ACTIVE" },
+    { name: "Centimeters", shortName: "cm", status: "ACTIVE" },
+  ];
+
+  for (const u of unitsData) {
+    await prisma.unit.create({ data: u });
+  }
+
+  // 3. Create Categories matching screenshots
   const catComputers = await prisma.category.create({
     data: { name: "Computers", slug: "computers", description: "Laptops, Desktops and Accessories", status: "ACTIVE" },
   });
@@ -54,7 +91,7 @@ async function main() {
     data: { name: "Clothing", slug: "clothing", description: "Apparel and garments", status: "ACTIVE" },
   });
 
-  // Create Sub Categories matching Screenshot 2
+  // 4. Create Sub Categories matching Screenshot 2
   const subCategories = [
     { name: "Laptop", slug: "laptop", categoryId: catComputers.id, code: "CT001", description: "Efficient Productivity", status: "ACTIVE" },
     { name: "Desktop", slug: "desktop", categoryId: catComputers.id, code: "CT002", description: "Compact Design", status: "ACTIVE" },
@@ -72,51 +109,57 @@ async function main() {
     await prisma.subCategory.create({ data: sub });
   }
 
-  // Create Customers
-  const customerWalkin = await prisma.customer.create({
+  // 5. Create Customers
+  await prisma.customer.create({
     data: { name: "Walk-in Customer", phone: "080-000-0000", email: "walkin@example.com" },
   });
 
-  const customerSomchai = await prisma.customer.create({
+  await prisma.customer.create({
     data: { name: "Somchai Prasert", phone: "089-123-4567", email: "somchai@gmail.com", points: 120 },
   });
 
-  // Create Sample Products
+  // 6. Create Sample Products with Manufacturing and Expiry dates
   const sampleProducts = [
     {
-      name: "Apple MacBook Pro 14 M3",
-      sku: "PROD-001",
+      name: "Lenovo 3rd Generation",
+      sku: "PT001",
       barcode: "885123450001",
-      price: 59900,
-      costPrice: 52000,
-      stock: 12,
-      minStockAlert: 3,
+      price: 600,
+      costPrice: 450,
+      stock: 100,
+      minStockAlert: 10,
       categoryId: catComputers.id,
-      image: "/assets/products/product-01.jpg",
+      image: "/assets/images/product-01.jpg",
+      manufacturedDate: new Date("2024-12-24"),
+      expiredDate: new Date("2026-12-20"),
       status: "ACTIVE",
     },
     {
-      name: "Logitech MX Master 3S Wireless Mouse",
-      sku: "PROD-002",
+      name: "Beats Pro",
+      sku: "PT002",
       barcode: "885123450002",
-      price: 3590,
-      costPrice: 2800,
-      stock: 45,
-      minStockAlert: 5,
-      categoryId: catComputers.id,
-      image: "/assets/products/product-02.jpg",
+      price: 160,
+      costPrice: 100,
+      stock: 140,
+      minStockAlert: 15,
+      categoryId: catElectronics.id,
+      image: "/assets/images/product-03.jpg",
+      manufacturedDate: new Date("2024-12-10"),
+      expiredDate: new Date("2026-12-07"),
       status: "ACTIVE",
     },
     {
-      name: "Sony WH-1000XM5 Wireless Headphones",
-      sku: "PROD-003",
-      barcode: "885123450004",
-      price: 13990,
-      costPrice: 11000,
-      stock: 8,
-      minStockAlert: 2,
-      categoryId: catElectronics.id,
-      image: "/assets/products/product-04.jpg",
+      name: "Nike Jordan",
+      sku: "PT003",
+      barcode: "885123450003",
+      price: 110,
+      costPrice: 70,
+      stock: 300,
+      minStockAlert: 20,
+      categoryId: catShoe.id,
+      image: "/assets/images/product-04.jpg",
+      manufacturedDate: new Date("2024-11-27"),
+      expiredDate: new Date("2026-11-20"),
       status: "ACTIVE",
     },
   ];
@@ -125,7 +168,7 @@ async function main() {
     await prisma.product.create({ data: item });
   }
 
-  console.log("Seeding finished successfully with Categories and SubCategories!");
+  console.log("Seeding finished successfully with Brands, Units, Categories, SubCategories, and Products!");
 }
 
 main()

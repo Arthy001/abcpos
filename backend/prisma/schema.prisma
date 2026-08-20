@@ -33,23 +33,54 @@ model SubCategory {
   updatedAt   DateTime  @updatedAt
 }
 
+model Brand {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  image       String?
+  status      String    @default("ACTIVE") // ACTIVE, INACTIVE
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model Unit {
+  id          String    @id @default(uuid())
+  name        String
+  shortName   String    @unique // e.g. kg, L, pcs
+  status      String    @default("ACTIVE") // ACTIVE, INACTIVE
+  products    Product[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
 model Product {
-  id            String      @id @default(uuid())
-  name          String
-  sku           String      @unique
-  barcode       String?     @unique
-  description   String?
-  price         Float
-  costPrice     Float       @default(0.0)
-  stock         Int         @default(0)
-  minStockAlert Int         @default(5)
-  image         String?
-  status        String      @default("ACTIVE") // ACTIVE, INACTIVE, OUT_OF_STOCK
-  categoryId    String?
-  category      Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
-  orderItems    OrderItem[]
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
+  id               String      @id @default(uuid())
+  name             String
+  sku              String      @unique
+  barcode          String?     @unique
+  description      String?
+  price            Float
+  costPrice        Float       @default(0.0)
+  stock            Int         @default(0)
+  minStockAlert    Int         @default(5)
+  image            String?
+  status           String      @default("ACTIVE") // ACTIVE, INACTIVE, OUT_OF_STOCK
+  manufacturedDate DateTime?
+  expiredDate      DateTime?
+  
+  categoryId       String?
+  category         Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  
+  brandId          String?
+  brand            Brand?      @relation(fields: [brandId], references: [id], onDelete: SetNull)
+  
+  unitId           String?
+  unit             Unit?       @relation(fields: [unitId], references: [id], onDelete: SetNull)
+
+  orderItems       OrderItem[]
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 model Customer {

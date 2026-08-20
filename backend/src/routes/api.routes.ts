@@ -10,6 +10,18 @@ import {
   deleteSubCategory,
 } from "../controllers/category.controller.js";
 import {
+  getBrands,
+  createBrand,
+  updateBrand,
+  deleteBrand,
+} from "../controllers/brand.controller.js";
+import {
+  getUnits,
+  createUnit,
+  updateUnit,
+  deleteUnit,
+} from "../controllers/unit.controller.js";
+import {
   getProducts,
   getProductById,
   createProduct,
@@ -23,7 +35,7 @@ const router = Router();
 
 // Health Check
 router.get("/health", (req, res) => {
-  res.json({ status: "ok", message: "ABC POS Backend API is running smoothly." });
+  res.json({ status: "ok", message: "A POS Backend API is running smoothly." });
 });
 
 // Dashboard
@@ -40,6 +52,18 @@ router.get("/sub-categories", getSubCategories);
 router.post("/sub-categories", createSubCategory);
 router.put("/sub-categories/:id", updateSubCategory);
 router.delete("/sub-categories/:id", deleteSubCategory);
+
+// Brands
+router.get("/brands", getBrands);
+router.post("/brands", createBrand);
+router.put("/brands/:id", updateBrand);
+router.delete("/brands/:id", deleteBrand);
+
+// Units
+router.get("/units", getUnits);
+router.post("/units", createUnit);
+router.put("/units/:id", updateUnit);
+router.delete("/units/:id", deleteUnit);
 
 // Products
 router.get("/products", getProducts);

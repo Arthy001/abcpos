@@ -1,4 +1,4 @@
-import { Category, DashboardStats, Order, Product, SubCategory } from "@/types";
+import { Brand, Category, DashboardStats, Order, Product, SubCategory, Unit } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
 
@@ -44,6 +44,87 @@ export async function createProductApi(payload: {
     throw new Error(data.message || "Failed to create product");
   }
   return data.data;
+}
+
+// ==================== BRANDS ====================
+export async function fetchBrands(params?: { status?: string; search?: string }): Promise<Brand[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/brands?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch brands");
+  return await res.json();
+}
+
+export async function createBrandApi(payload: {
+  name: string;
+  slug?: string;
+  image?: string;
+  status?: string;
+}): Promise<Brand> {
+  const res = await fetch(`${API_BASE_URL}/brands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create brand");
+  return await res.json();
+}
+
+export async function updateBrandApi(id: string, payload: Partial<Brand>): Promise<Brand> {
+  const res = await fetch(`${API_BASE_URL}/brands/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update brand");
+  return await res.json();
+}
+
+export async function deleteBrandApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/brands/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete brand");
+}
+
+// ==================== UNITS ====================
+export async function fetchUnits(params?: { status?: string; search?: string }): Promise<Unit[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/units?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch units");
+  return await res.json();
+}
+
+export async function createUnitApi(payload: {
+  name: string;
+  shortName: string;
+  status?: string;
+}): Promise<Unit> {
+  const res = await fetch(`${API_BASE_URL}/units`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to create unit");
+  return await res.json();
+}
+
+export async function updateUnitApi(id: string, payload: Partial<Unit>): Promise<Unit> {
+  const res = await fetch(`${API_BASE_URL}/units/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update unit");
+  return await res.json();
+}
+
+export async function deleteUnitApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/units/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete unit");
 }
 
 // ==================== CATEGORIES ====================
