@@ -83,6 +83,30 @@ import {
   updateCustomer,
   deleteCustomer,
 } from "../controllers/customer.controller.js";
+import {
+  getShifts,
+  createShift,
+  updateShift,
+  deleteShift,
+} from "../controllers/shift.controller.js";
+import {
+  getDepartments,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
+} from "../controllers/department.controller.js";
+import {
+  getDesignations,
+  createDesignation,
+  updateDesignation,
+  deleteDesignation,
+} from "../controllers/designation.controller.js";
+import {
+  getEmployees,
+  createEmployee,
+  updateEmployee,
+  deleteEmployee,
+} from "../controllers/employee.controller.js";
 import { getOrders, createOrder } from "../controllers/order.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 
@@ -187,5 +211,29 @@ router.delete("/products/:id", deleteProduct);
 // Orders / POS
 router.get("/orders", getOrders);
 router.post("/orders", createOrder);
+
+// HRM: Shifts
+router.get("/shifts", getShifts);
+router.post("/shifts", createShift);
+router.put("/shifts/:id", updateShift);
+router.delete("/shifts/:id", deleteShift);
+
+// HRM: Departments
+router.get("/departments", getDepartments);
+router.post("/departments", createDepartment);
+router.put("/departments/:id", updateDepartment);
+router.delete("/departments/:id", deleteDepartment);
+
+// HRM: Designations
+router.get("/designations", getDesignations);
+router.post("/designations", createDesignation);
+router.put("/designations/:id", updateDesignation);
+router.delete("/designations/:id", deleteDesignation);
+
+// HRM: Employees
+router.get("/employees", getEmployees);
+router.post("/employees", createEmployee);
+router.put("/employees/:id", updateEmployee);
+router.delete("/employees/:id", deleteEmployee);
 
 export default router;

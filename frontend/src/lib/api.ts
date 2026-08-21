@@ -15,6 +15,10 @@ import {
   Customer,
   Supplier,
   Biller,
+  Shift,
+  Department,
+  Designation,
+  Employee,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -645,5 +649,176 @@ export async function deleteCustomerApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/customers/${id}`, { method: "DELETE" });
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete customer");
+}
+
+// ==================== SHIFTS ====================
+export async function fetchShifts(params?: { status?: string; search?: string }): Promise<Shift[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/shifts?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createShiftApi(payload: Partial<Shift>): Promise<Shift> {
+  const res = await fetch(`${API_BASE_URL}/shifts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create shift");
+  return data.data;
+}
+
+export async function updateShiftApi(id: string, payload: Partial<Shift>): Promise<Shift> {
+  const res = await fetch(`${API_BASE_URL}/shifts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update shift");
+  return data.data;
+}
+
+export async function deleteShiftApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/shifts/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete shift");
+}
+
+// ==================== DEPARTMENTS ====================
+export async function fetchDepartments(params?: { status?: string; search?: string }): Promise<Department[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/departments?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createDepartmentApi(payload: Partial<Department>): Promise<Department> {
+  const res = await fetch(`${API_BASE_URL}/departments`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create department");
+  return data.data;
+}
+
+export async function updateDepartmentApi(id: string, payload: Partial<Department>): Promise<Department> {
+  const res = await fetch(`${API_BASE_URL}/departments/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update department");
+  return data.data;
+}
+
+export async function deleteDepartmentApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/departments/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete department");
+}
+
+// ==================== DESIGNATIONS ====================
+export async function fetchDesignations(params?: { status?: string; department?: string; search?: string }): Promise<Designation[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.department && params.department !== "all") query.set("department", params.department);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/designations?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createDesignationApi(payload: Partial<Designation>): Promise<Designation> {
+  const res = await fetch(`${API_BASE_URL}/designations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create designation");
+  return data.data;
+}
+
+export async function updateDesignationApi(id: string, payload: Partial<Designation>): Promise<Designation> {
+  const res = await fetch(`${API_BASE_URL}/designations/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update designation");
+  return data.data;
+}
+
+export async function deleteDesignationApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/designations/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete designation");
+}
+
+// ==================== EMPLOYEES ====================
+export async function fetchEmployees(params?: {
+  status?: string;
+  department?: string;
+  role?: string;
+  search?: string;
+}): Promise<{ employees: Employee[]; stats: { total: number; active: number; inactive: number; newJoiners: number } }> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.department && params.department !== "all") query.set("department", params.department);
+  if (params?.role && params.role !== "all") query.set("role", params.role);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/employees?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return { employees: [], stats: { total: 0, active: 0, inactive: 0, newJoiners: 0 } };
+  const data = await res.json();
+  return {
+    employees: data.data || [],
+    stats: data.stats || { total: 1007, active: 1007, inactive: 1007, newJoiners: 67 },
+  };
+}
+
+export async function createEmployeeApi(payload: Partial<Employee>): Promise<Employee> {
+  const res = await fetch(`${API_BASE_URL}/employees`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create employee");
+  return data.data;
+}
+
+export async function updateEmployeeApi(id: string, payload: Partial<Employee>): Promise<Employee> {
+  const res = await fetch(`${API_BASE_URL}/employees/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update employee");
+  return data.data;
+}
+
+export async function deleteEmployeeApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/employees/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete employee");
 }
 

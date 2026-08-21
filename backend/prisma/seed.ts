@@ -20,6 +20,10 @@ async function main() {
   await prisma.customer.deleteMany();
   await prisma.supplier.deleteMany();
   await prisma.biller.deleteMany();
+  await prisma.shift.deleteMany();
+  await prisma.department.deleteMany();
+  await prisma.designation.deleteMany();
+  await prisma.employee.deleteMany();
 
   // 1. Create Brands
   const brandsData = [
@@ -262,6 +266,69 @@ async function main() {
 
   for (const item of sampleProducts) {
     await prisma.product.create({ data: item });
+  }
+
+  // 10. Create Shifts matching Screenshot
+  const shiftsData = [
+    { name: "Fixed", timing: "09:00 AM - 6:00 PM", weekOff: "Sunday, Monday", createdAt: new Date("2024-08-04"), status: "ACTIVE" },
+    { name: "Rotating", timing: "06:00 AM - 3:00 PM", weekOff: "Saturday, Sunday", createdAt: new Date("2024-07-21"), status: "ACTIVE" },
+    { name: "Split", timing: "03:00 AM - 9:00 PM", weekOff: "Tuesday, Saturday", createdAt: new Date("2024-01-31"), status: "ACTIVE" },
+    { name: "On-Call", timing: "09:00 AM - 6:00 PM", weekOff: "Monday", createdAt: new Date("2024-05-15"), status: "ACTIVE" },
+    { name: "Weekend", timing: "06:00 AM - 3:00 PM", weekOff: "Friday", createdAt: new Date("2024-08-04"), status: "ACTIVE" },
+  ];
+  for (const s of shiftsData) {
+    await prisma.shift.create({ data: s });
+  }
+
+  // 11. Create Designations matching Screenshot
+  const designationsData = [
+    { name: "Sales Manager", department: "Sales", totalMembers: 7, createdAt: new Date("2024-12-24"), status: "ACTIVE" },
+    { name: "Inventory Manager", department: "Inventory", totalMembers: 10, createdAt: new Date("2024-12-10"), status: "ACTIVE" },
+    { name: "Accountant", department: "Finance", totalMembers: 5, createdAt: new Date("2024-11-27"), status: "ACTIVE" },
+    { name: "System Administrator", department: "Admin", totalMembers: 10, createdAt: new Date("2024-11-18"), status: "ACTIVE" },
+    { name: "HR Manager", department: "Human Resources", totalMembers: 6, createdAt: new Date("2024-11-06"), status: "ACTIVE" },
+    { name: "Marketing Manager", department: "Marketing", totalMembers: 12, createdAt: new Date("2024-10-25"), status: "ACTIVE" },
+    { name: "QA Analyst", department: "Quality Assurance", totalMembers: 8, createdAt: new Date("2024-10-14"), status: "ACTIVE" },
+    { name: "Research Analyst", department: "R&D", totalMembers: 7, createdAt: new Date("2024-10-03"), status: "ACTIVE" },
+    { name: "Support Engineer", department: "IT Support", totalMembers: 10, createdAt: new Date("2024-09-20"), status: "ACTIVE" },
+    { name: "Content Writer", department: "Content Creation", totalMembers: 8, createdAt: new Date("2024-09-10"), status: "INACTIVE" },
+  ];
+  for (const d of designationsData) {
+    await prisma.designation.create({ data: d });
+  }
+
+  // 12. Create Departments matching Screenshot
+  const departmentsData = [
+    { name: "Inventory", headName: "Mitchum Daniel", headAvatar: "/assets/images/customer11.jpg", totalMembers: 8, status: "ACTIVE" },
+    { name: "Human Resources", headName: "Susan Lopez", headAvatar: "/assets/images/customer12.jpg", totalMembers: 10, status: "ACTIVE" },
+    { name: "Admin", headName: "Robert Grossman", headAvatar: "/assets/images/customer13.jpg", totalMembers: 5, status: "ACTIVE" },
+    { name: "Sales", headName: "Janet Hembre", headAvatar: "/assets/images/customer14.jpg", totalMembers: 10, status: "ACTIVE" },
+    { name: "Marketing", headName: "Russell Belle", headAvatar: "/assets/images/customer15.jpg", totalMembers: 6, status: "ACTIVE" },
+    { name: "Quality Assurance", headName: "Edward Muniz", headAvatar: "/assets/images/customer16.jpg", totalMembers: 6, status: "ACTIVE" },
+    { name: "Finance", headName: "Susan Moore", headAvatar: "/assets/images/customer17.jpg", totalMembers: 8, status: "ACTIVE" },
+    { name: "Maintenance", headName: "Lance Jackson", headAvatar: "/assets/images/customer18.jpg", totalMembers: 7, status: "ACTIVE" },
+    { name: "R&D", headName: "Travis Marcotte", headAvatar: "/assets/images/avatar-01.jpg", totalMembers: 10, status: "ACTIVE" },
+    { name: "Content Creation", headName: "Malinda Ruiz", headAvatar: "/assets/images/avatar-02.jpg", totalMembers: 8, status: "ACTIVE" },
+    { name: "Social Media", headName: "David Slater", headAvatar: "/assets/images/avatar-03.jpg", totalMembers: 6, status: "ACTIVE" },
+    { name: "IT Support", headName: "Michele Kim", headAvatar: "/assets/images/avatar-10.jpg", totalMembers: 4, status: "ACTIVE" },
+  ];
+  for (const dep of departmentsData) {
+    await prisma.department.create({ data: dep });
+  }
+
+  // 13. Create Employees matching Screenshot
+  const employeesData = [
+    { empId: "POS001", name: "Anthony Lewis", avatar: "/assets/images/customer11.jpg", role: "System Admin", department: "HR", joinedDate: "30 May 2023", email: "anthony@example.com", phone: "+12498345785", status: "ACTIVE" },
+    { empId: "POS002", name: "Brian Villalobos", avatar: "/assets/images/customer12.jpg", role: "Software Developer", department: "UI/UX", joinedDate: "30 May 2023", email: "brian@example.com", phone: "+13178964582", status: "ACTIVE" },
+    { empId: "POS003", name: "Harvey Smith", avatar: "/assets/images/customer13.jpg", role: "System Admin", department: "Admin", joinedDate: "30 May 2023", email: "harvey@example.com", phone: "+12796183487", status: "ACTIVE" },
+    { empId: "POS004", name: "Stephan Peralt", avatar: "/assets/images/customer14.jpg", role: "System Admin", department: "Admin", joinedDate: "30 May 2023", email: "stephan@example.com", phone: "+17538647943", status: "ACTIVE" },
+    { empId: "POS005", name: "Doglas Martini", avatar: "/assets/images/customer15.jpg", role: "System Admin", department: "IT", joinedDate: "30 May 2023", email: "doglas@example.com", phone: "+13798132475", status: "ACTIVE" },
+    { empId: "POS006", name: "Linda Ray", avatar: "/assets/images/customer16.jpg", role: "System Admin", department: "Support", joinedDate: "30 May 2023", email: "linda@example.com", phone: "+17596341894", status: "ACTIVE" },
+    { empId: "POS007", name: "Elliot Murray", avatar: "/assets/images/customer17.jpg", role: "System Admin", department: "UI/UX", joinedDate: "30 May 2023", email: "elliot@example.com", phone: "+12973548678", status: "ACTIVE" },
+    { empId: "POS008", name: "Rebecca Smtih", avatar: "/assets/images/customer18.jpg", role: "System Admin", department: "HR", joinedDate: "30 May 2023", email: "rebecca@example.com", phone: "+13147858357", status: "ACTIVE" },
+  ];
+  for (const emp of employeesData) {
+    await prisma.employee.create({ data: emp });
   }
 
   console.log("Seeding finished successfully with all modules!");

@@ -128,6 +128,52 @@ export interface Biller {
   updatedAt?: string;
 }
 
+export interface Shift {
+  id: string;
+  name: string;
+  timing: string;
+  weekOff: string;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Department {
+  id: string;
+  name: string;
+  headName?: string | null;
+  headAvatar?: string | null;
+  totalMembers?: number;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Designation {
+  id: string;
+  name: string;
+  department: string;
+  totalMembers?: number;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Employee {
+  id: string;
+  empId?: string | null;
+  name: string;
+  avatar?: string | null;
+  role?: string | null;
+  department?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  joinedDate?: string | null;
+  status: "ACTIVE" | "INACTIVE" | "NEW_JOINER";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface StockTransfer {
   id: string;
   fromWarehouse: string;

@@ -154,7 +154,31 @@
 
 ---
 
-## 📊 กลุ่มที่ 5: รายงานและการตั้งค่า (Reports & Settings)
+## 👔 กลุ่มที่ 5: การจัดการทรัพยากรบุคคล (HRM)
+
+- [x] **22. Employees List**
+  - **Route**: `/hrm/employees`
+  - **Backend**: `GET/POST/PUT/DELETE /api/employees`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (การ์ดสถิติ 4 ใบ: Total, Active, Inactive, New Joiners | สลับมุมมอง Grid Cards & List Table | ข้อมูลพนักงาน รหัส EMP ID, รูป Avatar, ชื่อ, ตำแหน่ง, แผนก, วันเริ่มงาน | Search, Filter, Export PDF/Excel, Modal เพิ่ม/แก้ไข/ดูโปรไฟล์)
+
+- [x] **23. Departments**
+  - **Route**: `/hrm/departments`
+  - **Backend**: `GET/POST/PUT/DELETE /api/departments`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (สลับมุมมอง Grid Cards & List Table | จุดสถานะสีเขียว, ชื่อแผนก, หัวหน้าแผนก + รูป Avatar, สรุปจำนวนสมาชิก Total Members, Avatar Stack | Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไขแผนก)
+
+- [x] **24. Designation**
+  - **Route**: `/hrm/designations`
+  - **Backend**: `GET/POST/PUT/DELETE /api/designations`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางตำแหน่งงาน: Designation, แผนก Department, Members Avatar Stack, Total Members, วันที่สร้าง Created On, สถานะ Active/Inactive, Action แก้ไข/ลบ | Search, Filter แผนก/สถานะ, Export PDF/Excel, Modal จัดการตำแหน่ง)
+
+- [x] **25. Shifts & Schedules**
+  - **Route**: `/hrm/shifts`
+  - **Backend**: `GET/POST/PUT/DELETE /api/shifts`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางกะการทำงาน: Shift Name, ช่วงเวลา Timing, วันหยุดประจำสัปดาห์ Week off, วันที่สร้าง Created On, สถานะ Active/Inactive, Action แก้ไข/ลบ | Search, Filter สถานะ, Export PDF/Excel, Modal เพิ่ม/แก้ไขกะ)
+
+---
+
+## 📊 กลุ่มที่ 6: รายงานและการตั้งค่า (Reports & Settings)
 
 - [ ] **22. Sales & Profit/Loss Report**
   - **Route**: `/reports/sales`, `/reports/profit-loss`
