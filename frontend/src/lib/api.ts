@@ -12,6 +12,9 @@ import {
   Store,
   StockTransfer,
   StockAdjustment,
+  Customer,
+  Supplier,
+  Biller,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -226,17 +229,164 @@ export async function deleteVariantAttributeApi(id: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to delete variant attribute");
 }
 
-// ==================== WAREHOUSES & STORES ====================
-export async function fetchWarehouses(): Promise<Warehouse[]> {
-  const res = await fetch(`${API_BASE_URL}/warehouses`, { cache: "no-store" });
+// ==================== WAREHOUSES ====================
+export async function fetchWarehouses(params?: { status?: string; search?: string }): Promise<Warehouse[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/warehouses?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];
-  return await res.json();
+  const data = await res.json();
+  return data.data || data;
 }
 
-export async function fetchStores(): Promise<Store[]> {
-  const res = await fetch(`${API_BASE_URL}/stores`, { cache: "no-store" });
+export async function createWarehouseApi(payload: Partial<Warehouse>): Promise<Warehouse> {
+  const res = await fetch(`${API_BASE_URL}/warehouses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create warehouse");
+  return data.data;
+}
+
+export async function updateWarehouseApi(id: string, payload: Partial<Warehouse>): Promise<Warehouse> {
+  const res = await fetch(`${API_BASE_URL}/warehouses/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update warehouse");
+  return data.data;
+}
+
+export async function deleteWarehouseApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/warehouses/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete warehouse");
+}
+
+// ==================== STORES ====================
+export async function fetchStores(params?: { status?: string; search?: string }): Promise<Store[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/stores?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];
-  return await res.json();
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createStoreApi(payload: Partial<Store>): Promise<Store> {
+  const res = await fetch(`${API_BASE_URL}/stores`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create store");
+  return data.data;
+}
+
+export async function updateStoreApi(id: string, payload: Partial<Store>): Promise<Store> {
+  const res = await fetch(`${API_BASE_URL}/stores/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update store");
+  return data.data;
+}
+
+export async function deleteStoreApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/stores/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete store");
+}
+
+// ==================== SUPPLIERS ====================
+export async function fetchSuppliers(params?: { status?: string; search?: string }): Promise<Supplier[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/suppliers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createSupplierApi(payload: Partial<Supplier>): Promise<Supplier> {
+  const res = await fetch(`${API_BASE_URL}/suppliers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create supplier");
+  return data.data;
+}
+
+export async function updateSupplierApi(id: string, payload: Partial<Supplier>): Promise<Supplier> {
+  const res = await fetch(`${API_BASE_URL}/suppliers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update supplier");
+  return data.data;
+}
+
+export async function deleteSupplierApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/suppliers/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete supplier");
+}
+
+// ==================== BILLERS ====================
+export async function fetchBillers(params?: { status?: string; search?: string }): Promise<Biller[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/billers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createBillerApi(payload: Partial<Biller>): Promise<Biller> {
+  const res = await fetch(`${API_BASE_URL}/billers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create biller");
+  return data.data;
+}
+
+export async function updateBillerApi(id: string, payload: Partial<Biller>): Promise<Biller> {
+  const res = await fetch(`${API_BASE_URL}/billers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update biller");
+  return data.data;
+}
+
+export async function deleteBillerApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/billers/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete biller");
 }
 
 // ==================== BRANDS ====================
@@ -446,3 +596,54 @@ export async function fetchOrders(): Promise<Order[]> {
   const data = await res.json();
   return data.data;
 }
+
+// ==================== CUSTOMERS ====================
+export async function fetchCustomers(params?: {
+  status?: string;
+  search?: string;
+}): Promise<Customer[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/customers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch customers");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function fetchCustomerById(id: string): Promise<Customer> {
+  const res = await fetch(`${API_BASE_URL}/customers/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch customer");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function createCustomerApi(payload: Partial<Customer>): Promise<Customer> {
+  const res = await fetch(`${API_BASE_URL}/customers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create customer");
+  return data.data;
+}
+
+export async function updateCustomerApi(id: string, payload: Partial<Customer>): Promise<Customer> {
+  const res = await fetch(`${API_BASE_URL}/customers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update customer");
+  return data.data;
+}
+
+export async function deleteCustomerApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/customers/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete customer");
+}
+

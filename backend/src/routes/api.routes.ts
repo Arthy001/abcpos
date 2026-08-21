@@ -35,8 +35,32 @@ import {
 } from "../controllers/variant.controller.js";
 import {
   getWarehouses,
-  getStores,
+  getWarehouseById,
+  createWarehouse,
+  updateWarehouse,
+  deleteWarehouse,
 } from "../controllers/warehouse.controller.js";
+import {
+  getStores,
+  getStoreById,
+  createStore,
+  updateStore,
+  deleteStore,
+} from "../controllers/store.controller.js";
+import {
+  getSuppliers,
+  getSupplierById,
+  createSupplier,
+  updateSupplier,
+  deleteSupplier,
+} from "../controllers/supplier.controller.js";
+import {
+  getBillers,
+  getBillerById,
+  createBiller,
+  updateBiller,
+  deleteBiller,
+} from "../controllers/biller.controller.js";
 import {
   getStockTransfers,
   createStockTransfer,
@@ -52,6 +76,13 @@ import {
   updateProduct,
   deleteProduct,
 } from "../controllers/product.controller.js";
+import {
+  getCustomers,
+  getCustomerById,
+  createCustomer,
+  updateCustomer,
+  deleteCustomer,
+} from "../controllers/customer.controller.js";
 import { getOrders, createOrder } from "../controllers/order.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 
@@ -64,6 +95,13 @@ router.get("/health", (req, res) => {
 
 // Dashboard
 router.get("/dashboard/stats", getDashboardStats);
+
+// Customers
+router.get("/customers", getCustomers);
+router.get("/customers/:id", getCustomerById);
+router.post("/customers", createCustomer);
+router.put("/customers/:id", updateCustomer);
+router.delete("/customers/:id", deleteCustomer);
 
 // Categories
 router.get("/categories", getCategories);
@@ -101,9 +139,33 @@ router.post("/variant-attributes", createVariantAttribute);
 router.put("/variant-attributes/:id", updateVariantAttribute);
 router.delete("/variant-attributes/:id", deleteVariantAttribute);
 
-// Warehouses & Stores
+// Warehouses
 router.get("/warehouses", getWarehouses);
+router.get("/warehouses/:id", getWarehouseById);
+router.post("/warehouses", createWarehouse);
+router.put("/warehouses/:id", updateWarehouse);
+router.delete("/warehouses/:id", deleteWarehouse);
+
+// Stores
 router.get("/stores", getStores);
+router.get("/stores/:id", getStoreById);
+router.post("/stores", createStore);
+router.put("/stores/:id", updateStore);
+router.delete("/stores/:id", deleteStore);
+
+// Suppliers
+router.get("/suppliers", getSuppliers);
+router.get("/suppliers/:id", getSupplierById);
+router.post("/suppliers", createSupplier);
+router.put("/suppliers/:id", updateSupplier);
+router.delete("/suppliers/:id", deleteSupplier);
+
+// Billers
+router.get("/billers", getBillers);
+router.get("/billers/:id", getBillerById);
+router.post("/billers", createBiller);
+router.put("/billers/:id", updateBiller);
+router.delete("/billers/:id", deleteBiller);
 
 // Stock Transfers
 router.get("/stock-transfers", getStockTransfers);

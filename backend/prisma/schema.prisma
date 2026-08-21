@@ -74,27 +74,63 @@ model VariantAttribute {
 }
 
 model Warehouse {
-  id        String    @id @default(uuid())
-  name      String
-  code      String?
-  phone     String?
-  address   String?
-  status    String    @default("ACTIVE")
-  products  Product[]
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id            String    @id @default(uuid())
+  name          String
+  contactPerson String?
+  contactAvatar String?
+  phone         String?
+  totalProducts Int       @default(0)
+  stock         Int       @default(0)
+  qty           Int       @default(0)
+  code          String?
+  address       String?
+  status        String    @default("ACTIVE") // ACTIVE, INACTIVE
+  products      Product[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 }
 
 model Store {
   id        String    @id @default(uuid())
   name      String
-  code      String?
+  userName  String?
+  email     String?
   phone     String?
+  code      String?
   address   String?
-  status    String    @default("ACTIVE")
+  status    String    @default("ACTIVE") // ACTIVE, INACTIVE
   products  Product[]
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
+}
+
+model Supplier {
+  id        String   @id @default(uuid())
+  code      String?  @unique
+  name      String
+  image     String?
+  email     String?
+  phone     String?
+  country   String?
+  address   String?
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Biller {
+  id          String   @id @default(uuid())
+  code        String?  @unique
+  name        String
+  avatar      String?
+  companyName String?
+  email       String?
+  phone       String?
+  country     String?
+  address     String?
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model StockTransfer {
@@ -164,11 +200,16 @@ model Product {
 
 model Customer {
   id          String   @id @default(uuid())
+  code        String?  @unique
   name        String
   phone       String?
   email       String?
-  points      Int      @default(0)
+  avatar      String?
+  country     String?
+  city        String?
   address     String?
+  points      Int      @default(0)
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
   orders      Order[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt

@@ -18,6 +18,8 @@ async function main() {
   await prisma.warehouse.deleteMany();
   await prisma.store.deleteMany();
   await prisma.customer.deleteMany();
+  await prisma.supplier.deleteMany();
+  await prisma.biller.deleteMany();
 
   // 1. Create Brands
   const brandsData = [
@@ -90,23 +92,72 @@ async function main() {
     await prisma.variantAttribute.create({ data: v });
   }
 
-  // 5. Create Warehouses & Stores matching Low Stock Screenshot
+  // 5. Create Warehouses matching Screenshot
   const warehousesData = [
-    "Lavish Warehouse", "Quaint Warehouse", "Traditional Warehouse", "Cool Warehouse",
-    "Overflow Warehouse", "Nova Storage Hub", "Retail Supply Hub", "EdgeWare Solutions",
-    "North Zone Warehouse", "Fulfillment Hub"
+    { name: "Lavish Warehouse", contactPerson: "Chad Taylor", contactAvatar: "/assets/images/customer11.jpg", phone: "+12498345785", totalProducts: 10, stock: 600, qty: 80, createdAt: new Date("2024-12-24"), status: "ACTIVE" },
+    { name: "Quaint Warehouse", contactPerson: "Jenny Ellis", contactAvatar: "/assets/images/customer12.jpg", phone: "+13178964582", totalProducts: 15, stock: 300, qty: 85, createdAt: new Date("2024-12-10"), status: "ACTIVE" },
+    { name: "Traditional Warehouse", contactPerson: "Leon Baxter", contactAvatar: "/assets/images/customer13.jpg", phone: "+12796183487", totalProducts: 12, stock: 400, qty: 70, createdAt: new Date("2024-11-27"), status: "ACTIVE" },
+    { name: "Cool Warehouse", contactPerson: "Karen Flores", contactAvatar: "/assets/images/customer14.jpg", phone: "+17538647943", totalProducts: 20, stock: 320, qty: 65, createdAt: new Date("2024-11-18"), status: "ACTIVE" },
+    { name: "Overflow Warehouse", contactPerson: "Michael Dawson", contactAvatar: "/assets/images/customer15.jpg", phone: "+13798132475", totalProducts: 8, stock: 170, qty: 80, createdAt: new Date("2024-11-06"), status: "ACTIVE" },
+    { name: "Nova Storage Hub", contactPerson: "Karen Galvan", contactAvatar: "/assets/images/customer16.jpg", phone: "+17596341894", totalProducts: 13, stock: 220, qty: 75, createdAt: new Date("2024-10-25"), status: "ACTIVE" },
+    { name: "Retail Supply Hub", contactPerson: "Thomas Ward", contactAvatar: "/assets/images/customer17.jpg", phone: "+12973548678", totalProducts: 17, stock: 310, qty: 60, createdAt: new Date("2024-10-14"), status: "ACTIVE" },
+    { name: "EdgeWare Solutions", contactPerson: "Aliza Duncan", contactAvatar: "/assets/images/customer18.jpg", phone: "+13147858357", totalProducts: 22, stock: 450, qty: 50, createdAt: new Date("2024-10-03"), status: "ACTIVE" },
+    { name: "North Zone Warehouse", contactPerson: "James Higham", contactAvatar: "/assets/images/avatar-01.jpg", phone: "+11978348626", totalProducts: 24, stock: 270, qty: 70, createdAt: new Date("2024-09-20"), status: "ACTIVE" },
+    { name: "Fulfillment Hub", contactPerson: "Jada Robinson", contactAvatar: "/assets/images/avatar-02.jpg", phone: "+12678934561", totalProducts: 14, stock: 300, qty: 45, createdAt: new Date("2024-09-10"), status: "ACTIVE" },
   ];
   for (const wh of warehousesData) {
-    await prisma.warehouse.create({ data: { name: wh, status: "ACTIVE" } });
+    await prisma.warehouse.create({ data: wh });
   }
 
+  // 5.1 Create Stores matching Screenshot
   const storesData = [
-    "Electro Mart", "Quantum Gadgets", "Prime Bazaar", "Gadget World",
-    "Volt Vault", "Elite Retail", "Prime Mart", "NeoTech Store",
-    "Urban Mart", "Travel Mart"
+    { name: "Electro Mart", userName: "johnsmith", email: "electromart@example.com", phone: "+12498345785", status: "ACTIVE" },
+    { name: "Quantum Gadgets", userName: "janedoe", email: "quantum@example.com", phone: "+13178964582", status: "ACTIVE" },
+    { name: "Prime Bazaar", userName: "sarahlee", email: "primebazaar@example.com", phone: "+12796183487", status: "ACTIVE" },
+    { name: "Gadget World", userName: "alexbrown", email: "gadgetworld@example.com", phone: "+17538647943", status: "ACTIVE" },
+    { name: "Volt Vault", userName: "jesswhite", email: "voltvault@example.com", phone: "+13798132475", status: "ACTIVE" },
+    { name: "Elite Retail", userName: "emilydavis", email: "eliteretail@example.com", phone: "+17596341894", status: "ACTIVE" },
+    { name: "Prime Mart", userName: "tomharris", email: "primemart@example.com", phone: "+12973548678", status: "ACTIVE" },
+    { name: "NeoTech Store", userName: "sarahjohnson", email: "neotech@example.com", phone: "+13147858357", status: "ACTIVE" },
+    { name: "Urban Mart", userName: "laurawilson", email: "urbanmart@example.com", phone: "+11978348626", status: "ACTIVE" },
+    { name: "Travel Mart", userName: "robertwhite", email: "travelmart@example.com", phone: "+12678934561", status: "ACTIVE" },
   ];
   for (const st of storesData) {
-    await prisma.store.create({ data: { name: st, status: "ACTIVE" } });
+    await prisma.store.create({ data: st });
+  }
+
+  // 5.2 Create Suppliers matching Screenshot
+  const suppliersData = [
+    { code: "SU001", name: "Apex Computers", image: "/assets/images/product-01.jpg", email: "apexcomputers@example.com", phone: "+15964712634", country: "Germany", status: "ACTIVE" },
+    { code: "SU002", name: "Beats Headphones", image: "/assets/images/product-03.jpg", email: "beatsheadphone@example.com", phone: "+16372895190", country: "Japan", status: "ACTIVE" },
+    { code: "SU003", name: "Dazzle Shoes", image: "/assets/images/product-04.jpg", email: "dazzleshoes@example.com", phone: "+17589201739", country: "USA", status: "ACTIVE" },
+    { code: "SU004", name: "Best Accessories", image: "/assets/images/product-05.jpg", email: "bestaccessories@example.com", phone: "+18934092467", country: "Austria", status: "ACTIVE" },
+    { code: "SU005", name: "A-Z Store", image: "/assets/images/product-06.jpg", email: "a2zstore@example.com", phone: "+12568749035", country: "Turkey", status: "ACTIVE" },
+    { code: "SU006", name: "Hatimi Hardwares", image: "/assets/images/product-07.jpg", email: "hatimihardware@example.com", phone: "+19054674627", country: "Mexico", status: "ACTIVE" },
+    { code: "SU007", name: "Aesthetic Bags", image: "/assets/images/product-08.jpg", email: "aestheticbags@example.com", phone: "+18943670365", country: "France", status: "ACTIVE" },
+    { code: "SU008", name: "Alpha Mobiles", image: "/assets/images/product-09.jpg", email: "alphamobiles@example.com", phone: "+16473894103", country: "Greece", status: "ACTIVE" },
+    { code: "SU009", name: "Sigma Chairs", image: "/assets/images/product-10.jpg", email: "sigmachair@example.com", phone: "+17590274536", country: "Italy", status: "ACTIVE" },
+    { code: "SU010", name: "Zenith Bags", image: "/assets/images/product-11.jpg", email: "zenithbags@example.com", phone: "+12564098473", country: "China", status: "ACTIVE" },
+  ];
+  for (const sup of suppliersData) {
+    await prisma.supplier.create({ data: sup });
+  }
+
+  // 5.3 Create Billers matching Screenshot
+  const billersData = [
+    { code: "BI001", name: "Shaun Farley", avatar: "/assets/images/customer11.jpg", companyName: "GreenTech Industries", email: "shaun@example.com", phone: "+18647961254", country: "USA", status: "ACTIVE" },
+    { code: "BI002", name: "Jenny Ellis", avatar: "/assets/images/customer12.jpg", companyName: "BlueSky Logistics", email: "jenny@example.com", phone: "+13197521863", country: "Germany", status: "ACTIVE" },
+    { code: "BI003", name: "Leon Baxter", avatar: "/assets/images/customer13.jpg", companyName: "EcoFarm Organics", email: "leon@example.com", phone: "+18496275831", country: "Japan", status: "ACTIVE" },
+    { code: "BI004", name: "Karen Flores", avatar: "/assets/images/customer14.jpg", companyName: "SmartTech Solutions", email: "karen@example.com", phone: "+18731498524", country: "Austria", status: "ACTIVE" },
+    { code: "BI005", name: "Michael Dawson", avatar: "/assets/images/customer15.jpg", companyName: "Fresh Supplies", email: "michael@example.com", phone: "+12876928738", country: "Turkey", status: "ACTIVE" },
+    { code: "BI006", name: "Karen Galvan", avatar: "/assets/images/customer16.jpg", companyName: "BrightSource Lighting", email: "karen@example.com", phone: "+17534896148", country: "Mexico", status: "ACTIVE" },
+    { code: "BI007", name: "Thomas Ward", avatar: "/assets/images/customer17.jpg", companyName: "GlobalTech Industries", email: "thomas@example.com", phone: "+16482479624", country: "France", status: "ACTIVE" },
+    { code: "BI008", name: "Aliza Duncan", avatar: "/assets/images/customer18.jpg", companyName: "HealthWell Pharma", email: "aliza@example.com", phone: "+13175964827", country: "Greece", status: "ACTIVE" },
+    { code: "BI009", name: "James Higham", avatar: "/assets/images/avatar-01.jpg", companyName: "HomeStyle Furnishings", email: "james@example.com", phone: "+13875196482", country: "Italy", status: "ACTIVE" },
+    { code: "BI010", name: "Jada Robinson", avatar: "/assets/images/avatar-02.jpg", companyName: "EcoLogistics Partners", email: "robinson@example.com", phone: "+17586143284", country: "China", status: "ACTIVE" },
+  ];
+  for (const bil of billersData) {
+    await prisma.biller.create({ data: bil });
   }
 
   // 6. Create Categories
@@ -145,10 +196,23 @@ async function main() {
     await prisma.subCategory.create({ data: sub });
   }
 
-  // 8. Create Customers
-  await prisma.customer.create({
-    data: { name: "Walk-in Customer", phone: "080-000-0000", email: "walkin@example.com" },
-  });
+  // 8. Create Customers matching Screenshot
+  const customersData = [
+    { code: "CU001", name: "Carl Evans", email: "carlevans@example.com", phone: "+12163547758", country: "Germany", avatar: "/assets/images/customer11.jpg", status: "ACTIVE" },
+    { code: "CU002", name: "Minerva Rameriz", email: "rameriz@example.com", phone: "+11367529510", country: "Japan", avatar: "/assets/images/customer12.jpg", status: "ACTIVE" },
+    { code: "CU003", name: "Robert Lamon", email: "robert@example.com", phone: "+15362789414", country: "USA", avatar: "/assets/images/customer13.jpg", status: "ACTIVE" },
+    { code: "CU004", name: "Patricia Lewis", email: "patricia@example.com", phone: "+18513094627", country: "Austria", avatar: "/assets/images/customer14.jpg", status: "ACTIVE" },
+    { code: "CU005", name: "Mark Joslyn", email: "markjoslyn@example.com", phone: "+14678219025", country: "Turkey", avatar: "/assets/images/customer15.jpg", status: "ACTIVE" },
+    { code: "CU006", name: "Marsha Betts", email: "marshabetts@example.com", phone: "+10913278319", country: "Mexico", avatar: "/assets/images/customer16.jpg", status: "ACTIVE" },
+    { code: "CU007", name: "Daniel Jude", email: "daieljude@example.com", phone: "+19125852947", country: "France", avatar: "/assets/images/customer17.jpg", status: "ACTIVE" },
+    { code: "CU008", name: "Emma Bates", email: "emmabates@example.com", phone: "+13671835209", country: "Greece", avatar: "/assets/images/customer18.jpg", status: "ACTIVE" },
+    { code: "CU009", name: "Richard Fralick", email: "richard@example.com", phone: "+19756194733", country: "Italy", avatar: "/assets/images/avatar-01.jpg", status: "ACTIVE" },
+    { code: "CU010", name: "Michelle Robison", email: "robinson@example.com", phone: "+19167850925", country: "China", avatar: "/assets/images/avatar-02.jpg", status: "ACTIVE" },
+  ];
+
+  for (const c of customersData) {
+    await prisma.customer.create({ data: c });
+  }
 
   // 9. Create Products
   const sampleProducts = [

@@ -126,23 +126,25 @@
 
 ## 👥 กลุ่มที่ 4: ลูกค้า คู่ค้า และการเงิน (Peoples & Finance)
 
-- [ ] **18. Customers List**
+- [x] **18. Customers List**
   - **Route**: `/customers`
   - **Backend**: `GET/POST/PUT/DELETE /api/customers`
-  - **สิ่งที่ต้องการ**: ตารางลูกค้า, เบอร์โทร, แต้มสะสม, ยอดซื้อสะสม
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางลูกค้าตรงตามภาพ Dreams POS: รหัส CUxxx, รูป Avatar, ชื่อ, Email, เบอร์โทร, ประเทศ, สถานะ Active/Inactive, Action ดู/แก้ไข/ลบ, ค้นหา, Filter, Export PDF/Excel, Modal เพิ่ม/แก้ไขลูกค้า และดูข้อมูลส่วนตัว)
 
-- [ ] **19. Suppliers List**
+- [x] **19. Suppliers List**
   - **Route**: `/suppliers`
   - **Backend**: `GET/POST/PUT/DELETE /api/suppliers`
-  - **สิ่งที่ต้องการ**: รายชื่อคู่ค้า/ซัพพลายเออร์, ข้อมูลติดต่อ, เครดิตเทอม
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางซัพพลายเออร์ตรงตามภาพ: รหัส SUxxx, รูปสินค้า/ร้าน, ชื่อ, Email, Phone, Country, สถานะ Active/Inactive, Action ดู/แก้ไข/ลบ, Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไข/ดูโปรไฟล์)
 
-- [ ] **20. Stores & Warehouses**
+- [x] **20. Stores & Warehouses**
   - **Route**: `/stores`, `/warehouses`
-  - **Backend**: `GET/POST /api/stores`, `/api/warehouses`
-  - **สิ่งที่ต้องการ**: หน้าจัดการสาขา และคลังสินค้า
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **Backend**: `GET/POST/PUT/DELETE /api/stores`, `GET/POST/PUT/DELETE /api/warehouses`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (หน้าร้านค้า: Store, User Name, Email, Phone, Status, Print/Export, Modal จัดการสาขา | หน้าคลังสินค้า: Warehouse, Contact Person + Avatar, Phone, Total Products, Stock, Qty, Created On, Status, Export/Print, Modal จัดการคลัง)
+
+- [x] **21. Billers**
+  - **Route**: `/billers`
+  - **Backend**: `GET/POST/PUT/DELETE /api/billers`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางผู้ออกบิล: รหัส BIxxx, รูป Avatar, ชื่อ, Company Name, Email, Phone, Country, สถานะ Active/Inactive, Action ดู/แก้ไข/ลบ, Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไข/ดูรายละเอียด)
 
 - [ ] **21. Expenses & Income (รายรับ-รายจ่าย)**
   - **Route**: `/finance/expenses`, `/finance/income`

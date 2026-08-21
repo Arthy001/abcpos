@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -80,12 +80,18 @@ interface MenuGroup {
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const pathname = usePathname();
   const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({});
+  const sidebarRef = useRef<HTMLElement>(null);
 
   const toggleSubMenu = (menuName: string) => {
-    setOpenSubMenus((prev) => ({
-      ...prev,
-      [menuName]: !prev[menuName],
-    }));
+    setOpenSubMenus((prev) => {
+      const next = { ...prev, [menuName]: !prev[menuName] };
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("sidebar_open_submenus", JSON.stringify(next));
+        } catch (e) {}
+      }
+      return next;
+    });
   };
 
   const menuGroups: MenuGroup[] = [
@@ -218,6 +224,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         { name: "Suppliers", href: "/suppliers", icon: UserCheck },
         { name: "Stores", href: "/stores", icon: Store },
         { name: "Warehouses", href: "/warehouses", icon: Warehouse },
+        { name: "Billers", href: "/billers", icon: UserCheck },
       ],
     },
     {
@@ -256,8 +263,75 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
     },
   ];
 
+  // Auto expand submenu for active route & restore saved open submenus
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      let savedOpen: { [key: string]: boolean } = {};
+      try {
+        const raw = sessionStorage.getItem("sidebar_open_submenus");
+        if (raw) savedOpen = JSON.parse(raw);
+      } catch (e) {}
+
+      // Check if current pathname is inside any submenu
+      menuGroups.forEach((group) => {
+        group.items.forEach((item) => {
+          if (item.hasSub && item.subItems) {
+            const hasActiveChild = item.subItems.some((sub) => pathname === sub.href);
+            if (hasActiveChild) {
+              savedOpen[item.name] = true;
+            }
+          }
+        });
+      });
+
+      setOpenSubMenus(savedOpen);
+      try {
+        sessionStorage.setItem("sidebar_open_submenus", JSON.stringify(savedOpen));
+      } catch (e) {}
+    }
+  }, [pathname]);
+
+  // Restore scroll position and scroll active item into view
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (sidebarRef.current) {
+        // 1. Try restoring saved scroll position
+        const savedScroll = sessionStorage.getItem("sidebar_scroll_top");
+        if (savedScroll !== null) {
+          sidebarRef.current.scrollTop = Number(savedScroll);
+        }
+
+        // 2. Ensure active element is scrolled into view if it was off-screen
+        const activeElement = sidebarRef.current.querySelector<HTMLElement>('[data-active="true"]');
+        if (activeElement) {
+          activeElement.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        }
+      }
+    }, 50);
+
+    return () => clearTimeout(timer);
+  }, [pathname]);
+
+  const handleScroll = () => {
+    if (sidebarRef.current && typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("sidebar_scroll_top", String(sidebarRef.current.scrollTop));
+      } catch (e) {}
+    }
+  };
+
+  const handleLinkClick = () => {
+    if (sidebarRef.current && typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("sidebar_scroll_top", String(sidebarRef.current.scrollTop));
+      } catch (e) {}
+    }
+  };
+
   return (
     <aside
+      ref={sidebarRef}
+      onScroll={handleScroll}
       className={`fixed top-16 left-0 bottom-0 z-30 bg-white border-r border-gray-100 transition-all duration-300 overflow-y-auto ${
         isOpen ? "w-56" : "w-16"
       }`}
@@ -317,6 +391,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                               <Link
                                 key={sub.href}
                                 href={sub.href}
+                                onClick={handleLinkClick}
+                                data-active={isSubActive ? "true" : "false"}
                                 className={`flex items-center space-x-2.5 px-2.5 py-1.5 rounded-lg text-xs font-normal transition-all ${
                                   isSubActive
                                     ? "text-[#FE9F43] font-bold"
@@ -338,6 +414,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                   <Link
                     key={item.href}
                     href={item.href}
+                    onClick={handleLinkClick}
+                    data-active={isItemActive ? "true" : "false"}
                     className={`flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
                       isItemActive
                         ? "bg-[#FFF5ED] text-[#FE9F43] font-bold"

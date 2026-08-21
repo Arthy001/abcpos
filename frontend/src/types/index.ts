@@ -73,19 +73,59 @@ export interface VariantAttribute {
 export interface Warehouse {
   id: string;
   name: string;
-  code?: string | null;
+  contactPerson?: string | null;
+  contactAvatar?: string | null;
   phone?: string | null;
+  totalProducts?: number;
+  stock?: number;
+  qty?: number;
+  code?: string | null;
   address?: string | null;
   status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Store {
   id: string;
   name: string;
-  code?: string | null;
+  userName?: string | null;
+  email?: string | null;
   phone?: string | null;
+  code?: string | null;
   address?: string | null;
   status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Supplier {
+  id: string;
+  code?: string | null;
+  name: string;
+  image?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  country?: string | null;
+  address?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Biller {
+  id: string;
+  code?: string | null;
+  name: string;
+  avatar?: string | null;
+  companyName?: string | null;
+  email?: string | null;
+  phone?: string | null;
+  country?: string | null;
+  address?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface StockTransfer {
@@ -146,11 +186,18 @@ export interface Product {
 
 export interface Customer {
   id: string;
+  code?: string | null;
   name: string;
   phone?: string | null;
   email?: string | null;
-  points: number;
+  avatar?: string | null;
+  country?: string | null;
+  city?: string | null;
   address?: string | null;
+  points: number;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OrderItem {
