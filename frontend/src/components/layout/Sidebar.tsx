@@ -79,10 +79,7 @@ interface MenuGroup {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const pathname = usePathname();
-  const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({
-    Sales: false,
-    POS: true, // Opened POS in screenshot
-  });
+  const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({});
 
   const toggleSubMenu = (menuName: string) => {
     setOpenSubMenus((prev) => ({
@@ -289,21 +286,23 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                         type="button"
                         onClick={() => toggleSubMenu(item.name)}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-xl font-medium text-xs transition-all ${
-                          isItemActive || isSubMenuOpen
+                          isItemActive
                             ? "bg-[#FFF5ED] text-[#FE9F43] font-bold"
+                            : isSubMenuOpen
+                            ? "bg-gray-50 text-gray-900 font-semibold"
                             : "text-[#374151] hover:bg-gray-50 hover:text-gray-900"
                         }`}
                       >
                         <div className="flex items-center space-x-2.5">
                           <Icon
                             className={`w-4 h-4 flex-shrink-0 ${
-                              isItemActive || isSubMenuOpen ? "text-[#FE9F43]" : "text-gray-500"
+                              isItemActive ? "text-[#FE9F43]" : "text-gray-500"
                             }`}
                           />
                           <span className="truncate">{item.name}</span>
                         </div>
                         {isSubMenuOpen ? (
-                          <ChevronDown className="w-3.5 h-3.5 text-[#FE9F43]" />
+                          <ChevronDown className={`w-3.5 h-3.5 ${isItemActive ? "text-[#FE9F43]" : "text-gray-400"}`} />
                         ) : (
                           <ChevronRight className="w-3.5 h-3.5 text-gray-400" />
                         )}
