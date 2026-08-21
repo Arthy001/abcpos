@@ -174,6 +174,345 @@ export interface Employee {
   updatedAt?: string;
 }
 
+export interface AttendanceRecord {
+  id: string;
+  employeeId?: string | null;
+  employeeName?: string | null;
+  employeeRole?: string | null;
+  employeeAvatar?: string | null;
+  date: string;
+  status: "PRESENT" | "ABSENT" | "HOLIDAY" | "HALF_DAY" | "LATE";
+  clockIn?: string | null;
+  clockOut?: string | null;
+  production?: string | null;
+  breakTime?: string | null;
+  overtime?: string | null;
+  totalHours?: string | null;
+  progress?: number | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface LeaveType {
+  id: string;
+  name: string;
+  quota: number;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Leave {
+  id: string;
+  empCode?: string | null;
+  employeeName?: string | null;
+  employeeRole?: string | null;
+  employeeAvatar?: string | null;
+  leaveType: string;
+  fromDate: string;
+  toDate: string;
+  duration: string;
+  appliedOn: string;
+  shift?: string | null;
+  reason?: string | null;
+  status: "APPROVED" | "REJECTED" | "APPLIED";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Holiday {
+  id: string;
+  name: string;
+  date: string;
+  description?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Payroll {
+  id: string;
+  empCode: string;
+  employeeName: string;
+  employeeRole: string;
+  employeeAvatar?: string | null;
+  email: string;
+  salary: number;
+  basicSalary: number;
+  hra?: number;
+  conveyance?: number;
+  medical?: number;
+  bonus?: number;
+  pf?: number;
+  professionalTax?: number;
+  tds?: number;
+  loans?: number;
+  payPeriod?: string;
+  location?: string;
+  status: "PAID" | "UNPAID";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SalesReportItem {
+  id: string;
+  sku: string;
+  productName: string;
+  productImage?: string | null;
+  brand: string;
+  category: string;
+  soldQty: number;
+  soldAmount: number;
+  instockQty: number;
+  store?: string;
+  date?: string;
+}
+
+export interface SalesReportSummary {
+  totalAmount: string;
+  totalPaid: string;
+  totalUnpaid: string;
+  overdue: string;
+}
+
+export interface PurchaseReportItem {
+  id: string;
+  reference: string;
+  sku: string;
+  dueDate: string;
+  productName: string;
+  productImage?: string | null;
+  category: string;
+  instockQty: number;
+  purchaseQty: number;
+  purchaseAmount: number;
+  store?: string;
+  date?: string;
+}
+
+export interface InventoryReportItem {
+  id: string;
+  sku: string;
+  productName: string;
+  productImage?: string | null;
+  category: string;
+  unit: string;
+  instockQty: number;
+  minStock: number;
+  stockValue: number;
+  store?: string;
+  date?: string;
+}
+
+export interface StockHistoryItem {
+  id: string;
+  sku: string;
+  productName: string;
+  productImage?: string | null;
+  initialQuantity: number;
+  addedQuantity: number;
+  soldQuantity: number;
+  defectiveQuantity: number;
+  finalQuantity: number;
+  category?: string;
+  store?: string;
+  date?: string;
+}
+
+export interface SoldStockItem {
+  id: string;
+  sku: string;
+  productName: string;
+  productImage?: string | null;
+  unit: number;
+  quantity: number;
+  taxValue: number;
+  total: number;
+  category?: string;
+  store?: string;
+  date?: string;
+}
+
+export interface InvoiceReportItem {
+  id: string;
+  invoiceNo: string;
+  customer: string;
+  dueDate: string;
+  amount: number;
+  paid: number;
+  amountDue: number;
+  status: "PAID" | "UNPAID";
+  date?: string;
+}
+
+export interface SupplierReportItem {
+  id: string;
+  reference: string;
+  supplierId: string;
+  supplierName: string;
+  supplierImage?: string | null;
+  totalItems: number;
+  amount: number;
+  paymentMethod: string;
+  status: "RECEIVED" | "PENDING" | "ORDERED";
+  date?: string;
+}
+
+export interface SupplierDueReportItem {
+  id: string;
+  reference: string;
+  supplierId: string;
+  supplierName: string;
+  supplierImage?: string | null;
+  totalAmount: number;
+  paid: number;
+  due: number;
+  status: "PAID" | "OVERDUE" | "UNPAID";
+  date?: string;
+}
+
+export interface CustomerReportItem {
+  id: string;
+  reference: string;
+  customerCode: string;
+  customerName: string;
+  customerImage?: string | null;
+  totalOrders: number;
+  amount: number;
+  paymentMethod: string;
+  status: string;
+  date?: string;
+}
+
+export interface CustomerDueReportItem {
+  id: string;
+  reference: string;
+  customerCode: string;
+  customerName: string;
+  customerImage?: string | null;
+  totalAmount: number;
+  paid: number;
+  due: number;
+  status: string;
+  date?: string;
+}
+
+export interface ProductReportItem {
+  id: string;
+  sku: string;
+  productName: string;
+  productImage?: string | null;
+  category: string;
+  brand: string;
+  qty: number;
+  price: number;
+  totalOrdered: number;
+  revenue: number;
+  store?: string;
+  date?: string;
+}
+
+export interface ProductExpiryReportItem {
+  id: string;
+  sku: string;
+  serialNo: string;
+  productName: string;
+  productImage?: string | null;
+  manufacturedDate: string;
+  expiredDate: string;
+  store?: string;
+  category?: string;
+  brand?: string;
+  date?: string;
+}
+
+export interface ProductQuantityAlertItem {
+  id: string;
+  sku: string;
+  serialNo: string;
+  productName: string;
+  productImage?: string | null;
+  totalQuantity: number;
+  alertQuantity: number;
+  store?: string;
+  category?: string;
+  brand?: string;
+  date?: string;
+}
+
+export interface ExpenseReportItem {
+  id: string;
+  expenseName: string;
+  category: string;
+  description: string;
+  expenseDate: string;
+  amount: number;
+  paymentMethod: string;
+  status: "APPROVED" | "PENDING";
+  date?: string;
+}
+
+export interface IncomeReportItem {
+  id: string;
+  incomeName: string;
+  category: string;
+  description: string;
+  incomeDate: string;
+  amount: number;
+  paymentMethod: string;
+  status: "RECEIVED" | "PENDING";
+  date?: string;
+}
+
+export interface PurchaseTaxReportItem {
+  id: string;
+  reference: string;
+  supplier: string;
+  taxDate: string;
+  store: string;
+  amount: number;
+  paymentMethod: string;
+  discount: number;
+  taxAmount: number;
+  date?: string;
+}
+
+export interface SalesTaxReportItem {
+  id: string;
+  reference: string;
+  customer: string;
+  taxDate: string;
+  store: string;
+  amount: number;
+  paymentMethod: string;
+  discount: number;
+  taxAmount: number;
+  date?: string;
+}
+
+export interface ProfitLossReportItem {
+  id: string;
+  type: "INCOME" | "EXPENSE";
+  itemKey: string;
+  jan2026: number;
+  feb2026: number;
+  mar2026: number;
+  apr2026: number;
+  may2026: number;
+  jun2026: number;
+}
+
+export interface AnnualReportItem {
+  id: string;
+  monthName: string;
+  jan2026: number;
+  feb2026: number;
+  mar2026: number;
+  apr2026: number;
+  year?: number;
+  store?: string;
+}
+
 export interface StockTransfer {
   id: string;
   fromWarehouse: string;

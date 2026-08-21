@@ -176,21 +176,89 @@
   - **Backend**: `GET/POST/PUT/DELETE /api/shifts`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางกะการทำงาน: Shift Name, ช่วงเวลา Timing, วันหยุดประจำสัปดาห์ Week off, วันที่สร้าง Created On, สถานะ Active/Inactive, Action แก้ไข/ลบ | Search, Filter สถานะ, Export PDF/Excel, Modal เพิ่ม/แก้ไขกะ)
 
+- [x] **26. Attendance (Employee & Admin)**
+  - **Route**: `/hrm/attendance/employee`, `/hrm/attendance/admin`
+  - **Backend**: `GET/POST/PUT/DELETE /api/attendance`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ฝั่งพนักงาน: กล่องเวลาปัจจุบัน Current Time พร้อมปุ่ม Clock In/Out และ Break, สรุป 6 การ์ดรายเดือน, ตารางบันทึกเวลาพร้อม Multi-color Progress Bar | ฝั่งผู้ดูแล Admin: ตารางสรุปเวลาของพนักงานทุกคน Employee + Avatar + Role, Status, Clock In, Clock Out, Production, Break, Overtime, Total Hours | Search, Date Picker, Filter Status, Export PDF/Excel)
+
+- [x] **27. Leaves (Admin, Employee & Leave Type)**
+  - **Route**: `/hrm/leaves/admin`, `/hrm/leaves/employee`, `/hrm/leaves/types`
+  - **Backend**: `GET/POST/PUT/DELETE /api/leaves`, `GET/POST/PUT/DELETE /api/leave-types`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Leave Type: จัดการประเภทการลาและโควตาต่อปี | Admin Leaves: ตารางคำขอลาของพนักงานทุกคน ID, Employee + Avatar, Type, From/To Date, Days/Hours, Applied On, Shift, Status, Action แก้ไข/ลบ | Employee Leaves: ประวัติการลาของตนเอง พร้อมปุ่ม Cancel/Info, Modal ขอลา Apply Leave)
+
+- [x] **28. Holidays**
+  - **Route**: `/hrm/holidays`
+  - **Backend**: `GET/POST/PUT/DELETE /api/holidays`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางวันหยุด: Type/ชื่อวันหยุด, Date วันที่, Description คำอธิบาย, Status Active/Inactive, Action แก้ไข/ลบ | Search, Filter Status, Export PDF/Excel, Modal เพิ่ม/แก้ไขวันหยุด)
+
+- [x] **29. Payroll (Employee Salary & Payslip)**
+  - **Route**: `/hrm/payroll/salary`, `/hrm/payroll/payslip`
+  - **Backend**: `GET/POST/PUT/DELETE /api/payroll`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Employee Salary: ตารางเงินเดือนพนักงาน ID, Employee + Avatar, Email, Salary, Status Paid/UnPaid, Action ดูสลิปเงินเดือน View Payslip, ดาวน์โหลด, แก้ไข, ลบ | Payslip: ใบสลิปเงินเดือนแบบละเอียดแจกแจง Earnings vs Deductions, คำนวณ Net Salary พร้อมตัวสะกด Inwords, ปุ่ม Send Email, Download, Print Barcode, เลือกพนักงาน)
+
 ---
 
 ## 📊 กลุ่มที่ 6: รายงานและการตั้งค่า (Reports & Settings)
 
-- [ ] **22. Sales & Profit/Loss Report**
-  - **Route**: `/reports/sales`, `/reports/profit-loss`
-  - **Backend**: `GET /api/reports/sales-summary`
-  - **สิ่งที่ต้องการ**: รายงานยอดขายและกำไรขั้นต้น แยกตามวัน/เดือน/ปี/พนักงาน
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+- [x] **22. Sales Report & Best Seller Report**
+  - **Route**: `/reports/sales`, `/reports/sales/best-seller`
+  - **Backend**: `GET /api/reports/sales`, `GET /api/reports/bestsellers`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Sales Report: 4 สรุปสถิติ Total Amount, Total Paid, Total Unpaid, Overdue พร้อมกล่องกรอง Choose Date, Store, Products, ปุ่ม Generate Report | ตารางสินค้า: SKU, Product Name + รูป, Brand, Category, Sold Qty, Sold Amount, Instock Qty, Export PDF/Excel/Print | Bestseller Products Report: สรุปสินค้ายอดนิยมเรียงตามจำนวนที่ขายได้)
 
-- [ ] **23. Inventory & Product Report**
-  - **Route**: `/reports/inventory`, `/reports/products`
-  - **Backend**: `GET /api/reports/inventory-summary`
-  - **สิ่งที่ต้องการ**: รายงานมูลค่าสต็อกคงเหลือ และสินค้าขายดี/หมุนเวียนช้า
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+- [x] **23. Purchase Report**
+  - **Route**: `/reports/purchases`
+  - **Backend**: `GET /api/reports/purchases`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (กล่องกรอง Choose Date, Store, Products, ปุ่ม Generate Report | ตารางรายงานการซื้อ: Reference PO, SKU, Due Date, Product Name + รูปภาพ, Category, Instock Qty, Purchase Qty, Purchase Amount, Export PDF/Excel/Print)
+
+- [x] **24. Inventory Report (3 Submenus: Inventory Report, Stock History, Sold Stock)**
+  - **Route**: `/reports/inventory`, `/reports/inventory/stock-history`, `/reports/inventory/sold-stock`
+  - **Backend**: `GET /api/reports/inventory`, `GET /api/reports/stock-history`, `GET /api/reports/sold-stock`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Tab Switcher สลับ 3 หน้ารายงานด้านบน | Inventory Report: ตารางสรุปสต็อกสินค้า SKU, Category, Unit, Instock Qty, Min Stock Alert, Stock Value | Stock History: ตารางประวัติสต็อก Initial Qty, Added Qty, Sold Qty, Defective Qty, Final Qty | Sold Stock: ตารางสินค้าที่ขายออก Unit, Qty, Tax Value, Total ยอดรวม | กล่องกรอง Choose Date, Category, Products, Export PDF/Excel/Print)
+
+- [x] **25. Invoice Report**
+  - **Route**: `/reports/invoices`
+  - **Backend**: `GET /api/reports/invoices`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (4 สรุปสถิติ Total Amount, Total Paid, Total Unpaid, Overdue พร้อมกล่องกรอง Choose Date, Customer, Status, ปุ่ม Generate Report | ตารางใบแจ้งหนี้: Checkbox, Invoice No, Customer, Due Date, Amount, Paid, Amount Due, Status Paid/Unpaid, Export PDF/Excel/Print)
+
+- [x] **26. Supplier Report (2 Submenus: Supplier Report, Supplier Due Report)**
+  - **Route**: `/reports/suppliers`, `/reports/suppliers/due`
+  - **Backend**: `GET /api/reports/suppliers`, `GET /api/reports/suppliers/due`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Tab Switcher สลับ Supplier Report / Supplier Due ด้านบน | Supplier Report: ตารางสรุปการซื้อจากซัพพลายเออร์ Reference, ID, Supplier, Total Items, Amount, Payment Method, Status Received/Pending/Ordered, สรุปรวม Total $33268.53 | Supplier Due: ตารางค้างชำระ Reference, ID, Supplier, Total Amount, Paid, Due, Status Paid/Overdue/Unpaid, สรุปรวม Total 33268 $33268.53 $0.0 | กล่องกรอง Choose Date, Supplier, Status/Payment Status, Payment Method/Reference, Export PDF/Excel/Print)
+
+- [x] **27. Customer Report (2 Submenus: Customer Report, Customer Due Report)**
+  - **Route**: `/reports/customers`, `/reports/customers/due`
+  - **Backend**: `GET /api/reports/customers`, `GET /api/reports/customers/due`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Tab Switcher สลับ Customer Report / Customer Due ด้านบน | Customer Report: ตารางสรุปยอดขายลูกค้า Reference, Code, Customer + Avatar, Total Orders, Amount, Payment Method, Status Completed, สรุปรวม Total $33268.53 | Customer Due: ตารางค้างชำระลูกค้า Reference, Code, Customer, Total Amount, Paid, Due, Status Paid/Overdue/Unpaid/Completed, สรุปรวม Total 33268 $33268.53 $0.0 | กล่องกรอง Choose Date, Customer, Payment Method, Status/Payment Status, Export PDF/Excel/Print)
+
+- [x] **28. Product Report (3 Submenus: Product Report, Product Expiry Report, Product Quantity Alert)**
+  - **Route**: `/reports/products`, `/reports/products/expiry`, `/reports/products/quantity-alert`
+  - **Backend**: `GET /api/reports/products`, `GET /api/reports/products/expiry`, `GET /api/reports/products/quantity-alert`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Tab Switcher สลับ 3 หน้ารายงานด้านบน | Product Report: ตารางรายงานสินค้า SKU, Product Name, Category, Brand, Qty, Price, Total Ordered, Revenue | Product Expiry Report: ตารางวันหมดอายุ SKU, Serial No, Product Name, Manufactured Date, Expired Date | Product Quantity Alert: ตารางเตือนสต็อก SKU, Serial No, Product Name, Total Quantity, Alert Quantity | กล่องกรอง Choose Date, Store, Category, Brand, Product, Export PDF/Excel/Print)
+
+- [x] **29. Expense Report**
+  - **Route**: `/reports/expenses`
+  - **Backend**: `GET /api/reports/expenses`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (กล่องกรอง Choose Date, Expense Category, Payment Method, Status Approved/Pending, ปุ่ม Generate Report | ตารางรายงานค่าใช้จ่าย: Expense Name, Category, Description, Date, Amount, Status Approved/Pending, Export PDF/Excel/Print)
+
+- [x] **30. Income Report**
+  - **Route**: `/reports/income`
+  - **Backend**: `GET /api/reports/income`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (กล่องกรอง Choose Date, Income Category, Payment Method, Status Received/Pending, ปุ่ม Generate Report | ตารางรายงานรายรับ: Income Name, Category, Description, Date, Amount, Status Received/Pending, Export PDF/Excel/Print)
+
+- [x] **31. Tax Report (2 Submenus: Purchase Tax, Sales Tax)**
+  - **Route**: `/reports/tax`, `/reports/tax/sales`
+  - **Backend**: `GET /api/reports/tax/purchase`, `GET /api/reports/tax/sales`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Tab Switcher สลับ Purchase tax / Sales Tax ด้านบน | Purchase Tax: ตารางภาษีซื้อ Reference, Supplier, Date, Store, Amount, Payment Method, Discount, Tax Amount | Sales Tax: ตารางภาษีขาย Reference, Customer, Date, Store, Amount, Payment Method, Discount, Tax Amount | กล่องกรอง Choose Date, Store, Supplier/Customer, Payment Method, Export PDF/Excel/Print)
+
+- [x] **32. Profit / Loss Report**
+  - **Route**: `/reports/profit-loss`
+  - **Backend**: `GET /api/reports/profit-loss`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (กล่องกรอง Date Range, ปุ่ม Generate Report | ตารางเปรียบเทียบ 6 เดือน Jan 2026 - Jun 2026 แยก 2 หมวด: Income [Sales, Service, Purchase Return, Gross Profit] และ Expenses [Sales, Purrchase, Sales Return, Total Expense, Net Profit])
+
+- [x] **33. Annual Report**
+  - **Route**: `/reports/annual`
+  - **Backend**: `GET /api/reports/annual`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (กล่องกรอง Date [2026], Store [All Stores], ปุ่ม Generate Report | ตารางรายงานประจำปีแยก 12 เดือน January - December เทียบ Jan 2026, Feb 2026, Mar 2026, Apr 2026 พร้อมแถวสรุปผลรวม Total $8,000)
 
 - [ ] **24. Store Settings & Tax**
   - **Route**: `/settings`, `/settings/tax`

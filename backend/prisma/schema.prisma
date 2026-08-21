@@ -179,6 +179,376 @@ model Employee {
   updatedAt  DateTime @updatedAt
 }
 
+model Attendance {
+  id             String   @id @default(uuid())
+  employeeId     String?
+  employeeName   String?  @default("John Smilga")
+  employeeRole   String?
+  employeeAvatar String?
+  date           String   // "01 Jan 2026"
+  status         String   @default("PRESENT") // PRESENT, ABSENT, HOLIDAY, HALF_DAY, LATE
+  clockIn        String?
+  clockOut       String?
+  production     String?
+  breakTime      String?
+  overtime       String?
+  totalHours     String?
+  progress       Int?     @default(100)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model LeaveType {
+  id        String   @id @default(uuid())
+  name      String
+  quota     Int      @default(5)
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Leave {
+  id             String   @id @default(uuid())
+  empCode        String?  // "EMP001"
+  employeeName   String?
+  employeeRole   String?
+  employeeAvatar String?
+  leaveType      String   // "Sick Leave"
+  fromDate       String   // "24 Dec 2024"
+  toDate         String   // "24 Dec 2024"
+  duration       String   @default("01 Day") // "01 Day", "02 hrs"
+  appliedOn      String   // "23 Dec 2024"
+  shift          String?  @default("Regular")
+  reason         String?
+  status         String   @default("APPROVED") // APPROVED, REJECTED, APPLIED
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Holiday {
+  id          String   @id @default(uuid())
+  name        String   // e.g. "New Year", "Martin Luther King Jr. Day"
+  date        String   // "01 Jan 2026"
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Payroll {
+  id              String   @id @default(uuid())
+  empCode         String   // "EMP001"
+  employeeName    String   // "Carl Evans"
+  employeeRole    String   // "Designer"
+  employeeAvatar  String?  // "/assets/images/customer11.jpg"
+  email           String   // "carlevans@example.com"
+  salary          Float    @default(30000)
+  basicSalary     Float    @default(30000)
+  hra             Float    @default(0)
+  conveyance      Float    @default(0)
+  medical         Float    @default(0)
+  bonus           Float    @default(0)
+  pf              Float    @default(0)
+  professionalTax Float    @default(0)
+  tds             Float    @default(0)
+  loans           Float    @default(0)
+  payPeriod       String   @default("Jan 2026")
+  location        String   @default("USA")
+  status          String   @default("PAID") // PAID, UNPAID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SalesReportItem {
+  id          String   @id @default(uuid())
+  sku         String   // "PT001"
+  productName String   // "Lenovo IdeaPad 3"
+  productImage String? // "/assets/images/product-01.jpg"
+  brand       String   // "Lenovo"
+  category    String   // "Computers"
+  soldQty     Int      @default(5)
+  soldAmount  Float    @default(3000)
+  instockQty  Int      @default(100)
+  store       String   @default("All")
+  date        DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PurchaseReportItem {
+  id             String   @id @default(uuid())
+  reference      String   @default("PO2026")
+  sku            String   // "PT001"
+  dueDate        String   // "24 Dec 2024"
+  productName    String   // "Lenovo IdeaPad 3"
+  productImage   String?  // "/assets/images/product-01.jpg"
+  category       String   // "Computers"
+  instockQty     Int      @default(100)
+  purchaseQty    Int      @default(5)
+  purchaseAmount Float    @default(500)
+  store          String   @default("All")
+  date           DateTime @default(now())
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model InventoryReportItem {
+  id           String   @id @default(uuid())
+  sku          String   // "PT001"
+  productName  String   // "Lenovo IdeaPad 3"
+  productImage String?  // "/assets/images/product-01.jpg"
+  category     String   // "Computers"
+  unit         String   @default("Pc")
+  instockQty   Int      @default(100)
+  minStock     Int      @default(10)
+  stockValue   Float    @default(3000)
+  store        String   @default("All")
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model StockHistoryItem {
+  id                String   @id @default(uuid())
+  sku               String   // "PT001"
+  productName       String   // "Lenovo IdeaPad 3"
+  productImage      String?  // "/assets/images/product-01.jpg"
+  initialQuantity   Int      @default(6000)
+  addedQuantity     Int      @default(100)
+  soldQuantity      Int      @default(100)
+  defectiveQuantity Int      @default(100)
+  finalQuantity     Int      @default(100)
+  category          String   @default("All")
+  store             String   @default("All")
+  date              DateTime @default(now())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SoldStockItem {
+  id           String   @id @default(uuid())
+  sku          String   // "PT001"
+  productName  String   // "Lenovo IdeaPad 3"
+  productImage String?  // "/assets/images/product-01.jpg"
+  unit         Int      @default(6000)
+  quantity     Int      @default(100)
+  taxValue     Float    @default(300)
+  total        Float    @default(300)
+  category     String   @default("All")
+  store        String   @default("All")
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InvoiceReportItem {
+  id         String   @id @default(uuid())
+  invoiceNo  String   // "INV001"
+  customer   String   // "Carl Evans"
+  dueDate    String   // "24 Dec 2024"
+  amount     Float    @default(500)
+  paid       Float    @default(500)
+  amountDue  Float    @default(500)
+  status     String   @default("PAID") // PAID, UNPAID
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model SupplierReportItem {
+  id            String   @id @default(uuid())
+  reference     String   // "INV/PO2026"
+  supplierId    String   // "SU001"
+  supplierName  String   // "Apex Computers"
+  supplierImage String?  // "/assets/images/product-01.jpg"
+  totalItems    Int      @default(10)
+  amount        Float    @default(1000)
+  paymentMethod String   @default("Cash")
+  status        String   @default("RECEIVED") // RECEIVED, PENDING, ORDERED
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SupplierDueReportItem {
+  id            String   @id @default(uuid())
+  reference     String   // "INV/PO2026"
+  supplierId    String   // "SU001"
+  supplierName  String   // "Apex Computers"
+  supplierImage String?  // "/assets/images/product-01.jpg"
+  totalAmount   Float    @default(1000)
+  paid          Float    @default(1000)
+  due           Float    @default(0)
+  status        String   @default("PAID") // PAID, OVERDUE, UNPAID
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model CustomerReportItem {
+  id            String   @id @default(uuid())
+  reference     String   // "INV2026"
+  customerCode  String   // "CU001"
+  customerName  String   // "Carl Evans"
+  customerImage String?  // "/assets/images/customer11.jpg"
+  totalOrders   Int      @default(10)
+  amount        Float    @default(1000)
+  paymentMethod String   @default("Cash")
+  status        String   @default("COMPLETED")
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model CustomerDueReportItem {
+  id            String   @id @default(uuid())
+  reference     String   // "INV2026"
+  customerCode  String   // "CU001"
+  customerName  String   // "Carl Evans"
+  customerImage String?  // "/assets/images/customer11.jpg"
+  totalAmount   Float    @default(1000)
+  paid          Float    @default(1000)
+  due           Float    @default(0)
+  status        String   @default("PAID") // PAID, OVERDUE, UNPAID, COMPLETED
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ProductReportItem {
+  id           String   @id @default(uuid())
+  sku          String   // "PT001"
+  productName  String   // "Lenovo IdeaPad 3"
+  productImage String?  // "/assets/images/product-01.jpg"
+  category     String   // "Computers"
+  brand        String   // "Lenovo"
+  qty          Int      @default(100)
+  price        Float    @default(600)
+  totalOrdered Int      @default(5000)
+  revenue      Float    @default(787258)
+  store        String   @default("All")
+  date         DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model ProductExpiryReportItem {
+  id               String   @id @default(uuid())
+  sku              String   // "PT001"
+  serialNo         String   @default("LNV-IP3-8GB-256SSD-BL")
+  productName      String   // "Lenovo IdeaPad 3"
+  productImage     String?  // "/assets/images/product-01.jpg"
+  manufacturedDate String   // "24 Dec 2024"
+  expiredDate      String   // "20 Dec 2026"
+  store            String   @default("All")
+  category         String   @default("All")
+  brand            String   @default("All")
+  date             DateTime @default(now())
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model ProductQuantityAlertItem {
+  id            String   @id @default(uuid())
+  sku           String   // "PT001"
+  serialNo      String   @default("LNV-IP3-8GB-256SSD-BL")
+  productName   String   // "Lenovo IdeaPad 3"
+  productImage  String?  // "/assets/images/product-01.jpg"
+  totalQuantity Int      @default(98)
+  alertQuantity Int      @default(79)
+  store         String   @default("All")
+  category      String   @default("All")
+  brand         String   @default("All")
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ExpenseReportItem {
+  id            String   @id @default(uuid())
+  expenseName   String   // "Electricity Payment"
+  category      String   // "Utilities"
+  description   String   // "Electricity Bill"
+  expenseDate   String   // "24 Dec 2024"
+  amount        Float    @default(200)
+  paymentMethod String   @default("Cash")
+  status        String   @default("APPROVED") // APPROVED, PENDING
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model IncomeReportItem {
+  id            String   @id @default(uuid())
+  incomeName    String   // "Product Sales"
+  category      String   // "Sales"
+  description   String   // "Monthly store sales"
+  incomeDate    String   // "24 Dec 2024"
+  amount        Float    @default(4565)
+  paymentMethod String   @default("Cash")
+  status        String   @default("RECEIVED") // RECEIVED, PENDING
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PurchaseTaxReportItem {
+  id            String   @id @default(uuid())
+  reference     String   // "#4237300"
+  supplier      String   // "Apex Computers"
+  taxDate       String   // "24 Dec 2024"
+  store         String   // "Electro Mart"
+  amount        Float    @default(200)
+  paymentMethod String   @default("Stripe")
+  discount      Float    @default(200)
+  taxAmount     Float    @default(200)
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model SalesTaxReportItem {
+  id            String   @id @default(uuid())
+  reference     String   // "#4237300"
+  customer      String   // "Apex Computers"
+  taxDate       String   // "24 Dec 2024"
+  store         String   // "Electro Mart"
+  amount        Float    @default(200)
+  paymentMethod String   @default("Stripe")
+  discount      Float    @default(200)
+  taxAmount     Float    @default(200)
+  date          DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ProfitLossReportItem {
+  id        String   @id @default(uuid())
+  type      String   // "INCOME" or "EXPENSE"
+  itemKey   String   // "Sales", "Service", "Purchase Return", "Purrchase", "Sales Return"
+  jan2026   Float    @default(50000)
+  feb2026   Float    @default(50000)
+  mar2026   Float    @default(50000)
+  apr2026   Float    @default(50000)
+  may2026   Float    @default(50000)
+  jun2026   Float    @default(50000)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AnnualReportItem {
+  id        String   @id @default(uuid())
+  monthName String   // "January", "Febuary", "March"...
+  jan2026   Float    @default(50000)
+  feb2026   Float    @default(50000)
+  mar2026   Float    @default(50000)
+  apr2026   Float    @default(50000)
+  year      Int      @default(2026)
+  store     String   @default("All Stores")
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
 model StockTransfer {
   id                 String   @id @default(uuid())
   fromWarehouse      String

@@ -107,6 +107,57 @@ import {
   updateEmployee,
   deleteEmployee,
 } from "../controllers/employee.controller.js";
+import {
+  getAttendanceRecords,
+  createAttendanceRecord,
+  updateAttendanceRecord,
+  deleteAttendanceRecord,
+} from "../controllers/attendance.controller.js";
+import {
+  getLeaveTypes,
+  createLeaveType,
+  updateLeaveType,
+  deleteLeaveType,
+  getLeaves,
+  createLeave,
+  updateLeave,
+  deleteLeave,
+} from "../controllers/leave.controller.js";
+import {
+  getHolidays,
+  createHoliday,
+  updateHoliday,
+  deleteHoliday,
+} from "../controllers/holiday.controller.js";
+import {
+  getPayrolls,
+  getPayrollById,
+  createPayroll,
+  updatePayroll,
+  deletePayroll,
+} from "../controllers/payroll.controller.js";
+import {
+  getSalesReport,
+  getBestsellerReport,
+  getPurchaseReport,
+  getInventoryReport,
+  getStockHistoryReport,
+  getSoldStockReport,
+  getInvoiceReport,
+  getSupplierReport,
+  getSupplierDueReport,
+  getCustomerReport,
+  getCustomerDueReport,
+  getProductReport,
+  getProductExpiryReport,
+  getProductQuantityAlertReport,
+  getExpenseReport,
+  getIncomeReport,
+  getPurchaseTaxReport,
+  getSalesTaxReport,
+  getProfitLossReport,
+  getAnnualReport,
+} from "../controllers/report.controller.js";
 import { getOrders, createOrder } from "../controllers/order.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 
@@ -235,5 +286,58 @@ router.get("/employees", getEmployees);
 router.post("/employees", createEmployee);
 router.put("/employees/:id", updateEmployee);
 router.delete("/employees/:id", deleteEmployee);
+
+// HRM: Attendance
+router.get("/attendance", getAttendanceRecords);
+router.post("/attendance", createAttendanceRecord);
+router.put("/attendance/:id", updateAttendanceRecord);
+router.delete("/attendance/:id", deleteAttendanceRecord);
+
+// HRM: Leave Types
+router.get("/leave-types", getLeaveTypes);
+router.post("/leave-types", createLeaveType);
+router.put("/leave-types/:id", updateLeaveType);
+router.delete("/leave-types/:id", deleteLeaveType);
+
+// HRM: Leaves
+router.get("/leaves", getLeaves);
+router.post("/leaves", createLeave);
+router.put("/leaves/:id", updateLeave);
+router.delete("/leaves/:id", deleteLeave);
+
+// HRM: Holidays
+router.get("/holidays", getHolidays);
+router.post("/holidays", createHoliday);
+router.put("/holidays/:id", updateHoliday);
+router.delete("/holidays/:id", deleteHoliday);
+
+// HRM: Payroll & Payslip
+router.get("/payroll", getPayrolls);
+router.get("/payroll/:id", getPayrollById);
+router.post("/payroll", createPayroll);
+router.put("/payroll/:id", updatePayroll);
+router.delete("/payroll/:id", deletePayroll);
+
+// Reports: Sales, Bestsellers, Purchases, Inventory, Invoices, Suppliers, Customers, Products & Expenses
+router.get("/reports/sales", getSalesReport);
+router.get("/reports/bestsellers", getBestsellerReport);
+router.get("/reports/purchases", getPurchaseReport);
+router.get("/reports/inventory", getInventoryReport);
+router.get("/reports/stock-history", getStockHistoryReport);
+router.get("/reports/sold-stock", getSoldStockReport);
+router.get("/reports/invoices", getInvoiceReport);
+router.get("/reports/suppliers", getSupplierReport);
+router.get("/reports/suppliers/due", getSupplierDueReport);
+router.get("/reports/customers", getCustomerReport);
+router.get("/reports/customers/due", getCustomerDueReport);
+router.get("/reports/products", getProductReport);
+router.get("/reports/products/expiry", getProductExpiryReport);
+router.get("/reports/products/quantity-alert", getProductQuantityAlertReport);
+router.get("/reports/expenses", getExpenseReport);
+router.get("/reports/income", getIncomeReport);
+router.get("/reports/tax/purchase", getPurchaseTaxReport);
+router.get("/reports/tax/sales", getSalesTaxReport);
+router.get("/reports/profit-loss", getProfitLossReport);
+router.get("/reports/annual", getAnnualReport);
 
 export default router;

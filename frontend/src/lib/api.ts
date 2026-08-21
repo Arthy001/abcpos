@@ -19,6 +19,31 @@ import {
   Department,
   Designation,
   Employee,
+  AttendanceRecord,
+  LeaveType,
+  Leave,
+  Holiday,
+  Payroll,
+  SalesReportItem,
+  SalesReportSummary,
+  PurchaseReportItem,
+  InventoryReportItem,
+  StockHistoryItem,
+  SoldStockItem,
+  InvoiceReportItem,
+  SupplierReportItem,
+  SupplierDueReportItem,
+  CustomerReportItem,
+  CustomerDueReportItem,
+  ProductReportItem,
+  ProductExpiryReportItem,
+  ProductQuantityAlertItem,
+  ExpenseReportItem,
+  IncomeReportItem,
+  PurchaseTaxReportItem,
+  SalesTaxReportItem,
+  ProfitLossReportItem,
+  AnnualReportItem,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -820,5 +845,584 @@ export async function deleteEmployeeApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/employees/${id}`, { method: "DELETE" });
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete employee");
+}
+
+// ==================== ATTENDANCE ====================
+export async function fetchAttendanceRecords(params?: {
+  status?: string;
+  search?: string;
+}): Promise<{
+  records: AttendanceRecord[];
+  summary: {
+    totalWorkingDays: number;
+    absentDays: number;
+    presentDays: number;
+    halfDays: number;
+    lateDays: number;
+    holidays: number;
+  };
+}> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/attendance?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) {
+    return {
+      records: [],
+      summary: {
+        totalWorkingDays: 31,
+        absentDays: 5,
+        presentDays: 28,
+        halfDays: 2,
+        lateDays: 1,
+        holidays: 2,
+      },
+    };
+  }
+  const data = await res.json();
+  return {
+    records: data.data || [],
+    summary: data.summary || {
+      totalWorkingDays: 31,
+      absentDays: 5,
+      presentDays: 28,
+      halfDays: 2,
+      lateDays: 1,
+      holidays: 2,
+    },
+  };
+}
+
+export async function createAttendanceRecordApi(payload: Partial<AttendanceRecord>): Promise<AttendanceRecord> {
+  const res = await fetch(`${API_BASE_URL}/attendance`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create attendance record");
+  return data.data;
+}
+
+export async function updateAttendanceRecordApi(id: string, payload: Partial<AttendanceRecord>): Promise<AttendanceRecord> {
+  const res = await fetch(`${API_BASE_URL}/attendance/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update attendance record");
+  return data.data;
+}
+
+export async function deleteAttendanceRecordApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/attendance/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete attendance record");
+}
+
+// ==================== LEAVE TYPES ====================
+export async function fetchLeaveTypes(params?: { status?: string; search?: string }): Promise<LeaveType[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/leave-types?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createLeaveTypeApi(payload: Partial<LeaveType>): Promise<LeaveType> {
+  const res = await fetch(`${API_BASE_URL}/leave-types`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create leave type");
+  return data.data;
+}
+
+export async function updateLeaveTypeApi(id: string, payload: Partial<LeaveType>): Promise<LeaveType> {
+  const res = await fetch(`${API_BASE_URL}/leave-types/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update leave type");
+  return data.data;
+}
+
+export async function deleteLeaveTypeApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/leave-types/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete leave type");
+}
+
+// ==================== LEAVES ====================
+export async function fetchLeaves(params?: { status?: string; type?: string; empCode?: string; search?: string }): Promise<Leave[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.type && params.type !== "all") query.set("type", params.type);
+  if (params?.empCode) query.set("empCode", params.empCode);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/leaves?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createLeaveApi(payload: Partial<Leave>): Promise<Leave> {
+  const res = await fetch(`${API_BASE_URL}/leaves`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create leave");
+  return data.data;
+}
+
+export async function updateLeaveApi(id: string, payload: Partial<Leave>): Promise<Leave> {
+  const res = await fetch(`${API_BASE_URL}/leaves/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update leave");
+  return data.data;
+}
+
+export async function deleteLeaveApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/leaves/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete leave");
+}
+
+// ==================== HOLIDAYS ====================
+export async function fetchHolidays(params?: { status?: string; search?: string }): Promise<Holiday[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/holidays?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function createHolidayApi(payload: Partial<Holiday>): Promise<Holiday> {
+  const res = await fetch(`${API_BASE_URL}/holidays`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create holiday");
+  return data.data;
+}
+
+export async function updateHolidayApi(id: string, payload: Partial<Holiday>): Promise<Holiday> {
+  const res = await fetch(`${API_BASE_URL}/holidays/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update holiday");
+  return data.data;
+}
+
+export async function deleteHolidayApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/holidays/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete holiday");
+}
+
+// ==================== PAYROLL & PAYSLIP ====================
+export async function fetchPayrolls(params?: { status?: string; search?: string }): Promise<Payroll[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/payroll?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || data;
+}
+
+export async function fetchPayrollById(id: string): Promise<Payroll | null> {
+  const res = await fetch(`${API_BASE_URL}/payroll/${id}`, { cache: "no-store" });
+  if (!res.ok) return null;
+  const data = await res.json();
+  return data.data;
+}
+
+export async function createPayrollApi(payload: Partial<Payroll>): Promise<Payroll> {
+  const res = await fetch(`${API_BASE_URL}/payroll`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to create payroll record");
+  return data.data;
+}
+
+export async function updatePayrollApi(id: string, payload: Partial<Payroll>): Promise<Payroll> {
+  const res = await fetch(`${API_BASE_URL}/payroll/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to update payroll record");
+  return data.data;
+}
+
+export async function deletePayrollApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/payroll/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.message || "Failed to delete payroll record");
+}
+
+// ==================== SALES REPORTS & BESTSELLERS ====================
+export async function fetchSalesReport(params?: { store?: string; product?: string; search?: string }): Promise<{
+  summary: SalesReportSummary;
+  items: SalesReportItem[];
+}> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/sales?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) {
+    return {
+      summary: { totalAmount: "$4,56,000", totalPaid: "$2,56,42", totalUnpaid: "$1,52,45", overdue: "$2,56,12" },
+      items: [],
+    };
+  }
+  const data = await res.json();
+  return {
+    summary: data.summary || { totalAmount: "$4,56,000", totalPaid: "$2,56,42", totalUnpaid: "$1,52,45", overdue: "$2,56,12" },
+    items: data.items || [],
+  };
+}
+
+export async function fetchBestsellersReport(params?: { store?: string; product?: string; search?: string }): Promise<SalesReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/bestsellers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchPurchaseReport(params?: { store?: string; product?: string; search?: string }): Promise<PurchaseReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/purchases?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+// ==================== INVENTORY REPORTS, STOCK HISTORY & SOLD STOCK ====================
+export async function fetchInventoryReport(params?: { store?: string; product?: string; category?: string; search?: string }): Promise<InventoryReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/inventory?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchStockHistoryReport(params?: { store?: string; product?: string; category?: string; search?: string }): Promise<StockHistoryItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/stock-history?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchSoldStockReport(params?: { store?: string; product?: string; category?: string; search?: string }): Promise<SoldStockItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/sold-stock?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchInvoiceReport(params?: { customer?: string; status?: string; search?: string }): Promise<{
+  summary: { totalAmount: string; totalPaid: string; totalUnpaid: string; overdue: string };
+  items: InvoiceReportItem[];
+}> {
+  const query = new URLSearchParams();
+  if (params?.customer && params.customer !== "All") query.set("customer", params.customer);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/invoices?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) {
+    return {
+      summary: { totalAmount: "$4,56,000", totalPaid: "$2,56,42", totalUnpaid: "$1,52,45", overdue: "$2,56,12" },
+      items: [],
+    };
+  }
+  const data = await res.json();
+  return {
+    summary: data.summary || { totalAmount: "$4,56,000", totalPaid: "$2,56,42", totalUnpaid: "$1,52,45", overdue: "$2,56,12" },
+    items: data.items || [],
+  };
+}
+
+// ==================== SUPPLIER REPORTS ====================
+export async function fetchSupplierReport(params?: { supplier?: string; status?: string; paymentMethod?: string; search?: string }): Promise<{
+  total: string;
+  items: SupplierReportItem[];
+}> {
+  const query = new URLSearchParams();
+  if (params?.supplier && params.supplier !== "All") query.set("supplier", params.supplier);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/suppliers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return { total: "$33268.53", items: [] };
+  const data = await res.json();
+  return { total: data.total || "$33268.53", items: data.items || [] };
+}
+
+export async function fetchSupplierDueReport(params?: { supplier?: string; status?: string; reference?: string; search?: string }): Promise<{
+  totalAmount: number;
+  paid: string;
+  due: string;
+  items: SupplierDueReportItem[];
+}> {
+  const query = new URLSearchParams();
+  if (params?.supplier && params.supplier !== "All") query.set("supplier", params.supplier);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.reference) query.set("reference", params.reference);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/suppliers/due?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return { totalAmount: 33268, paid: "$33268.53", due: "$0.0", items: [] };
+  const data = await res.json();
+  return { totalAmount: data.totalAmount || 33268, paid: data.paid || "$33268.53", due: data.due || "$0.0", items: data.items || [] };
+}
+
+// ==================== CUSTOMER REPORTS ====================
+export async function fetchCustomerReport(params?: { customer?: string; paymentMethod?: string; status?: string; search?: string }): Promise<{
+  total: string;
+  items: CustomerReportItem[];
+}> {
+  const query = new URLSearchParams();
+  if (params?.customer && params.customer !== "All") query.set("customer", params.customer);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/customers?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return { total: "$33268.53", items: [] };
+  const data = await res.json();
+  return { total: data.total || "$33268.53", items: data.items || [] };
+}
+
+export async function fetchCustomerDueReport(params?: { customer?: string; paymentMethod?: string; status?: string; search?: string }): Promise<{
+  totalAmount: number;
+  paid: string;
+  due: string;
+  items: CustomerDueReportItem[];
+}> {
+  const query = new URLSearchParams();
+  if (params?.customer && params.customer !== "All") query.set("customer", params.customer);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/customers/due?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return { totalAmount: 33268, paid: "$33268.53", due: "$0.0", items: [] };
+  const data = await res.json();
+  return { totalAmount: data.totalAmount || 33268, paid: data.paid || "$33268.53", due: data.due || "$0.0", items: data.items || [] };
+}
+
+// ==================== PRODUCT REPORTS ====================
+export async function fetchProductReport(params?: {
+  store?: string;
+  category?: string;
+  brand?: string;
+  product?: string;
+  search?: string;
+}): Promise<ProductReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.brand && params.brand !== "All") query.set("brand", params.brand);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/products?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchProductExpiryReport(params?: {
+  store?: string;
+  category?: string;
+  brand?: string;
+  product?: string;
+  search?: string;
+}): Promise<ProductExpiryReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.brand && params.brand !== "All") query.set("brand", params.brand);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/products/expiry?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchProductQuantityAlertReport(params?: {
+  store?: string;
+  category?: string;
+  brand?: string;
+  product?: string;
+  search?: string;
+}): Promise<ProductQuantityAlertItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.brand && params.brand !== "All") query.set("brand", params.brand);
+  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/products/quantity-alert?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+// ==================== EXPENSE REPORT ====================
+export async function fetchExpenseReport(params?: {
+  category?: string;
+  paymentMethod?: string;
+  status?: string;
+  search?: string;
+}): Promise<ExpenseReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/expenses?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+// ==================== INCOME REPORT ====================
+export async function fetchIncomeReport(params?: {
+  category?: string;
+  paymentMethod?: string;
+  status?: string;
+  search?: string;
+}): Promise<IncomeReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.category && params.category !== "All") query.set("category", params.category);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/income?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+// ==================== TAX, PROFIT/LOSS & ANNUAL REPORTS ====================
+export async function fetchPurchaseTaxReport(params?: {
+  store?: string;
+  supplier?: string;
+  paymentMethod?: string;
+  search?: string;
+}): Promise<PurchaseTaxReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.supplier && params.supplier !== "All") query.set("supplier", params.supplier);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/tax/purchase?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchSalesTaxReport(params?: {
+  store?: string;
+  customer?: string;
+  paymentMethod?: string;
+  search?: string;
+}): Promise<SalesTaxReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.store && params.store !== "All") query.set("store", params.store);
+  if (params?.customer && params.customer !== "All") query.set("customer", params.customer);
+  if (params?.paymentMethod && params.paymentMethod !== "All") query.set("paymentMethod", params.paymentMethod);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/reports/tax/sales?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchProfitLossReport(): Promise<ProfitLossReportItem[]> {
+  const res = await fetch(`${API_BASE_URL}/reports/profit-loss`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
+}
+
+export async function fetchAnnualReport(params?: { year?: number; store?: string }): Promise<AnnualReportItem[]> {
+  const query = new URLSearchParams();
+  if (params?.year) query.set("year", String(params.year));
+  if (params?.store && params.store !== "All Stores") query.set("store", params.store);
+
+  const res = await fetch(`${API_BASE_URL}/reports/annual?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.items || [];
 }
 

@@ -24,6 +24,30 @@ async function main() {
   await prisma.department.deleteMany();
   await prisma.designation.deleteMany();
   await prisma.employee.deleteMany();
+  await prisma.attendance.deleteMany();
+  await prisma.leaveType.deleteMany();
+  await prisma.leave.deleteMany();
+  await prisma.holiday.deleteMany();
+  await prisma.payroll.deleteMany();
+  await prisma.salesReportItem.deleteMany();
+  await prisma.purchaseReportItem.deleteMany();
+  await prisma.inventoryReportItem.deleteMany();
+  await prisma.stockHistoryItem.deleteMany();
+  await prisma.soldStockItem.deleteMany();
+  await prisma.invoiceReportItem.deleteMany();
+  await prisma.supplierReportItem.deleteMany();
+  await prisma.supplierDueReportItem.deleteMany();
+  await prisma.customerReportItem.deleteMany();
+  await prisma.customerDueReportItem.deleteMany();
+  await prisma.productReportItem.deleteMany();
+  await prisma.productExpiryReportItem.deleteMany();
+  await prisma.productQuantityAlertItem.deleteMany();
+  await prisma.expenseReportItem.deleteMany();
+  await prisma.incomeReportItem.deleteMany();
+  await prisma.purchaseTaxReportItem.deleteMany();
+  await prisma.salesTaxReportItem.deleteMany();
+  await prisma.profitLossReportItem.deleteMany();
+  await prisma.annualReportItem.deleteMany();
 
   // 1. Create Brands
   const brandsData = [
@@ -329,6 +353,404 @@ async function main() {
   ];
   for (const emp of employeesData) {
     await prisma.employee.create({ data: emp });
+  }
+
+  // 14. Create Attendance matching Admin & Employee Screenshots
+  const attendanceData = [
+    { employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:00 AM", clockOut: "07:15 PM", production: "09h 00m", breakTime: "0h 45m", overtime: "0h 20m", totalHours: "09h 20m", progress: 85 },
+    { employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:15 AM", clockOut: "07:12 PM", production: "09h 00m", breakTime: "01h 15m", overtime: "0h 12m", totalHours: "09h 12m", progress: 90 },
+    { employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:40 AM", clockOut: "07:00 PM", production: "08h 45m", breakTime: "01h 00m", overtime: "00h 00m", totalHours: "08h 45m", progress: 88 },
+    { employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:45 AM", clockOut: "08:10 PM", production: "09h 12m", breakTime: "00h 50m", overtime: "00 14m", totalHours: "09h 14m", progress: 82 },
+    { employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", date: "01 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-", progress: 0 },
+    { employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:17 AM", clockOut: "07:34 PM", production: "09h 26m", breakTime: "01h 20m", overtime: "00h 26m", totalHours: "09h 26m", progress: 80 },
+    { employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", date: "01 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-", progress: 0 },
+    { employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:42 AM", clockOut: "07:20 PM", production: "09h 17m", breakTime: "01h 00m", overtime: "00h 17m", totalHours: "09h 17m", progress: 86 },
+    { employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:18 AM", clockOut: "07:11 PM", production: "09h 32m", breakTime: "01h 15m", overtime: "00h 32m", totalHours: "09h 32m", progress: 89 },
+    { employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:30 AM", clockOut: "08:10 PM", production: "09h 00m", breakTime: "00h 34m", overtime: "00h 20m", totalHours: "09h 20m", progress: 87 },
+  ];
+  for (const att of attendanceData) {
+    await prisma.attendance.create({ data: att });
+  }
+
+  // 15. Create Leave Types matching Screenshot
+  const leaveTypesData = [
+    { name: "Sick Leave", quota: 5, createdAt: new Date("2023-08-02"), status: "ACTIVE" },
+    { name: "Maternity", quota: 5, createdAt: new Date("2023-08-03"), status: "ACTIVE" },
+    { name: "Paternity", quota: 5, createdAt: new Date("2023-08-04"), status: "ACTIVE" },
+    { name: "Casual Leave", quota: 5, createdAt: new Date("2023-08-07"), status: "ACTIVE" },
+    { name: "Emergency", quota: 5, createdAt: new Date("2023-08-08"), status: "ACTIVE" },
+    { name: "Vacation", quota: 5, createdAt: new Date("2023-08-10"), status: "ACTIVE" },
+  ];
+  for (const lt of leaveTypesData) {
+    await prisma.leaveType.create({ data: lt });
+  }
+
+  // 16. Create Leaves matching Screenshot
+  const leavesData = [
+    { empCode: "EMP001", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", leaveType: "Sick Leave", fromDate: "24 Dec 2024", toDate: "24 Dec 2024", duration: "01 Day", appliedOn: "23 Dec 2024", shift: "Regular", status: "APPROVED" },
+    { empCode: "EMP002", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", leaveType: "Casual Leave", fromDate: "10 Dec 2024", toDate: "10 Dec 2024", duration: "01 Day", appliedOn: "09 Dec 2024", shift: "Regular", status: "APPROVED" },
+    { empCode: "EMP003", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", leaveType: "Casual Leave", fromDate: "27 Nov 2024", toDate: "28 Nov 2024", duration: "02 Day", appliedOn: "26 Nov 2024", shift: "Regular", status: "APPLIED" },
+    { empCode: "EMP004", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", leaveType: "Sick Leave", fromDate: "18 Nov 2024", toDate: "18 Nov 2024", duration: "02 hrs", appliedOn: "18 Nov 2024", shift: "Regular", status: "APPROVED" },
+    { empCode: "EMP005", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", leaveType: "Casual Leave", fromDate: "06 Nov 2024", toDate: "08 Nov 2024", duration: "03 Days", appliedOn: "05 Nov 2024", shift: "Regular", status: "APPROVED" },
+    { empCode: "EMP006", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", leaveType: "Sick Leave", fromDate: "25 Oct 2024", toDate: "25 Oct 2024", duration: "01 Days", appliedOn: "24 Oct 2024", shift: "Regular", status: "REJECTED" },
+    { empCode: "EMP007", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", leaveType: "Casual Leave", fromDate: "14 Oct 2024", toDate: "15 Oct 2024", duration: "02 Days", appliedOn: "13 Oct 2024", shift: "Regular", status: "APPROVED" },
+    { empCode: "EMP008", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", leaveType: "Casual Leave", fromDate: "03 Oct 2024", toDate: "03 Oct 2024", duration: "01 Days", appliedOn: "02 Oct 2024", shift: "Regular", status: "APPLIED" },
+    { empCode: "EMP009", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", leaveType: "Sick Leave", fromDate: "20 Sep 2024", toDate: "21 Sep 2024", duration: "02 Days", appliedOn: "19 Sep 2024", shift: "Regular", status: "APPROVED" },
+    { empCode: "EMP010", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", leaveType: "Casual Leave", fromDate: "10 Sep 2024", toDate: "10 Sep 2024", duration: "02 hrs", appliedOn: "09 Sep 2024", shift: "Regular", status: "REJECTED" },
+  ];
+  for (const l of leavesData) {
+    await prisma.leave.create({ data: l });
+  }
+
+  // 17. Create Holidays matching Screenshot
+  const holidaysData = [
+    { name: "New Year", date: "01 Jan 2026", description: "First day of the new year", status: "ACTIVE" },
+    { name: "Martin Luther King Jr. Day", date: "15 Jan 2026", description: "Celebrating the civil rights leader", status: "ACTIVE" },
+    { name: "Presidents' Day", date: "19 Feb 2026", description: "Honoring past US Presidents", status: "ACTIVE" },
+    { name: "Good Friday", date: "29 Mar 2026", description: "Holiday before Easter", status: "ACTIVE" },
+    { name: "Easter Monday", date: "01 Apr 2026", description: "Holiday after Easter", status: "ACTIVE" },
+    { name: "Memorial Day", date: "27 May 2026", description: "Honors military personnel", status: "ACTIVE" },
+    { name: "Independence Day", date: "04 Jul 2026", description: "Celebrates Independence", status: "ACTIVE" },
+    { name: "Labour Day", date: "02 Sep 2026", description: "Honors working people", status: "ACTIVE" },
+    { name: "Veterans Day", date: "11 Nov 2026", description: "Honors working people", status: "ACTIVE" },
+    { name: "Christmas Day", date: "25 Dec 2026", description: "Celebration of Christmas", status: "ACTIVE" },
+  ];
+  for (const h of holidaysData) {
+    await prisma.holiday.create({ data: h });
+  }
+
+  // 18. Create Payroll matching Screenshot
+  const payrollData = [
+    { empCode: "EMP001", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", email: "carlevans@example.com", salary: 30000, basicSalary: 32000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP002", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", email: "rameriz@example.com", salary: 20000, basicSalary: 20000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP003", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", email: "robert@example.com", salary: 35000, basicSalary: 35000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP004", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", email: "robert@example.com", salary: 35000, basicSalary: 35000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP005", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", email: "markjoslyn@example.com", salary: 32000, basicSalary: 32000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP006", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", email: "marshabetts@example.com", salary: 28000, basicSalary: 28000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP007", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", email: "daieljude@example.com", salary: 25000, basicSalary: 25000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP008", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", email: "emmabates@example.com", salary: 21000, basicSalary: 21000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP009", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", email: "richard@example.com", salary: 34000, basicSalary: 34000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
+    { empCode: "EMP010", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", email: "robinson@example.com", salary: 28000, basicSalary: 28000, payPeriod: "Jan 2026", location: "USA", status: "UNPAID" },
+  ];
+  for (const p of payrollData) {
+    await prisma.payroll.create({ data: p });
+  }
+
+  // 19. Create Sales Report Items matching Screenshot
+  const salesReportData = [
+    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", brand: "Lenovo", category: "Computers", soldQty: 5, soldAmount: 3000, instockQty: 100 },
+    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", brand: "Beats", category: "Electronics", soldQty: 10, soldAmount: 1600, instockQty: 140 },
+    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", brand: "Nike", category: "Shoe", soldQty: 8, soldAmount: 880, instockQty: 300 },
+    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", brand: "Apple", category: "Electronics", soldQty: 10, soldAmount: 1200, instockQty: 450 },
+    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", brand: "Amazon", category: "Electronics", soldQty: 5, soldAmount: 400, instockQty: 320 },
+    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", brand: "Modern Wave", category: "Furniture", soldQty: 7, soldAmount: 2240, instockQty: 650 },
+    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", brand: "Dior", category: "Bags", soldQty: 15, soldAmount: 900, instockQty: 700 },
+    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", brand: "Apple", category: "Phone", soldQty: 12, soldAmount: 6480, instockQty: 630 },
+    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", brand: "Arlime", category: "Furniture", soldQty: 10, soldAmount: 2000, instockQty: 410 },
+    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", brand: "The North Face", category: "Bags", soldQty: 20, soldAmount: 900, instockQty: 550 },
+  ];
+  for (const s of salesReportData) {
+    await prisma.salesReportItem.create({ data: s });
+  }
+
+  // 20. Create Purchase Report Items matching Screenshot
+  const purchaseReportData = [
+    { reference: "PO2026", sku: "PT001", dueDate: "24 Dec 2024", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", instockQty: 100, purchaseQty: 5, purchaseAmount: 500 },
+    { reference: "PO2026", sku: "PT002", dueDate: "10 Dec 2024", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", instockQty: 140, purchaseQty: 10, purchaseAmount: 1500 },
+    { reference: "PO2026", sku: "PT003", dueDate: "27 Nov 2024", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", instockQty: 300, purchaseQty: 8, purchaseAmount: 600 },
+    { reference: "PO2026", sku: "PT004", dueDate: "18 Nov 2024", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", instockQty: 450, purchaseQty: 10, purchaseAmount: 1000 },
+    { reference: "PO2026", sku: "PT005", dueDate: "18 Nov 2024", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", instockQty: 320, purchaseQty: 5, purchaseAmount: 1200 },
+    { reference: "PO2026", sku: "PT006", dueDate: "25 Oct 2024", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", instockQty: 650, purchaseQty: 7, purchaseAmount: 800 },
+    { reference: "PO2026", sku: "PT007", dueDate: "14 Oct 2024", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", instockQty: 700, purchaseQty: 15, purchaseAmount: 2000 },
+    { reference: "PO2026", sku: "PT008", dueDate: "03 Oct 2024", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", instockQty: 630, purchaseQty: 12, purchaseAmount: 2000 },
+    { reference: "PO2026", sku: "PT009", dueDate: "20 Sep 2024", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", instockQty: 410, purchaseQty: 10, purchaseAmount: 300 },
+    { reference: "PO2026", sku: "PT010", dueDate: "10 Sep 2024", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", instockQty: 550, purchaseQty: 20, purchaseAmount: 5000 },
+  ];
+  for (const pr of purchaseReportData) {
+    await prisma.purchaseReportItem.create({ data: pr });
+  }
+
+  // 21. Create Inventory Report Items
+  const inventoryReportData = [
+    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", unit: "Pc", instockQty: 100, minStock: 10, stockValue: 3000 },
+    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", unit: "Pc", instockQty: 140, minStock: 10, stockValue: 1600 },
+    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", unit: "Pc", instockQty: 300, minStock: 15, stockValue: 880 },
+    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", unit: "Pc", instockQty: 450, minStock: 20, stockValue: 1200 },
+    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", unit: "Pc", instockQty: 320, minStock: 10, stockValue: 400 },
+    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", unit: "Pc", instockQty: 650, minStock: 5, stockValue: 2240 },
+    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", unit: "Pc", instockQty: 700, minStock: 15, stockValue: 900 },
+    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", unit: "Pc", instockQty: 630, minStock: 20, stockValue: 6480 },
+    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", unit: "Pc", instockQty: 410, minStock: 5, stockValue: 2000 },
+    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", unit: "Pc", instockQty: 550, minStock: 15, stockValue: 900 },
+  ];
+  for (const ir of inventoryReportData) {
+    await prisma.inventoryReportItem.create({ data: ir });
+  }
+
+  // 22. Create Stock History Items matching Screenshot
+  const stockHistoryData = [
+    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", initialQuantity: 6000, addedQuantity: 100, soldQuantity: 100, defectiveQuantity: 100, finalQuantity: 100 },
+    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", initialQuantity: 10, addedQuantity: 140, soldQuantity: 140, defectiveQuantity: 140, finalQuantity: 140 },
+    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", initialQuantity: 8, addedQuantity: 300, soldQuantity: 300, defectiveQuantity: 300, finalQuantity: 300 },
+    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", initialQuantity: 10, addedQuantity: 450, soldQuantity: 450, defectiveQuantity: 450, finalQuantity: 450 },
+    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", initialQuantity: 5, addedQuantity: 320, soldQuantity: 320, defectiveQuantity: 320, finalQuantity: 320 },
+    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", initialQuantity: 7, addedQuantity: 650, soldQuantity: 650, defectiveQuantity: 650, finalQuantity: 650 },
+    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", initialQuantity: 15, addedQuantity: 700, soldQuantity: 700, defectiveQuantity: 700, finalQuantity: 700 },
+    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", initialQuantity: 12, addedQuantity: 630, soldQuantity: 630, defectiveQuantity: 630, finalQuantity: 630 },
+    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", initialQuantity: 10, addedQuantity: 410, soldQuantity: 410, defectiveQuantity: 410, finalQuantity: 410 },
+    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", initialQuantity: 20, addedQuantity: 550, soldQuantity: 550, defectiveQuantity: 550, finalQuantity: 550 },
+  ];
+  for (const sh of stockHistoryData) {
+    await prisma.stockHistoryItem.create({ data: sh });
+  }
+
+  // 23. Create Sold Stock Items matching Screenshot
+  const soldStockData = [
+    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", unit: 6000, quantity: 100, taxValue: 300, total: 300 },
+    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", unit: 10, quantity: 140, taxValue: 10, total: 1600 },
+    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", unit: 8, quantity: 300, taxValue: 80, total: 880 },
+    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", unit: 10, quantity: 450, taxValue: 100, total: 1200 },
+    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", unit: 5, quantity: 320, taxValue: 400, total: 400 },
+    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", unit: 7, quantity: 650, taxValue: 220, total: 2240 },
+    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", unit: 15, quantity: 700, taxValue: 90, total: 900 },
+    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", unit: 12, quantity: 630, taxValue: 680, total: 6480 },
+    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", unit: 10, quantity: 410, taxValue: 200, total: 2000 },
+    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", unit: 20, quantity: 550, taxValue: 400, total: 900 },
+  ];
+  for (const ss of soldStockData) {
+    await prisma.soldStockItem.create({ data: ss });
+  }
+
+  // 24. Create Invoice Report Items matching Screenshot
+  const invoiceReportData = [
+    { invoiceNo: "INV001", customer: "Carl Evans", dueDate: "24 Dec 2024", amount: 500, paid: 500, amountDue: 500, status: "PAID" },
+    { invoiceNo: "INV002", customer: "Minerva Rameriz", dueDate: "10 Dec 2024", amount: 1500, paid: 1500, amountDue: 1500, status: "PAID" },
+    { invoiceNo: "INV003", customer: "Robert Lamon", dueDate: "27 Nov 2024", amount: 600, paid: 600, amountDue: 600, status: "PAID" },
+    { invoiceNo: "INV004", customer: "Patricia Lewis", dueDate: "18 Nov 2024", amount: 1000, paid: 1000, amountDue: 1000, status: "PAID" },
+    { invoiceNo: "INV005", customer: "Mark Joslyn", dueDate: "06 Nov 2024", amount: 1200, paid: 1200, amountDue: 1200, status: "PAID" },
+    { invoiceNo: "INV006", customer: "Marsha Betts", dueDate: "25 Oct 2024", amount: 800, paid: 800, amountDue: 800, status: "PAID" },
+    { invoiceNo: "INV007", customer: "Daniel Jude", dueDate: "14 Oct 2024", amount: 2000, paid: 2000, amountDue: 2000, status: "PAID" },
+    { invoiceNo: "INV008", customer: "Emma Bates", dueDate: "03 Oct 2024", amount: 100, paid: 100, amountDue: 100, status: "PAID" },
+    { invoiceNo: "INV009", customer: "Richard Fralick", dueDate: "20 Sep 2024", amount: 300, paid: 300, amountDue: 300, status: "PAID" },
+    { invoiceNo: "INV010", customer: "Michelle Robison", dueDate: "10 Sep 2024", amount: 5000, paid: 5000, amountDue: 5000, status: "UNPAID" },
+  ];
+  for (const inv of invoiceReportData) {
+    await prisma.invoiceReportItem.create({ data: inv });
+  }
+
+  // 25. Create Supplier Report Items matching Screenshot
+  const supplierReportData = [
+    { reference: "INV/PO2026", supplierId: "SU001", supplierName: "Apex Computers", supplierImage: "/assets/images/product-01.jpg", totalItems: 10, amount: 1000, paymentMethod: "Cash", status: "RECEIVED" },
+    { reference: "INV/PO2031", supplierId: "SU002", supplierName: "Beats Headphones", supplierImage: "/assets/images/product-02.jpg", totalItems: 15, amount: 1500, paymentMethod: "Paypal", status: "PENDING" },
+    { reference: "INV/PO2042", supplierId: "SU003", supplierName: "Dazzle Shoes", supplierImage: "/assets/images/product-03.jpg", totalItems: 22, amount: 1500, paymentMethod: "Paypal", status: "RECEIVED" },
+    { reference: "INV/PO2033", supplierId: "SU004", supplierName: "Best Accessories", supplierImage: "/assets/images/product-04.jpg", totalItems: 14, amount: 2000, paymentMethod: "Stripe", status: "ORDERED" },
+    { reference: "INV/PO2042", supplierId: "SU005", supplierName: "A-Z Store", supplierImage: "/assets/images/product-05.jpg", totalItems: 12, amount: 800, paymentMethod: "Paypal", status: "RECEIVED" },
+    { reference: "INV/PO2011", supplierId: "SU006", supplierName: "Hatimi Hardwares", supplierImage: "/assets/images/product-06.jpg", totalItems: 45, amount: 750, paymentMethod: "Cash", status: "PENDING" },
+    { reference: "INV/PO2014", supplierId: "SU007", supplierName: "Aesthetic Bags", supplierImage: "/assets/images/product-07.jpg", totalItems: 21, amount: 1300, paymentMethod: "Credit Card", status: "RECEIVED" },
+    { reference: "INV/PO2047", supplierId: "SU009", supplierName: "Sigma Chairs", supplierImage: "/assets/images/product-08.jpg", totalItems: 25, amount: 2300, paymentMethod: "Credit Card", status: "ORDERED" },
+    { reference: "INV/PO2017", supplierId: "SU010", supplierName: "Zenith Bags", supplierImage: "/assets/images/product-09.jpg", totalItems: 15, amount: 1700, paymentMethod: "Stripe", status: "PENDING" },
+  ];
+  for (const sup of supplierReportData) {
+    await prisma.supplierReportItem.create({ data: sup });
+  }
+
+  // 26. Create Supplier Due Report Items matching Screenshot
+  const supplierDueReportData = [
+    { reference: "INV/PO2026", supplierId: "SU001", supplierName: "Apex Computers", supplierImage: "/assets/images/product-01.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
+    { reference: "INV/PO2042", supplierId: "SU003", supplierName: "Dazzle Shoes", supplierImage: "/assets/images/product-03.jpg", totalAmount: 1500, paid: 1500, due: 0, status: "PAID" },
+    { reference: "INV/PO2033", supplierId: "SU004", supplierName: "Best Accessories", supplierImage: "/assets/images/product-04.jpg", totalAmount: 2000, paid: 2000, due: 0, status: "PAID" },
+    { reference: "INV/PO2042", supplierId: "SU005", supplierName: "A-Z Store", supplierImage: "/assets/images/product-05.jpg", totalAmount: 800, paid: 800, due: 0, status: "PAID" },
+    { reference: "INV/PO2011", supplierId: "SU006", supplierName: "Hatimi Hardwares", supplierImage: "/assets/images/product-06.jpg", totalAmount: 750, paid: 750, due: 0, status: "PAID" },
+    { reference: "INV/PO2014", supplierId: "SU007", supplierName: "Aesthetic Bags", supplierImage: "/assets/images/product-07.jpg", totalAmount: 1300, paid: 1300, due: 0, status: "OVERDUE" },
+    { reference: "INV/PO2056", supplierId: "SU008", supplierName: "Alpha Mobiles", supplierImage: "/assets/images/product-08.jpg", totalAmount: 1100, paid: 1100, due: 0, status: "PAID" },
+    { reference: "INV/PO2047", supplierId: "SU009", supplierName: "Sigma Chairs", supplierImage: "/assets/images/product-09.jpg", totalAmount: 2300, paid: 2300, due: 0, status: "PAID" },
+    { reference: "INV/PO2017", supplierId: "SU010", supplierName: "Zenith Bags", supplierImage: "/assets/images/product-10.jpg", totalAmount: 1700, paid: 1700, due: 0, status: "UNPAID" },
+  ];
+  for (const sd of supplierDueReportData) {
+    await prisma.supplierDueReportItem.create({ data: sd });
+  }
+
+  // 27. Create Customer Report Items matching Screenshot
+  const customerReportData = [
+    { reference: "INV2026", customerCode: "CU001", customerName: "Carl Evans", customerImage: "/assets/images/customer11.jpg", totalOrders: 10, amount: 1000, paymentMethod: "Cash", status: "COMPLETED" },
+    { reference: "INV2031", customerCode: "CU002", customerName: "Minerva Rameriz", customerImage: "/assets/images/customer12.jpg", totalOrders: 15, amount: 1500, paymentMethod: "Paypal", status: "COMPLETED" },
+    { reference: "INV2042", customerCode: "CU003", customerName: "Robert Lamon", customerImage: "/assets/images/customer13.jpg", totalOrders: 22, amount: 1500, paymentMethod: "Paypal", status: "COMPLETED" },
+    { reference: "INV2033", customerCode: "CU004", customerName: "Patricia Lewis", customerImage: "/assets/images/customer14.jpg", totalOrders: 14, amount: 2000, paymentMethod: "Stripe", status: "COMPLETED" },
+    { reference: "INV2042", customerCode: "CU005", customerName: "Mark Joslyn", customerImage: "/assets/images/customer15.jpg", totalOrders: 12, amount: 800, paymentMethod: "Paypal", status: "COMPLETED" },
+    { reference: "INV2011", customerCode: "CU006", customerName: "Marsha Betts", customerImage: "/assets/images/customer16.jpg", totalOrders: 45, amount: 750, paymentMethod: "Cash", status: "COMPLETED" },
+    { reference: "INV2014", customerCode: "CU007", customerName: "Daniel Jude", customerImage: "/assets/images/customer17.jpg", totalOrders: 21, amount: 1300, paymentMethod: "Credit Card", status: "COMPLETED" },
+    { reference: "INV2056", customerCode: "CU008", customerName: "Emma Bates", customerImage: "/assets/images/customer18.jpg", totalOrders: 78, amount: 1100, paymentMethod: "Stripe", status: "COMPLETED" },
+    { reference: "INV2047", customerCode: "CU009", customerName: "Richard Fralick", customerImage: "/assets/images/avatar-01.jpg", totalOrders: 15, amount: 1700, paymentMethod: "Credit Card", status: "COMPLETED" },
+  ];
+  for (const cr of customerReportData) {
+    await prisma.customerReportItem.create({ data: cr });
+  }
+
+  // 28. Create Customer Due Report Items matching Screenshot
+  const customerDueReportData = [
+    { reference: "INV2026", customerCode: "CU001", customerName: "Carl Evans", customerImage: "/assets/images/customer11.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
+    { reference: "INV2031", customerCode: "CU002", customerName: "Minerva Rameriz", customerImage: "/assets/images/customer12.jpg", totalAmount: 1500, paid: 1500, due: 0, status: "PAID" },
+    { reference: "INV2042", customerCode: "CU003", customerName: "Robert Lamon", customerImage: "/assets/images/customer13.jpg", totalAmount: 1600, paid: 1600, due: 0, status: "PAID" },
+    { reference: "INV2033", customerCode: "CU004", customerName: "Patricia Lewis", customerImage: "/assets/images/customer14.jpg", totalAmount: 700, paid: 700, due: 0, status: "PAID" },
+    { reference: "INV2042", customerCode: "CU005", customerName: "Mark Joslyn", customerImage: "/assets/images/customer15.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
+    { reference: "INV2011", customerCode: "CU006", customerName: "Marsha Betts", customerImage: "/assets/images/customer16.jpg", totalAmount: 2000, paid: 2000, due: 0, status: "PAID" },
+    { reference: "INV2014", customerCode: "CU007", customerName: "Daniel Jude", customerImage: "/assets/images/customer17.jpg", totalAmount: 600, paid: 600, due: 0, status: "OVERDUE" },
+    { reference: "INV2056", customerCode: "CU008", customerName: "Emma Bates", customerImage: "/assets/images/customer18.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "UNPAID" },
+    { reference: "INV2047", customerCode: "CU009", customerName: "Richard Fralick", customerImage: "/assets/images/avatar-01.jpg", totalAmount: 500, paid: 500, due: 0, status: "COMPLETED" },
+  ];
+  for (const cd of customerDueReportData) {
+    await prisma.customerDueReportItem.create({ data: cd });
+  }
+
+  // 29. Create Product Report Items matching Screenshot
+  const productReportData = [
+    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", brand: "Lenovo", qty: 100, price: 600, totalOrdered: 5000, revenue: 787258 },
+    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", brand: "Beats", qty: 140, price: 160, totalOrdered: 4860, revenue: 689788 },
+    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", brand: "Nike", qty: 300, price: 110, totalOrdered: 40, revenue: 7757 },
+    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", brand: "Apple", qty: 450, price: 120, totalOrdered: 9642, revenue: 7555 },
+    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", brand: "Amazon", qty: 320, price: 80, totalOrdered: 5464, revenue: 39698 },
+    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", brand: "Modern Wave", qty: 650, price: 320, totalOrdered: 158, revenue: 748 },
+    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", brand: "Dior", qty: 700, price: 60, totalOrdered: 7845, revenue: 7985 },
+    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", brand: "Apple", qty: 630, price: 540, totalOrdered: 540, revenue: 8769798 },
+    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", brand: "Arlime", qty: 410, price: 200, totalOrdered: 200, revenue: 788979 },
+    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", brand: "The North Face", qty: 550, price: 45, totalOrdered: 45, revenue: 895 },
+  ];
+  for (const pr of productReportData) {
+    await prisma.productReportItem.create({ data: pr });
+  }
+
+  // 30. Create Product Expiry Report Items matching Screenshot
+  const productExpiryData = [
+    { sku: "PT001", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
+    { sku: "PT002", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", manufacturedDate: "25 Dec 2024", expiredDate: "21 Dec 2026" },
+    { sku: "PT003", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", manufacturedDate: "26 Dec 2024", expiredDate: "22 Dec 2026" },
+    { sku: "PT004", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", manufacturedDate: "30 Dec 2024", expiredDate: "25 Dec 2026" },
+    { sku: "PT005", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", manufacturedDate: "28 Dec 2024", expiredDate: "26 Dec 2026" },
+    { sku: "PT006", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "29 Dec 2026" },
+    { sku: "PT007", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", manufacturedDate: "15 Dec 2024", expiredDate: "30 Dec 2026" },
+    { sku: "PT008", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
+    { sku: "PT009", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", manufacturedDate: "30 Dec 2024", expiredDate: "20 Dec 2026" },
+    { sku: "PT010", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
+  ];
+  for (const pe of productExpiryData) {
+    await prisma.productExpiryReportItem.create({ data: pe });
+  }
+
+  // 31. Create Product Quantity Alert Items matching Screenshot
+  const productQuantityAlertData = [
+    { sku: "PT001", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", totalQuantity: 98, alertQuantity: 79 },
+    { sku: "PT002", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", totalQuantity: 156, alertQuantity: 66 },
+    { sku: "PT003", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", totalQuantity: 89, alertQuantity: 69 },
+    { sku: "PT004", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", totalQuantity: 569, alertQuantity: 68 },
+    { sku: "PT005", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", totalQuantity: 548, alertQuantity: 33 },
+    { sku: "PT006", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", totalQuantity: 456, alertQuantity: 16 },
+    { sku: "PT007", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", totalQuantity: 178, alertQuantity: 86 },
+    { sku: "PT008", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", totalQuantity: 1768, alertQuantity: 33 },
+    { sku: "PT009", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", totalQuantity: 568, alertQuantity: 528 },
+    { sku: "PT010", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", totalQuantity: 146, alertQuantity: 11 },
+  ];
+  for (const pqa of productQuantityAlertData) {
+    await prisma.productQuantityAlertItem.create({ data: pqa });
+  }
+
+  // 32. Create Expense Report Items matching Screenshot
+  const expenseReportData = [
+    { expenseName: "Electricity Payment", category: "Utilities", description: "Electricity Bill", expenseDate: "24 Dec 2024", amount: 200, paymentMethod: "Cash", status: "APPROVED" },
+    { expenseName: "Stationery Purchase", category: "Office Supplies", description: "Stationery items for office", expenseDate: "10 Dec 2024", amount: 50, paymentMethod: "Paypal", status: "PENDING" },
+    { expenseName: "AC Repair Service", category: "Repairs & Maintenance", description: "AC Repair for Office", expenseDate: "27 Nov 2024", amount: 800, paymentMethod: "Cash", status: "APPROVED" },
+    { expenseName: "Social Media Promotion", category: "Marketing", description: "Social Media Ads Campaign", expenseDate: "18 Nov 2024", amount: 100, paymentMethod: "Stripe", status: "APPROVED" },
+    { expenseName: "Client Meeting", category: "Travel Expenses", description: "Travel fare for client meeting", expenseDate: "06 Nov 2024", amount: 700, paymentMethod: "Credit Card", status: "APPROVED" },
+    { expenseName: "Team Lunch", category: "Employee Benefits", description: "Team Lunch at Restaurant", expenseDate: "25 Oct 2024", amount: 1000, paymentMethod: "Cash", status: "PENDING" },
+    { expenseName: "Business Flight Ticket", category: "Travel Expenses", description: "Flight tickets for meetings", expenseDate: "14 Oct 2024", amount: 1200, paymentMethod: "Credit Card", status: "APPROVED" },
+    { expenseName: "Chair Purchase", category: "Office Supplies", description: "Ergonomic chairs for staff", expenseDate: "03 Oct 2024", amount: 750, paymentMethod: "Bank Transfer", status: "APPROVED" },
+    { expenseName: "Plumbing Service", category: "Repairs & Maintenance", description: "Plumbing repairs in office", expenseDate: "20 Sep 2024", amount: 450, paymentMethod: "Cash", status: "APPROVED" },
+    { expenseName: "Internet Bill Payment", category: "Utilities", description: "Monthly internet subscription", expenseDate: "10 Sep 2024", amount: 300, paymentMethod: "Paypal", status: "PENDING" },
+  ];
+  for (const exp of expenseReportData) {
+    await prisma.expenseReportItem.create({ data: exp });
+  }
+
+  // 33. Create Income Report Items
+  const incomeReportData = [
+    { incomeName: "Product Sales", category: "Sales", description: "Monthly store sales", incomeDate: "24 Dec 2024", amount: 4565, paymentMethod: "Cash", status: "RECEIVED" },
+    { incomeName: "Consulting Fee", category: "Consulting", description: "Client strategy consulting", incomeDate: "10 Dec 2024", amount: 4494, paymentMethod: "Paypal", status: "RECEIVED" },
+    { incomeName: "Store Rent", category: "Rental Income", description: "Branch office rental", incomeDate: "27 Nov 2024", amount: 65945, paymentMethod: "Bank Transfer", status: "RECEIVED" },
+    { incomeName: "Investment Dividend", category: "Investments", description: "Quarterly dividend payout", incomeDate: "18 Nov 2024", amount: 1948, paymentMethod: "Bank Transfer", status: "RECEIVED" },
+    { incomeName: "Web Development", category: "Services", description: "Custom web app service", incomeDate: "06 Nov 2024", amount: 1686, paymentMethod: "Stripe", status: "RECEIVED" },
+    { incomeName: "Service Charge", category: "Services", description: "POS setup and training", incomeDate: "25 Oct 2024", amount: 16547, paymentMethod: "Cash", status: "PENDING" },
+    { incomeName: "Affiliate Commission", category: "Marketing", description: "Referral commission", incomeDate: "14 Oct 2024", amount: 141845, paymentMethod: "Paypal", status: "RECEIVED" },
+    { incomeName: "Maintenance Retainer", category: "Maintenance", description: "Annual maintenance contract", incomeDate: "03 Oct 2024", amount: 44188, paymentMethod: "Bank Transfer", status: "RECEIVED" },
+    { incomeName: "Licensing Fee", category: "Royalties", description: "Brand licensing", incomeDate: "20 Sep 2024", amount: 614848, paymentMethod: "Bank Transfer", status: "RECEIVED" },
+    { incomeName: "Software Subscription", category: "Software", description: "Cloud POS subscription", incomeDate: "10 Sep 2024", amount: 77818, paymentMethod: "Stripe", status: "PENDING" },
+  ];
+  for (const inc of incomeReportData) {
+    await prisma.incomeReportItem.create({ data: inc });
+  }
+
+  // 34. Create Purchase Tax Report Items matching Screenshot
+  const purchaseTaxData = [
+    { reference: "#4237300", supplier: "Apex Computers", taxDate: "24 Dec 2024", store: "Electro Mart", amount: 200, paymentMethod: "Stripe", discount: 200, taxAmount: 200 },
+    { reference: "#7590325", supplier: "Beats Headphones", taxDate: "10 Dec 2024", store: "Quantum Gadgets", amount: 50, paymentMethod: "Paypal", discount: 50, taxAmount: 50 },
+    { reference: "#9814521", supplier: "Dazzle Shoes", taxDate: "27 Nov 2024", store: "Prime Bazaar", amount: 800, paymentMethod: "Cash", discount: 800, taxAmount: 800 },
+    { reference: "#8745225", supplier: "Best Accessories", taxDate: "18 Nov 2024", store: "Gadget World", amount: 100, paymentMethod: "Paypal", discount: 100, taxAmount: 100 },
+    { reference: "#4237022", supplier: "A-Z Store", taxDate: "06 Nov 2024", store: "Volt Vault", amount: 700, paymentMethod: "Cash", discount: 700, taxAmount: 700 },
+    { reference: "#8744439", supplier: "Hatimi Hardwares", taxDate: "25 Oct 2024", store: "Elite Retail", amount: 1000, paymentMethod: "Cash", discount: 1000, taxAmount: 1000 },
+    { reference: "#7590365", supplier: "Aesthetic Bags", taxDate: "14 Oct 2024", store: "Prime Mart", amount: 1200, paymentMethod: "Paypal", discount: 1200, taxAmount: 1200 },
+    { reference: "#8745478", supplier: "Alpha Mobiles", taxDate: "03 Oct 2024", store: "NeoTech Store", amount: 750, paymentMethod: "Stripe", discount: 750, taxAmount: 750 },
+    { reference: "#7590321", supplier: "Sigma Chairs", taxDate: "20 Sep 2024", store: "Urban Mart", amount: 450, paymentMethod: "Stripe", discount: 450, taxAmount: 450 },
+    { reference: "#8745245", supplier: "Zenith Bags", taxDate: "10 Sep 2024", store: "Travel Mart", amount: 300, paymentMethod: "Cash", discount: 300, taxAmount: 300 },
+  ];
+  for (const pt of purchaseTaxData) {
+    await prisma.purchaseTaxReportItem.create({ data: pt });
+  }
+
+  // 35. Create Sales Tax Report Items
+  const salesTaxData = [
+    { reference: "#4237300", customer: "Apex Computers", taxDate: "24 Dec 2024", store: "Electro Mart", amount: 200, paymentMethod: "Stripe", discount: 200, taxAmount: 200 },
+    { reference: "#7590325", customer: "Beats Headphones", taxDate: "10 Dec 2024", store: "Quantum Gadgets", amount: 50, paymentMethod: "Paypal", discount: 50, taxAmount: 50 },
+    { reference: "#9814521", customer: "Dazzle Shoes", taxDate: "27 Nov 2024", store: "Prime Bazaar", amount: 800, paymentMethod: "Cash", discount: 800, taxAmount: 800 },
+    { reference: "#8745225", customer: "Best Accessories", taxDate: "18 Nov 2024", store: "Gadget World", amount: 100, paymentMethod: "Paypal", discount: 100, taxAmount: 100 },
+    { reference: "#4237022", customer: "A-Z Store", taxDate: "06 Nov 2024", store: "Volt Vault", amount: 700, paymentMethod: "Cash", discount: 700, taxAmount: 700 },
+    { reference: "#8744439", customer: "Hatimi Hardwares", taxDate: "25 Oct 2024", store: "Elite Retail", amount: 1000, paymentMethod: "Cash", discount: 1000, taxAmount: 1000 },
+    { reference: "#7590365", customer: "Aesthetic Bags", taxDate: "14 Oct 2024", store: "Prime Mart", amount: 1200, paymentMethod: "Paypal", discount: 1200, taxAmount: 1200 },
+    { reference: "#8745478", customer: "Alpha Mobiles", taxDate: "03 Oct 2024", store: "NeoTech Store", amount: 750, paymentMethod: "Stripe", discount: 750, taxAmount: 750 },
+    { reference: "#7590321", customer: "Sigma Chairs", taxDate: "20 Sep 2024", store: "Urban Mart", amount: 450, paymentMethod: "Stripe", discount: 450, taxAmount: 450 },
+    { reference: "#8745245", customer: "Zenith Bags", taxDate: "10 Sep 2024", store: "Travel Mart", amount: 300, paymentMethod: "Cash", discount: 300, taxAmount: 300 },
+  ];
+  for (const st of salesTaxData) {
+    await prisma.salesTaxReportItem.create({ data: st });
+  }
+
+  // 36. Create Profit / Loss Report Items matching Screenshot
+  const profitLossData = [
+    { type: "INCOME", itemKey: "Sales", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000, may2026: 50000, jun2026: 50000 },
+    { type: "INCOME", itemKey: "Service", jan2026: 30000, feb2026: 30000, mar2026: 30000, apr2026: 30000, may2026: 30000, jun2026: 30000 },
+    { type: "INCOME", itemKey: "Purchase Return", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000, may2026: 7000, jun2026: 7000 },
+    { type: "EXPENSE", itemKey: "Sales", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000, may2026: 50000, jun2026: 50000 },
+    { type: "EXPENSE", itemKey: "Purrchase", jan2026: 30000, feb2026: 30000, mar2026: 30000, apr2026: 30000, may2026: 30000, jun2026: 30000 },
+    { type: "EXPENSE", itemKey: "Sales Return", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000, may2026: 7000, jun2026: 7000 },
+  ];
+  for (const pl of profitLossData) {
+    await prisma.profitLossReportItem.create({ data: pl });
+  }
+
+  // 37. Create Annual Report Items matching Screenshot
+  const annualData = [
+    { monthName: "January", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
+    { monthName: "Febuary", jan2026: 30000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
+    { monthName: "March", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
+    { monthName: "April", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
+    { monthName: "May", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
+    { monthName: "June", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
+    { monthName: "July", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
+    { monthName: "August", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
+    { monthName: "September", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
+    { monthName: "October", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
+    { monthName: "November", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
+    { monthName: "December", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
+  ];
+  for (const an of annualData) {
+    await prisma.annualReportItem.create({ data: an });
   }
 
   console.log("Seeding finished successfully with all modules!");
