@@ -67,19 +67,33 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
 // ==================== PRODUCTS ====================
 export async function fetchProducts(params?: {
   categoryId?: string;
+  brandId?: string;
+  unitId?: string;
   warehouseId?: string;
   storeId?: string;
+  status?: string;
   search?: string;
 }): Promise<Product[]> {
   const query = new URLSearchParams();
   if (params?.categoryId && params.categoryId !== "all") query.set("categoryId", params.categoryId);
+  if (params?.brandId && params.brandId !== "all") query.set("brandId", params.brandId);
+  if (params?.unitId && params.unitId !== "all") query.set("unitId", params.unitId);
   if (params?.warehouseId && params.warehouseId !== "all") query.set("warehouseId", params.warehouseId);
   if (params?.storeId && params.storeId !== "all") query.set("storeId", params.storeId);
+  if (params?.status && params.status !== "all") query.set("status", params.status);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/products?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch products");
   const data = await res.json();
+  return data.data || [];
+}
+
+export async function fetchProductById(id: string): Promise<Product> {
+  const res = await fetch(`${API_BASE_URL}/products/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch product details");
+  const data = await res.json();
+  if (!data.success) throw new Error(data.message || "Product not found");
   return data.data;
 }
 
@@ -93,7 +107,14 @@ export async function createProductApi(payload: {
   stock: number;
   minStockAlert?: number;
   categoryId?: string;
+  brandId?: string;
+  unitId?: string;
+  warehouseId?: string;
+  storeId?: string;
   image?: string;
+  status?: string;
+  manufacturedDate?: string;
+  expiredDate?: string;
 }): Promise<Product> {
   const res = await fetch(`${API_BASE_URL}/products`, {
     method: "POST",
@@ -105,6 +126,63 @@ export async function createProductApi(payload: {
     throw new Error(data.message || "Failed to create product");
   }
   return data.data;
+}
+
+export async function updateProductApi(
+  id: string,
+  payload: {
+    name?: string;
+    sku?: string;
+    barcode?: string;
+    description?: string;
+    price?: number;
+    costPrice?: number;
+    stock?: number;
+    minStockAlert?: number;
+    categoryId?: string;
+    brandId?: string;
+    unitId?: string;
+    warehouseId?: string;
+    storeId?: string;
+    image?: string;
+    status?: string;
+    manufacturedDate?: string;
+    expiredDate?: string;
+  }
+): Promise<Product> {
+  const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to update product");
+  }
+  return data.data;
+}
+
+export async function deleteProductApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/products/${id}`, {
+    method: "DELETE",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to delete product");
+  }
+}
+
+export async function bulkDeleteProductsApi(ids: string[]): Promise<{ count: number }> {
+  const res = await fetch(`${API_BASE_URL}/products/bulk-delete`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ ids }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to bulk delete products");
+  }
+  return data;
 }
 
 // ==================== STOCK TRANSFERS ====================

@@ -89,6 +89,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  bulkDeleteProducts,
 } from "../controllers/product.controller.js";
 import {
   getCustomers,
@@ -279,6 +280,7 @@ router.delete("/stock-adjustments/:id", deleteStockAdjustment);
 
 // Products
 router.get("/products", getProducts);
+router.post("/products/bulk-delete", bulkDeleteProducts);
 router.get("/products/:id", getProductById);
 router.post("/products", createProduct);
 router.put("/products/:id", updateProduct);

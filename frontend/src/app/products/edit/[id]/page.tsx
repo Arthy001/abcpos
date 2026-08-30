@@ -1,21 +1,22 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import {
+  fetchProductById,
   fetchCategories,
   fetchBrands,
   fetchUnits,
   fetchWarehouses,
   fetchStores,
-  createProductApi,
+  updateProductApi,
 } from "@/lib/api";
-import { Category, Brand, Unit, Warehouse, Store } from "@/types";
+import { Category, Brand, Unit, Warehouse, Store, Product } from "@/types";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Plus,
+  Save,
   Trash2,
   UploadCloud,
   Bold,
@@ -28,10 +29,13 @@ import {
   Info,
   CheckCircle,
   AlertTriangle,
+  RotateCcw,
 } from "lucide-react";
 
-export default function AddProductPage() {
+export default function EditProductPage() {
+  const params = useParams();
   const router = useRouter();
+  const productId = String(params?.id || "");
 
   // Reference lists from DB
   const [categories, setCategories] = useState<Category[]>([]);
@@ -40,6 +44,7 @@ export default function AddProductPage() {
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
 
+  const [initialLoading, setInitialLoading] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
   const [success, setSuccess] = useState<boolean>(false);
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -48,7 +53,6 @@ export default function AddProductPage() {
   const [storeId, setStoreId] = useState<string>("");
   const [warehouseId, setWarehouseId] = useState<string>("");
   const [name, setName] = useState<string>("");
-  const [slug, setSlug] = useState<string>("");
   const [sku, setSku] = useState<string>("");
   const [categoryId, setCategoryId] = useState<string>("");
   const [brandId, setBrandId] = useState<string>("");
@@ -56,14 +60,12 @@ export default function AddProductPage() {
   const [barcode, setBarcode] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [images, setImages] = useState<string[]>([]);
+  const [status, setStatus] = useState<string>("ACTIVE");
 
   // Pricing & Stocks
-  const [productType, setProductType] = useState<"SINGLE" | "VARIABLE">("SINGLE");
-  const [quantity, setQuantity] = useState<number>(20);
+  const [quantity, setQuantity] = useState<number>(0);
   const [price, setPrice] = useState<number>(0);
   const [costPrice, setCostPrice] = useState<number>(0);
-  const [taxType, setTaxType] = useState("Exclusive");
-  const [taxRate, setTaxRate] = useState("7% VAT");
   const [minStockAlert, setMinStockAlert] = useState<number>(5);
 
   // Custom Fields / Dates
@@ -71,37 +73,73 @@ export default function AddProductPage() {
   const [expiryDate, setExpiryDate] = useState<string>("");
 
   useEffect(() => {
-    // Generate initial random SKU
-    generateSku();
+    if (!productId) return;
 
-    // Fetch dropdown data
+    setInitialLoading(true);
     Promise.all([
+      fetchProductById(productId),
       fetchCategories(),
       fetchBrands(),
       fetchUnits(),
       fetchWarehouses(),
       fetchStores(),
     ])
-      .then(([cats, brds, unts, whs, strs]) => {
+      .then(([prod, cats, brds, unts, whs, strs]) => {
         setCategories(cats);
-        if (cats.length > 0) setCategoryId(cats[0].id);
-
         setBrands(brds);
-        if (brds.length > 0) setBrandId(brds[0].id);
-
         setUnits(unts);
-        if (unts.length > 0) setUnitId(unts[0].id);
-
         setWarehouses(whs);
-        if (whs.length > 0) setWarehouseId(whs[0].id);
-
         setStores(strs);
-        if (strs.length > 0) setStoreId(strs[0].id);
+
+        // Fill form
+        setName(prod.name || "");
+        setSku(prod.sku || "");
+        setCategoryId(prod.categoryId || "");
+        setBrandId(prod.brandId || "");
+        setUnitId(prod.unitId || "");
+        setWarehouseId(prod.warehouseId || "");
+        setStoreId(prod.storeId || "");
+        setBarcode(prod.barcode || "");
+        setDescription(prod.description || "");
+
+        // Parse images
+        if (prod.image) {
+          if (prod.image.startsWith("[")) {
+            try {
+              const parsed = JSON.parse(prod.image);
+              if (Array.isArray(parsed)) setImages(parsed);
+              else setImages([prod.image]);
+            } catch {
+              setImages([prod.image]);
+            }
+          } else {
+            setImages([prod.image]);
+          }
+        } else {
+          setImages([]);
+        }
+
+        setStatus(prod.status || "ACTIVE");
+        setPrice(prod.price || 0);
+        setCostPrice(prod.costPrice || 0);
+        setQuantity(prod.stock || 0);
+        setMinStockAlert(prod.minStockAlert || 5);
+
+        if (prod.manufacturedDate) {
+          setManufacturedDate(new Date(prod.manufacturedDate).toISOString().split("T")[0]);
+        }
+        if (prod.expiredDate) {
+          setExpiryDate(new Date(prod.expiredDate).toISOString().split("T")[0]);
+        }
       })
-      .catch((err) => {
-        console.error("Error loading dropdown data:", err);
+      .catch((err: any) => {
+        console.error("Error loading product for edit:", err);
+        setErrorMessage(err.message || "Failed to load product data");
+      })
+      .finally(() => {
+        setInitialLoading(false);
       });
-  }, []);
+  }, [productId]);
 
   // Handle multi-image file selection
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,30 +155,11 @@ export default function AddProductPage() {
       };
       reader.readAsDataURL(file);
     });
-    // Reset file input value so user can re-select same file if desired
     e.target.value = "";
   };
 
   const handleRemoveImage = (indexToRemove: number) => {
     setImages((prev) => prev.filter((_, idx) => idx !== indexToRemove));
-  };
-
-  // Auto generate slug
-  const handleNameChange = (val: string) => {
-    setName(val);
-    setSlug(
-      val
-        .toLowerCase()
-        .trim()
-        .replace(/[^a-z0-9]+/g, "-")
-        .replace(/^-+|-+$/g, "")
-    );
-  };
-
-  // Generate random SKU
-  const generateSku = () => {
-    const random = Math.floor(1000 + Math.random() * 9000);
-    setSku(`PROD-${random}`);
   };
 
   // Generate random Barcode
@@ -164,11 +183,9 @@ export default function AddProductPage() {
 
     try {
       setLoading(true);
-
-      // Serialize images if multiple or single
       const imagePayload = images.length > 0 ? JSON.stringify(images) : undefined;
 
-      await createProductApi({
+      await updateProductApi(productId, {
         name: name.trim(),
         sku: sku.trim(),
         barcode: barcode.trim() || undefined,
@@ -183,7 +200,7 @@ export default function AddProductPage() {
         warehouseId: warehouseId || undefined,
         storeId: storeId || undefined,
         image: imagePayload,
-        status: Number(quantity) > 0 ? "ACTIVE" : "OUT_OF_STOCK",
+        status: status || (Number(quantity) > 0 ? "ACTIVE" : "OUT_OF_STOCK"),
         manufacturedDate: manufacturedDate || undefined,
         expiredDate: expiryDate || undefined,
       });
@@ -193,11 +210,22 @@ export default function AddProductPage() {
         router.push("/products");
       }, 1200);
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to create product");
+      setErrorMessage(err.message || "Failed to update product");
     } finally {
       setLoading(false);
     }
   };
+
+  if (initialLoading) {
+    return (
+      <AppLayout>
+        <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+          <RotateCcw className="w-8 h-8 animate-spin text-[#FE9F43]" />
+          <p className="text-sm font-medium text-gray-500">Loading product details...</p>
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -212,8 +240,8 @@ export default function AddProductPage() {
               <ArrowLeft className="w-5 h-5" />
             </Link>
             <div>
-              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Create Product</h1>
-              <p className="text-xs text-gray-400 mt-0.5">Add a new item to your store & warehouse inventory</p>
+              <h1 className="text-xl font-bold text-gray-900 tracking-tight">Edit Product</h1>
+              <p className="text-xs text-gray-400 mt-0.5">Update product details, pricing, and stock levels</p>
             </div>
           </div>
 
@@ -230,11 +258,11 @@ export default function AddProductPage() {
               className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] disabled:bg-orange-300 text-white text-xs font-bold rounded-xl shadow-xs active:scale-95 transition-all flex items-center space-x-1.5"
             >
               {loading ? (
-                <span>Saving Product...</span>
+                <span>Saving Changes...</span>
               ) : (
                 <>
-                  <Plus className="w-4 h-4" />
-                  <span>Save Product</span>
+                  <Save className="w-4 h-4" />
+                  <span>Save Changes</span>
                 </>
               )}
             </button>
@@ -245,7 +273,7 @@ export default function AddProductPage() {
         {success && (
           <div className="p-4 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-2xl flex items-center space-x-3 text-sm font-semibold animate-in fade-in">
             <CheckCircle className="w-5 h-5 text-emerald-600 flex-shrink-0" />
-            <span>Product created successfully! Redirecting to products list...</span>
+            <span>Product updated successfully! Redirecting to products list...</span>
           </div>
         )}
 
@@ -306,44 +334,20 @@ export default function AddProductPage() {
               <input
                 type="text"
                 required
-                placeholder="e.g. Apple MacBook Air M3"
                 value={name}
-                onChange={(e) => handleNameChange(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
-              />
-            </div>
-
-            {/* Slug */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Slug</label>
-              <input
-                type="text"
-                placeholder="auto-generated-slug"
-                value={slug}
-                onChange={(e) => setSlug(e.target.value)}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
               />
             </div>
 
             {/* SKU */}
             <div className="space-y-1.5">
-              <div className="flex justify-between items-center">
-                <label className="text-xs font-bold text-gray-700">
-                  SKU <span className="text-red-500">*</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={generateSku}
-                  className="text-[11px] font-bold text-[#FE9F43] hover:text-[#E88B32] flex items-center space-x-1"
-                >
-                  <Sparkles className="w-3 h-3" />
-                  <span>Generate</span>
-                </button>
-              </div>
+              <label className="text-xs font-bold text-gray-700">
+                SKU <span className="text-red-500">*</span>
+              </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. PROD-1024"
                 value={sku}
                 onChange={(e) => setSku(e.target.value)}
                 className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono font-bold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
@@ -352,9 +356,7 @@ export default function AddProductPage() {
 
             {/* Category */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">
-                Category <span className="text-red-500">*</span>
-              </label>
+              <label className="text-xs font-bold text-gray-700">Category</label>
               <select
                 value={categoryId}
                 onChange={(e) => setCategoryId(e.target.value)}
@@ -418,7 +420,6 @@ export default function AddProductPage() {
               </div>
               <input
                 type="text"
-                placeholder="e.g. 885123456789"
                 value={barcode}
                 onChange={(e) => setBarcode(e.target.value)}
                 className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
@@ -426,7 +427,7 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          {/* Description with Toolbar */}
+          {/* Description */}
           <div className="space-y-1.5 pt-2">
             <label className="text-xs font-bold text-gray-700">Description</label>
             <div className="border border-gray-200 rounded-xl overflow-hidden bg-white">
@@ -453,7 +454,6 @@ export default function AddProductPage() {
               </div>
               <textarea
                 rows={3}
-                placeholder="Provide details about product features, dimensions, technical specifications..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="w-full p-3 text-xs text-gray-800 focus:outline-none"
@@ -466,36 +466,25 @@ export default function AddProductPage() {
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-5">
           <div className="border-b border-gray-100 pb-3 flex items-center justify-between">
             <h3 className="font-bold text-gray-900 text-sm">Pricing & Stocks</h3>
-            {/* Product Type Radio */}
-            <div className="flex items-center space-x-4 text-xs font-semibold text-gray-700">
-              <label className="flex items-center space-x-1.5 cursor-pointer">
-                <input
-                  type="radio"
-                  name="productType"
-                  checked={productType === "SINGLE"}
-                  onChange={() => setProductType("SINGLE")}
-                  className="accent-[#FE9F43]"
-                />
-                <span>Single Product</span>
-              </label>
-              <label className="flex items-center space-x-1.5 cursor-pointer">
-                <input
-                  type="radio"
-                  name="productType"
-                  checked={productType === "VARIABLE"}
-                  onChange={() => setProductType("VARIABLE")}
-                  className="accent-[#FE9F43]"
-                />
-                <span>Variable Product</span>
-              </label>
+            <div className="flex items-center space-x-2">
+              <label className="text-xs font-bold text-gray-700">Status:</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value)}
+                className="px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-semibold text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
+              >
+                <option value="ACTIVE">ACTIVE</option>
+                <option value="INACTIVE">INACTIVE</option>
+                <option value="OUT_OF_STOCK">OUT OF STOCK</option>
+              </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
             {/* Quantity */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-700">
-                Quantity (Stock) <span className="text-red-500">*</span>
+                Stock Quantity <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -519,7 +508,6 @@ export default function AddProductPage() {
                 required
                 value={price || ""}
                 onChange={(e) => setPrice(Number(e.target.value))}
-                placeholder="0.00"
                 className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-orange-600 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
               />
             </div>
@@ -533,41 +521,14 @@ export default function AddProductPage() {
                 step="any"
                 value={costPrice || ""}
                 onChange={(e) => setCostPrice(Number(e.target.value))}
-                placeholder="0.00"
                 className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
               />
-            </div>
-
-            {/* Tax Type */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Tax Type</label>
-              <select
-                value={taxType}
-                onChange={(e) => setTaxType(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              >
-                <option value="Exclusive">Exclusive</option>
-                <option value="Inclusive">Inclusive</option>
-              </select>
-            </div>
-
-            {/* Tax */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Tax Rate</label>
-              <select
-                value={taxRate}
-                onChange={(e) => setTaxRate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              >
-                <option value="7% VAT">7% Standard VAT</option>
-                <option value="0% Zero Tax">0% Exempted</option>
-              </select>
             </div>
 
             {/* Quantity Alert (Min Stock) */}
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-700">
-                Quantity Alert (Min Stock) <span className="text-red-500">*</span>
+                Quantity Alert <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -585,7 +546,7 @@ export default function AddProductPage() {
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
             <div>
               <h3 className="font-bold text-gray-900 text-sm">Product Images ({images.length})</h3>
-              <p className="text-[11px] text-gray-500 mt-0.5">Upload one or multiple images for this product</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Upload new images, manage, or remove existing photos</p>
             </div>
             {images.length > 0 && (
               <button
@@ -647,7 +608,7 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* 4. Card: Dates & Warranty */}
+        {/* 4. Card: Dates */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
           <div className="flex items-center space-x-3 border-b border-gray-100 pb-3">
             <h3 className="font-bold text-gray-900 text-sm">Tracking & Expiry</h3>
@@ -687,9 +648,9 @@ export default function AddProductPage() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] disabled:bg-orange-300 text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all"
+            className="px-6 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] disabled:bg-orange-300 text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all flex items-center space-x-1.5"
           >
-            {loading ? "Saving..." : "Add to Product"}
+            {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
       </form>

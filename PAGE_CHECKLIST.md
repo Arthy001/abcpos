@@ -17,14 +17,9 @@
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ยิงบาร์โค้ด, ตะกร้า, ส่วนลด, VAT 7%, ชำระเงินสด/QR/บัตร, ตัดสต็อกจริง, พิมพ์ใบเสร็จ)
 
 - [x] **3. Products List (Inventory)**
-  - **Route**: `/products`
-  - **Backend**: `GET /api/products`, `DELETE /api/products/:id`
-  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางสินค้า, ค้นหา, กรองหมวดหมู่, สถานะ Active/Out of Stock)
-
-- [x] **4. Create Product (Add Product)**
-  - **Route**: `/products/add`
-  - **Backend**: `POST /api/products`
-  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ถอดแบบตรงตามภาพ Dreams POS: ข้อมูลสินค้า, ราคา/สต็อก, อัปโหลดรูป, Custom fields)
+  - **Route**: `/products`, `/products/add`, `/products/edit/[id]`
+  - **Backend**: `GET/POST/PUT/DELETE /api/products`, `POST /api/products/bulk-delete`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (CRUD ครบวงจร: ตารางสินค้าจริงจาก DB, Dynamic Category & Brand Filter, ค้นหาเรียลไทม์, View Details Modal, Modal ยืนยันก่อนลบ, Bulk Delete หลายรายการพร้อมกัน, Export CSV / PDF, หน้า Add และ Edit สินค้าเชื่อมโยง Category/Brand/Unit/Warehouse/Store จริง)
 
 - [x] **5. Category & Sub Category**
   - **Route**: `/categories`, `/sub-categories`
