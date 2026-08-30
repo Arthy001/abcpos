@@ -24,16 +24,16 @@ import {
   Edit,
   Trash2,
   Eye,
-  PlusCircle,
+  Settings,
   AlertTriangle,
   Package,
   CheckCircle,
   X,
   TrendingDown,
   ShieldAlert,
-  SlidersHorizontal,
   ArrowUpRight,
   Layers,
+  ExternalLink,
 } from "lucide-react";
 
 export default function LowStockPage() {
@@ -63,12 +63,19 @@ export default function LowStockPage() {
 
   // Modals
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
-  const [restockProduct, setRestockProduct] = useState<Product | null>(null);
-  const [restockQty, setRestockQty] = useState<number>(10);
 
-  const [editMinAlertProduct, setEditMinAlertProduct] = useState<Product | null>(null);
-  const [newMinAlert, setNewMinAlert] = useState<number>(5);
+  // Quick Edit & Reset Stock Modal
+  const [quickEditProduct, setQuickEditProduct] = useState<Product | null>(null);
+  const [editStock, setEditStock] = useState<number>(0);
+  const [editMinAlert, setEditMinAlert] = useState<number>(5);
+  const [editPrice, setEditPrice] = useState<number>(0);
+  const [editCostPrice, setEditCostPrice] = useState<number>(0);
 
+  // Settings / Min Stock Alert Modal
+  const [settingsProduct, setSettingsProduct] = useState<Product | null>(null);
+  const [settingsMinAlert, setSettingsMinAlert] = useState<number>(5);
+
+  // Delete Modals
   const [deleteProductTarget, setDeleteProductTarget] = useState<Product | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
   const [alertMessage, setAlertMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -235,53 +242,58 @@ export default function LowStockPage() {
     }
   };
 
-  // Quick Restock Handler
-  const handleOpenRestock = (prod: Product) => {
-    setRestockProduct(prod);
-    const suggested = Math.max(10, ((prod.minStockAlert || 5) * 2) - prod.stock);
-    setRestockQty(suggested);
+  // Open Quick Edit Modal (with Stock Reset)
+  const handleOpenQuickEdit = (prod: Product) => {
+    setQuickEditProduct(prod);
+    setEditStock(prod.stock);
+    setEditMinAlert(prod.minStockAlert || 5);
+    setEditPrice(prod.price);
+    setEditCostPrice(prod.costPrice || 0);
   };
 
-  const handleSaveRestock = async (e: React.FormEvent) => {
+  const handleSaveQuickEdit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!restockProduct) return;
+    if (!quickEditProduct) return;
 
     try {
       setActionLoading(true);
-      const newStock = Number(restockProduct.stock) + Number(restockQty);
-      await updateProductApi(restockProduct.id, {
+      const newStock = Number(editStock);
+      await updateProductApi(quickEditProduct.id, {
         stock: newStock,
+        minStockAlert: Number(editMinAlert),
+        price: Number(editPrice),
+        costPrice: Number(editCostPrice),
         status: newStock > 0 ? "ACTIVE" : "OUT_OF_STOCK",
       });
 
-      showAlert("success", `Restocked +${restockQty} units for "${restockProduct.name}" (New Stock: ${newStock})`);
-      setRestockProduct(null);
+      showAlert("success", `Updated product & stock for "${quickEditProduct.name}" (Stock: ${newStock})`);
+      setQuickEditProduct(null);
       await loadData();
     } catch (err: any) {
-      showAlert("error", err.message || "Failed to restock product");
+      showAlert("error", err.message || "Failed to update product");
     } finally {
       setActionLoading(false);
     }
   };
 
-  // Quick Min Stock Alert Update
-  const handleOpenMinAlert = (prod: Product) => {
-    setEditMinAlertProduct(prod);
-    setNewMinAlert(prod.minStockAlert || 5);
+  // Open Settings Modal (Adjust Min Alert Threshold)
+  const handleOpenSettings = (prod: Product) => {
+    setSettingsProduct(prod);
+    setSettingsMinAlert(prod.minStockAlert || 5);
   };
 
-  const handleSaveMinAlert = async (e: React.FormEvent) => {
+  const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!editMinAlertProduct) return;
+    if (!settingsProduct) return;
 
     try {
       setActionLoading(true);
-      await updateProductApi(editMinAlertProduct.id, {
-        minStockAlert: Number(newMinAlert),
+      await updateProductApi(settingsProduct.id, {
+        minStockAlert: Number(settingsMinAlert),
       });
 
-      showAlert("success", `Updated Min Alert to ${newMinAlert} for "${editMinAlertProduct.name}"`);
-      setEditMinAlertProduct(null);
+      showAlert("success", `Updated Min Alert Limit to ${settingsMinAlert} for "${settingsProduct.name}"`);
+      setSettingsProduct(null);
       await loadData();
     } catch (err: any) {
       showAlert("error", err.message || "Failed to update alert threshold");
@@ -848,28 +860,37 @@ export default function LowStockPage() {
                         {/* Actions */}
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1.5">
-                            {/* Full Product Edit Link */}
-                            <Link
-                              href={`/products/edit/${item.id}`}
-                              title="Edit Product"
+                            {/* 1. Edit & Reset Stock Modal Button */}
+                            <button
+                              onClick={() => handleOpenQuickEdit(item)}
+                              title="Edit & Reset Stock / แก้ไขและรีเซ็ตสต็อก"
                               className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-orange-50 text-gray-500 hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white shadow-2xs"
                             >
                               <Edit className="w-3.5 h-3.5" />
-                            </Link>
+                            </button>
 
-                            {/* View Modal */}
+                            {/* 2. Settings / Min Alert Threshold Button */}
+                            <button
+                              onClick={() => handleOpenSettings(item)}
+                              title="Threshold Settings / ตั้งค่าจุดเตือนสต็อก"
+                              className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-amber-50 text-gray-500 hover:text-amber-600 flex items-center justify-center transition-colors bg-white shadow-2xs"
+                            >
+                              <Settings className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* 3. View Modal Button */}
                             <button
                               onClick={() => setViewProduct(item)}
-                              title="View Details"
+                              title="View Details / ดูรายละเอียด"
                               className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-colors bg-white shadow-2xs"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* Delete Product */}
+                            {/* 4. Delete Product Button */}
                             <button
                               onClick={() => setDeleteProductTarget(item)}
-                              title="Delete Product"
+                              title="Delete Product / ลบสินค้า"
                               className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-rose-50 text-gray-500 hover:text-rose-600 flex items-center justify-center transition-colors bg-white shadow-2xs"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
@@ -941,130 +962,236 @@ export default function LowStockPage() {
           </div>
         </div>
 
-        {/* ==================== QUICK RESTOCK MODAL ==================== */}
-        {restockProduct && (
-          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full border border-gray-100 shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-150">
+        {/* ==================== QUICK EDIT & RESET STOCK MODAL ==================== */}
+        {quickEditProduct && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-lg w-full border border-gray-100 shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-150">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center space-x-2">
-                  <div className="p-2 bg-emerald-50 text-emerald-600 rounded-xl">
-                    <PlusCircle className="w-5 h-5" />
+                <div className="flex items-center space-x-2.5">
+                  <div className="p-2 bg-orange-100 text-[#FE9F43] rounded-xl">
+                    <Edit className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900">Quick Restock / เติมสต็อก</h3>
-                    <p className="text-[11px] text-gray-500 truncate max-w-[220px]">{restockProduct.name}</p>
+                    <h3 className="text-sm font-bold text-gray-900">Edit & Reset Stock / แก้ไขและรีเซ็ตสต็อก</h3>
+                    <p className="text-[11px] text-gray-500 truncate max-w-[260px]">{quickEditProduct.name}</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setRestockProduct(null)}
+                  onClick={() => setQuickEditProduct(null)}
                   className="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <div className="p-3 bg-gray-50 rounded-xl space-y-1 text-xs border border-gray-100">
-                <div className="flex justify-between text-gray-600">
-                  <span>Current Stock:</span>
-                  <span className="font-bold text-gray-900">{restockProduct.stock} {restockProduct.unit?.shortName || "Pc"}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Min Alert Threshold:</span>
-                  <span className="font-bold text-amber-600">{restockProduct.minStockAlert || 5} {restockProduct.unit?.shortName || "Pc"}</span>
+              {/* Product Info Bar */}
+              <div className="flex items-center space-x-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
+                <img
+                  src={getPrimaryImage(quickEditProduct.image)}
+                  alt={quickEditProduct.name}
+                  className="w-10 h-10 rounded-lg object-contain bg-white border border-gray-200 p-0.5 flex-shrink-0"
+                />
+                <div className="text-xs space-y-0.5">
+                  <p className="font-bold text-gray-900 line-clamp-1">{quickEditProduct.name}</p>
+                  <p className="text-[11px] text-gray-500">
+                    SKU: <span className="font-mono font-medium text-gray-700">{quickEditProduct.sku}</span> | Wh: {quickEditProduct.warehouse?.name || "Central"}
+                  </p>
                 </div>
               </div>
 
-              <form onSubmit={handleSaveRestock} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Quantity to Add (+ Stock)</label>
+              <form onSubmit={handleSaveQuickEdit} className="space-y-4 text-xs">
+                {/* Stock Level Input & Quick Increment Buttons */}
+                <div className="space-y-1.5 p-3.5 bg-orange-50/50 rounded-xl border border-orange-100">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-gray-900">
+                      Inventory Stock Quantity ({quickEditProduct.unit?.shortName || "Pc"})
+                    </label>
+                    <span className="text-[11px] font-semibold text-gray-500">
+                      Current in DB: <strong className="text-gray-900">{quickEditProduct.stock}</strong>
+                    </span>
+                  </div>
+
                   <input
                     type="number"
-                    min="1"
+                    min="0"
                     required
-                    value={restockQty}
-                    onChange={(e) => setRestockQty(Number(e.target.value))}
-                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-base font-bold text-emerald-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:bg-white"
+                    value={editStock}
+                    onChange={(e) => setEditStock(Number(e.target.value))}
+                    className="w-full px-3.5 py-2.5 bg-white border border-orange-200 rounded-xl text-lg font-black text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
                   />
-                  <p className="text-[11px] text-gray-500">
-                    New total stock will be: <strong className="text-gray-900">{Number(restockProduct.stock) + Number(restockQty)}</strong> {restockProduct.unit?.shortName || "Pc"}
-                  </p>
+
+                  {/* Quick Preset Buttons */}
+                  <div className="flex items-center gap-1.5 pt-1">
+                    <span className="text-[10px] text-gray-500 font-semibold">Quick Set:</span>
+                    <button
+                      type="button"
+                      onClick={() => setEditStock((prev) => Number(prev) + 10)}
+                      className="px-2 py-0.5 rounded-md bg-white border border-orange-200 hover:bg-orange-100 text-orange-700 font-bold text-[10px] transition-colors"
+                    >
+                      +10
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditStock((prev) => Number(prev) + 25)}
+                      className="px-2 py-0.5 rounded-md bg-white border border-orange-200 hover:bg-orange-100 text-orange-700 font-bold text-[10px] transition-colors"
+                    >
+                      +25
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditStock((prev) => Number(prev) + 50)}
+                      className="px-2 py-0.5 rounded-md bg-white border border-orange-200 hover:bg-orange-100 text-orange-700 font-bold text-[10px] transition-colors"
+                    >
+                      +50
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditStock(0)}
+                      className="px-2 py-0.5 rounded-md bg-white border border-rose-200 hover:bg-rose-50 text-rose-600 font-bold text-[10px] transition-colors ml-auto"
+                    >
+                      Reset to 0
+                    </button>
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-end space-x-2 pt-3 border-t border-gray-100">
-                  <button
-                    type="button"
-                    onClick={() => setRestockProduct(null)}
-                    className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors"
+                {/* Min Stock Alert & Pricing Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-700">Min Alert Limit</label>
+                    <input
+                      type="number"
+                      min="1"
+                      required
+                      value={editMinAlert}
+                      onChange={(e) => setEditMinAlert(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-700">Selling Price (฿)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      required
+                      value={editPrice}
+                      onChange={(e) => setEditPrice(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="font-bold text-gray-700">Cost Price (฿)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={editCostPrice}
+                      onChange={(e) => setEditCostPrice(Number(e.target.value))}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                    />
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <Link
+                    href={`/products/edit/${quickEditProduct.id}`}
+                    target="_blank"
+                    className="text-xs text-[#FE9F43] hover:underline font-semibold flex items-center space-x-1"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={actionLoading || restockQty <= 0}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 flex items-center space-x-1"
-                  >
-                    {actionLoading && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
-                    <span>Confirm Restock</span>
-                  </button>
+                    <span>Full Product Edit Page</span>
+                    <ExternalLink className="w-3 h-3" />
+                  </Link>
+
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setQuickEditProduct(null)}
+                      className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={actionLoading}
+                      className="px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 flex items-center space-x-1"
+                    >
+                      {actionLoading && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
+                      <span>Save Changes</span>
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
           </div>
         )}
 
-        {/* ==================== ADJUST MIN ALERT MODAL ==================== */}
-        {editMinAlertProduct && (
+        {/* ==================== SETTINGS / MIN ALERT MODAL ==================== */}
+        {settingsProduct && (
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
             <div className="bg-white rounded-2xl max-w-md w-full border border-gray-100 shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-150">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div className="flex items-center space-x-2">
                   <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
-                    <SlidersHorizontal className="w-5 h-5" />
+                    <Settings className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-bold text-gray-900">Adjust Min Stock Alert</h3>
-                    <p className="text-[11px] text-gray-500 truncate max-w-[220px]">{editMinAlertProduct.name}</p>
+                    <h3 className="text-sm font-bold text-gray-900">Inventory Alert Settings / ตั้งค่าการแจ้งเตือน</h3>
+                    <p className="text-[11px] text-gray-500 truncate max-w-[220px]">{settingsProduct.name}</p>
                   </div>
                 </div>
                 <button
-                  onClick={() => setEditMinAlertProduct(null)}
+                  onClick={() => setSettingsProduct(null)}
                   className="w-7 h-7 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form onSubmit={handleSaveMinAlert} className="space-y-4">
+              <form onSubmit={handleSaveSettings} className="space-y-4 text-xs">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-gray-700">Minimum Stock Alert Threshold</label>
+                  <label className="font-bold text-gray-700">Minimum Stock Alert Threshold (จุดเตือนสต็อกต่ำ)</label>
                   <input
                     type="number"
                     min="1"
                     required
-                    value={newMinAlert}
-                    onChange={(e) => setNewMinAlert(Number(e.target.value))}
+                    value={settingsMinAlert}
+                    onChange={(e) => setSettingsMinAlert(Number(e.target.value))}
                     className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-base font-bold text-amber-600 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
                   />
                   <p className="text-[11px] text-gray-500">
-                    System will flag this item when stock reaches or drops below this number.
+                    System will flag this item under <strong>Low Stocks</strong> when quantity is less than or equal to this number.
                   </p>
+                </div>
+
+                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Warehouse Location:</span>
+                    <span className="font-semibold text-gray-800">{settingsProduct.warehouse?.name || "Central Warehouse"}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Store / Branch:</span>
+                    <span className="font-semibold text-gray-800">{settingsProduct.store?.name || "Main Store"}</span>
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-end space-x-2 pt-3 border-t border-gray-100">
                   <button
                     type="button"
-                    onClick={() => setEditMinAlertProduct(null)}
+                    onClick={() => setSettingsProduct(null)}
                     className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    disabled={actionLoading || newMinAlert < 1}
+                    disabled={actionLoading || settingsMinAlert < 1}
                     className="px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl transition-all shadow-xs disabled:opacity-50 flex items-center space-x-1"
                   >
                     {actionLoading && <RotateCcw className="w-3.5 h-3.5 animate-spin" />}
-                    <span>Save Alert Threshold</span>
+                    <span>Save Settings</span>
                   </button>
                 </div>
               </form>
@@ -1170,13 +1297,17 @@ export default function LowStockPage() {
               </div>
 
               <div className="flex items-center justify-end space-x-2 px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-                <Link
-                  href={`/products/edit/${viewProduct.id}`}
+                <button
+                  onClick={() => {
+                    const target = viewProduct;
+                    setViewProduct(null);
+                    handleOpenQuickEdit(target);
+                  }}
                   className="px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-1.5"
                 >
                   <Edit className="w-3.5 h-3.5" />
-                  <span>Edit Product</span>
-                </Link>
+                  <span>Edit / Reset Stock</span>
+                </button>
                 <button
                   onClick={() => setViewProduct(null)}
                   className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors"
