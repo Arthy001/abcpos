@@ -848,15 +848,14 @@ export default function LowStockPage() {
                         {/* Actions */}
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1.5">
-                            {/* Quick Restock (+ Stock) */}
-                            <button
-                              onClick={() => handleOpenRestock(item)}
-                              title="Quick Restock / เติมสต็อก"
-                              className="px-2 py-1 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 flex items-center space-x-1 font-bold text-[11px] transition-colors shadow-2xs"
+                            {/* Full Product Edit Link */}
+                            <Link
+                              href={`/products/edit/${item.id}`}
+                              title="Edit Product"
+                              className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-orange-50 text-gray-500 hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white shadow-2xs"
                             >
-                              <PlusCircle className="w-3.5 h-3.5" />
-                              <span>Restock</span>
-                            </button>
+                              <Edit className="w-3.5 h-3.5" />
+                            </Link>
 
                             {/* View Modal */}
                             <button
@@ -866,24 +865,6 @@ export default function LowStockPage() {
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-
-                            {/* Edit Min Stock Alert */}
-                            <button
-                              onClick={() => handleOpenMinAlert(item)}
-                              title="Adjust Min Alert Limit"
-                              className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-amber-50 text-gray-500 hover:text-amber-600 flex items-center justify-center transition-colors bg-white shadow-2xs"
-                            >
-                              <SlidersHorizontal className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* Full Product Edit Link */}
-                            <Link
-                              href={`/products/edit/${item.id}`}
-                              title="Edit Full Product"
-                              className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-orange-50 text-gray-500 hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white shadow-2xs"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </Link>
 
                             {/* Delete Product */}
                             <button
@@ -1189,16 +1170,13 @@ export default function LowStockPage() {
               </div>
 
               <div className="flex items-center justify-end space-x-2 px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-                <button
-                  onClick={() => {
-                    const target = viewProduct;
-                    setViewProduct(null);
-                    handleOpenRestock(target);
-                  }}
-                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl transition-all shadow-xs"
+                <Link
+                  href={`/products/edit/${viewProduct.id}`}
+                  className="px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl transition-all shadow-xs flex items-center space-x-1.5"
                 >
-                  Restock Now
-                </button>
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit Product</span>
+                </Link>
                 <button
                   onClick={() => setViewProduct(null)}
                   className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors"
