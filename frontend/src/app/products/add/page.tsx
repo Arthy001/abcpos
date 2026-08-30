@@ -201,7 +201,7 @@ export default function AddProductPage() {
 
   return (
     <AppLayout>
-      <form onSubmit={handleSubmit} className="space-y-6 max-w-6xl mx-auto pb-12 font-sans">
+      <form onSubmit={handleSubmit} className="space-y-5 w-full pb-12 font-sans">
         {/* Top Action Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
           <div className="flex items-center space-x-3">
