@@ -661,3 +661,104 @@ model OrderItem {
   subtotal    Float
   createdAt   DateTime @default(now())
 }
+
+model SystemUser {
+  id        String   @id @default(uuid())
+  name      String
+  phone     String?
+  email     String   @unique
+  role      String   @default("Admin")
+  avatar    String?  @default("/assets/images/customer11.jpg")
+  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
+  password  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Role {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  permissions String?  // JSON string representing module permissions
+  createdDate String?  // e.g. "12 Sep 2024"
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DeleteAccountRequest {
+  id                String   @id @default(uuid())
+  userName          String
+  userAvatar        String?  @default("/assets/images/customer11.jpg")
+  requisitionDate   String   // e.g. "25 Sep 2023"
+  deleteRequestDate String   // e.g. "01 Oct 2023"
+  status            String   @default("PENDING") // PENDING, CONFIRMED, CANCELLED
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model UserProfileSettings {
+  id          String   @id @default(uuid())
+  firstName   String   @default("John")
+  lastName    String   @default("Doe")
+  email       String   @default("john.doe@example.com")
+  phone       String   @default("+1 555-0199")
+  userName    String   @default("johndoe")
+  address     String   @default("123 Business Avenue, Suite 100")
+  city        String   @default("New York")
+  country     String   @default("United States")
+  postalCode  String   @default("10001")
+  bio         String   @default("Super Administrator & Store Manager")
+  avatar      String   @default("/assets/images/customer11.jpg")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model UserSecuritySettings {
+  id                  String   @id @default(uuid())
+  twoFactorEnabled    Boolean  @default(true)
+  twoFactorMethod     String   @default("Authenticator App") // Authenticator App, SMS
+  passwordLastChanged String   @default("2 months ago")
+  loginAlerts         Boolean  @default(true)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model UserSessionLog {
+  id         String   @id @default(uuid())
+  device     String   // "MacBook Pro (16-inch)"
+  browser    String   // "Chrome 120.0 (macOS)"
+  ipAddress  String   // "192.168.1.102"
+  location   String   // "New York, USA"
+  lastActive String   // "Current Session"
+  isCurrent  Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model UserNotificationSettings {
+  id             String   @id @default(uuid())
+  emailAlerts    Boolean  @default(true)
+  pushAlerts     Boolean  @default(true)
+  smsAlerts      Boolean  @default(false)
+  lowStockAlerts Boolean  @default(true)
+  newOrderAlerts Boolean  @default(true)
+  invoicesAlerts Boolean  @default(true)
+  paymentAlerts  Boolean  @default(true)
+  weeklyReports  Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model ConnectedAppItem {
+  id               String   @id @default(uuid())
+  appName          String   // "Slack", "Google Drive", "Mailchimp", "Stripe", "GitHub", "QuickBooks"
+  appCategory      String   // "Communication", "Storage", "Marketing", "Payments", "Developer", "Accounting"
+  appLogo          String   // "/assets/images/apps/slack.png"
+  description      String   // "Receive instant sales and inventory alerts in your channels."
+  status           String   @default("CONNECTED") // CONNECTED, DISCONNECTED
+  connectedAccount String?  // "workspace@team.slack.com"
+  connectedDate    String?  // "12 Jan 2024"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}

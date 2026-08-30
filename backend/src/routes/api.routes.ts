@@ -1,5 +1,19 @@
 import { Router } from "express";
 import {
+  getUsers,
+  getUserById,
+  createUser,
+  updateUser,
+  deleteUser,
+  getRoles,
+  createRole,
+  updateRole,
+  deleteRole,
+  getDeleteAccountRequests,
+  createDeleteAccountRequest,
+  deleteAccountRequestAction,
+} from "../controllers/user.controller.js";
+import {
   getCategories,
   createCategory,
   updateCategory,
@@ -158,6 +172,17 @@ import {
   getProfitLossReport,
   getAnnualReport,
 } from "../controllers/report.controller.js";
+import {
+  getProfileSettings,
+  updateProfileSettings,
+  getSecuritySettings,
+  updateSecuritySettings,
+  terminateSessionLog,
+  getNotificationSettings,
+  updateNotificationSettings,
+  getConnectedApps,
+  toggleConnectedApp,
+} from "../controllers/settings.controller.js";
 import { getOrders, createOrder } from "../controllers/order.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 
@@ -339,5 +364,34 @@ router.get("/reports/tax/purchase", getPurchaseTaxReport);
 router.get("/reports/tax/sales", getSalesTaxReport);
 router.get("/reports/profit-loss", getProfitLossReport);
 router.get("/reports/annual", getAnnualReport);
+
+// User Management: Users
+router.get("/users", getUsers);
+router.get("/users/:id", getUserById);
+router.post("/users", createUser);
+router.put("/users/:id", updateUser);
+router.delete("/users/:id", deleteUser);
+
+// User Management: Roles & Permissions
+router.get("/roles", getRoles);
+router.post("/roles", createRole);
+router.put("/roles/:id", updateRole);
+router.delete("/roles/:id", deleteRole);
+
+// User Management: Delete Account Requests
+router.get("/delete-account-requests", getDeleteAccountRequests);
+router.post("/delete-account-requests", createDeleteAccountRequest);
+router.delete("/delete-account-requests/:id", deleteAccountRequestAction);
+
+// General Settings
+router.get("/settings/profile", getProfileSettings);
+router.put("/settings/profile", updateProfileSettings);
+router.get("/settings/security", getSecuritySettings);
+router.put("/settings/security", updateSecuritySettings);
+router.delete("/settings/security/sessions/:id", terminateSessionLog);
+router.get("/settings/notifications", getNotificationSettings);
+router.put("/settings/notifications", updateNotificationSettings);
+router.get("/settings/connected-apps", getConnectedApps);
+router.put("/settings/connected-apps/:id", toggleConnectedApp);
 
 export default router;

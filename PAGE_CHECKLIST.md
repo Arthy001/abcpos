@@ -260,8 +260,56 @@
   - **Backend**: `GET /api/reports/annual`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (กล่องกรอง Date [2026], Store [All Stores], ปุ่ม Generate Report | ตารางรายงานประจำปีแยก 12 เดือน January - December เทียบ Jan 2026, Feb 2026, Mar 2026, Apr 2026 พร้อมแถวสรุปผลรวม Total $8,000)
 
-- [ ] **24. Store Settings & Tax**
-  - **Route**: `/settings`, `/settings/tax`
+---
+
+## 👤 กลุ่มที่ 7: การจัดการผู้ใช้งานและสิทธิ์ (User Management)
+
+- [x] **34. Users List (จัดการผู้ใช้งาน)**
+  - **Route**: `/users`
+  - **Backend**: `GET/POST/PUT/DELETE /api/users`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางจัดการผู้ใช้งาน: Checkbox, User Name + Avatar รูปโปรไฟล์, เบอร์โทร Phone, อีเมล Email, บทบาท Role, สถานะ Active/Inactive, Action ดูโปรไฟล์/แก้ไข/ลบ, Export PDF/Excel, Search, Filter สถานะ, Modal เพิ่มผู้ใช้ Add User, Modal แก้ไข Edit User, Modal ดูโปรไฟล์ View Profile, Modal ลบ Delete User)
+
+- [x] **35. Roles & Permissions (จัดการบทบาทและกำหนดสิทธิ์)**
+  - **Route**: `/roles-permissions`
+  - **Backend**: `GET/POST/PUT/DELETE /api/roles`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางจัดการบทบาท: Checkbox, Role Name, Created Date, Status Active/Inactive, Action ปุ่มโล่จัดการสิทธิ์ Permission Matrix Dialog / ปุ่มแก้ไข / ปุ่มลบ, Modal เพิ่ม Add Role, Modal แก้ไข Edit Role, Modal จัดการสิทธิ์กำหนด All/View/Create/Edit/Delete แยกตามโมดูลอย่างละเอียด, Export PDF/Excel, Search, Filter สถานะ)
+
+- [x] **36. Delete Account Request (คำขอลบบัญชี)**
+  - **Route**: `/delete-account-requests`
+  - **Backend**: `GET/POST/DELETE /api/delete-account-requests`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางคำขอลบบัญชี: Checkbox, User Name + Avatar, วันที่ส่งคำขอ Requisition Date, วันที่ขอลบ Delete Request Date, Action ปุ่มลบ Trash, Modal ยืนยันการลบบัญชี, Search, Export PDF/Excel/Print, Pagination)
+
+---
+
+## ⚙️ กลุ่มที่ 8: การตั้งค่า (Settings)
+
+- [x] **37. General Settings (4 Sub Menus: Profile, Security, Notifications, Connected Apps)**
+  - **Route**: `/settings/profile`, `/settings/security`, `/settings/notifications`, `/settings/connected-apps`
+  - **Backend**: `GET/PUT /api/settings/profile`, `GET/PUT /api/settings/security`, `GET/PUT /api/settings/notifications`, `GET/PUT /api/settings/connected-apps`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Left Sidebar การตั้งค่าแบ่งหมวด General Settings, Website Settings, App Settings, System Settings, Financial Settings, Other Settings | 1. **Profile**: อัปโหลดรูปโปรไฟล์, Basic Info: First/Last Name, User Name, Phone, Email, Address Info: Address, Country, State, City, Postal Code, ปุ่ม Cancel/Save Changes | 2. **Security**: Password [Change Password], Two-Factor Auth [Toggle], Google Auth [Connected Badge & Toggle], Phone/Email Verification [Verified Check, ปุ่ม Change/Remove], Device Management, Account Activity, Deactivate Account, Delete Account | 3. **Notifications**: สวิตช์เปิดปิด Mobile Push, Desktop, Email, MSMS Notifications, ตารางช่องทางแจ้งเตือน Matrix: Payment, Transaction, Email Verification, OTP, Activity, Account | 4. **Connected Apps**: การ์ดเชื่อมต่อ 6 แอป Calendar [Google 31], Figma, Dropbox, Slack, Github, Gmail พร้อม Badge Connected และ Switch เปิดปิด)
+
+- [x] **38. Website Settings (8 Sub Menus: System Settings, Company Settings, Localization, Prefixes, Preference, Appearance, Social Authentication, Language)**
+  - **Route**: `/settings/system`, `/settings/company`, `/settings/localization`, `/settings/prefixes`, `/settings/preference`, `/settings/appearance`, `/settings/social-auth`, `/settings/language`
   - **Backend**: `GET/PUT /api/settings`
-  - **สิ่งที่ต้องการ**: ตั้งค่าข้อมูลร้านค้า, หัวบิลใบเสร็จ, อัตราภาษี VAT
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (1. **System Settings**: การ์ดเชื่อมต่อ 4 รายการ Google Captcha, Google Analytics, Google Adsense, Google Map พร้อมปุ่ม View Integration และ Switch Toggle | 2. **Company Settings**: Company Info [Name, Email, Phone, Fax, Website], Company Images [Icon, Favicon, Logo, Dark Logo] พร้อมปุ่ม Upload และพรีวิว, Address Info [Address, Country, State, City, Postal Code] | 3. **Localization**: Basic Info [Language, Language Switcher, Timezone, Date Format, Time Format, Financial Year, Starting Month], Currency Settings [Currency, Symbol, Position, Decimal/Thousand Separators], Country Restrictions, File Settings [Allowed File Types, Max File Size] | 4. **Prefixes**: ช่องกรอก 15 คำนำหน้า [SKU, SUP, PU, PR, SA, SR, CT, EX, ST, SA, SO, PINV, EST, TRN, EMP] | 5. **Preference**: สวิตช์เปิดปิดฟีเจอร์ระบบ 11 รายการ [Maintenance Mode, Coupon, Offers, MultiLanguage, Multicurrency, SMS, Stores, Warehouses, Barcode, QR Code, HRMS] | 6. **Appearance**: ธีมเว็บไซต์ Light/Dark/Auto พร้อมภาพม็อคอัพ, สี Accent [Orange, Purple, Blue, Brown], Expand Sidebar Switch, Sidebar Size [Small 85px/Medium/Large], Font Family [Nunito, Inter, Prompt, Poppins] | 7. **Social Authentication**: การ์ดเข้าสู่ระบบด้วยโซเชียล [Facebook, Twitter, LinkedIn, Google] พร้อม Badge Connected/Not Connected และปุ่ม View Integration/Connect Now | 8. **Language**: ตารางจัดการภาษาเฉพาะ **English (en)** และ **ไทย (th)** พร้อม Flag, RTL, Default, Total, Done, Progress %, Status Toggle, ค้นหา, Dropdown เลือกภาษา, ปุ่ม Add Translation, ปุ่ม Import Sample)
+
+- [x] **39. App Settings (6 Sub Menus: Invoice Settings, Invoice Templates, Printer, POS, Signatures, Custom Fields)**
+  - **Route**: `/settings/invoice-settings`, `/settings/invoice-templates`, `/settings/printer`, `/settings/pos-settings`, `/settings/signatures`, `/settings/custom-fields`
+  - **Backend**: `GET/PUT /api/settings`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (1. **Invoice Settings**: อัปโหลดโลโก้ใบแจ้งหนี้, คำนำหน้า Invoice Prefix [INV -], กำหนดวันชำระ Invoice Due [5 Days], สวิตช์เปิดปิด Round Off [Round Off Up], สวิตช์แสดงข้อมูลบริษัท Show Company Details, ช่องข้อความ Invoice Header Terms / Footer Terms | 2. **Invoice Templates**: แท็บสลับหมวด Invoices, Purchases, Receipts พร้อมการ์ดแสดงเทมเพลตตัวอย่าง General Invoice 1-5 และปุ่มติดดาว Bookmark | 3. **Printer**: ตารางเครื่องพิมพ์ [HP Printer, Epson], ประเภทการเชื่อมต่อ Connection Type, IP Address, Port, ปุ่ม Add New Printer, ปุ่มแก้ไข/ลบ | 4. **POS Settings**: ตัวเลือก POS Printer, ตัวเลือกช่องทางชำระเงิน Checkboxes [COD, Cheque, Card, Paypal, Bank Transfer, Cash], สวิตช์เปิดปิดเสียง Enable Sound Effect | 5. **Signatures**: ตารางลายเซ็น [Allen, Raymond, Ralph, Steven], ตัวอย่างลายเซ็นกราฟิก, ป้ายสถานะ Active, ปุ่มกำหนดค่าเริ่มต้น Star, ปุ่ม Add Signature, ปุ่มแก้ไข/ลบ | 6. **Custom Fields**: ตารางจัดการฟิลด์กำหนดเองตามโมดูล Products, Customers, Orders, Suppliers พร้อมประเภทฟิลด์, ช่อง Required, สวิตช์เปิดปิด Status, ปุ่ม Add Custom Field, ปุ่มแก้ไข/ลบ)
+
+- [x] **40. System Settings (3 Sub Menus: Email, SMS Gateway, OTP)**
+  - **Route**: `/settings/email`, `/settings/sms`, `/settings/otp`
+  - **Backend**: `GET/PUT /api/settings`
+  - **สถานะ**: ✅ สร้างโครงสร้างเมนูและหน้าเพจพร้อมรองรับเรียบร้อย (1. **Email Settings**: เมนูตั้งค่าอีเมล SMTP / PHP Mailer / SendGrid | 2. **SMS Gateway**: เมนูตั้งค่า SMS Gateway Twilio / Nexmo / ThaiSMS | 3. **OTP Settings**: เมนูตั้งค่าระบบยืนยันรหัส OTP และความยาวรหัส/เวลาหมดอายุ)
+
+- [x] **41. Financial Settings (4 Sub Menus: Payment Gateway, Bank Accounts, Tax Rates, Currencies)**
+  - **Route**: `/settings/payment-gateway`, `/settings/bank-accounts`, `/settings/tax-rates`, `/settings/currencies`
+  - **Backend**: `GET/PUT /api/settings`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (1. **Payment Gateway**: โครงสร้างหน้าสำหรับเชื่อมต่อ Stripe / PayPal / 2C2P / Omise | 2. **Bank Accounts**: โครงสร้างหน้าสำหรับจัดการบัญชีธนาคารบริษัท | 3. **Tax Rates**: ตารางจัดการอัตราภาษี VAT 10%, CGST 8%, SGST 10%, ปุ่ม Add New Tax Rate, ปุ่มแก้ไข/ลบ | 4. **Currencies**: ตารางจัดการสกุลเงินเฉพาะ **Thai Baht (THB ฿)** และ **US Dollar (USD $)**, Exchange Rate, Created On, ปุ่ม Add New Currency, ปุ่มแก้ไข/ลบ)
+
+- [ ] **42. Other Settings / System Settings Additional**
+  - **Route**: `/settings/others`
+  - **Backend**: `GET/PUT /api/settings`
+  - **สิ่งที่ต้องการ**: การตั้งค่าอื่นๆ เพิ่มเติม
   - **สถานะ**: ⏳ *รอภาพแคปเจอร์*

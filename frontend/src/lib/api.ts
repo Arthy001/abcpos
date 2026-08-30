@@ -44,6 +44,14 @@ import {
   SalesTaxReportItem,
   ProfitLossReportItem,
   AnnualReportItem,
+  SystemUser,
+  RoleItem,
+  DeleteAccountRequestItem,
+  UserProfileSettings,
+  UserSecuritySettings,
+  UserSessionLog,
+  UserNotificationSettings,
+  ConnectedAppItem,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -1424,5 +1432,211 @@ export async function fetchAnnualReport(params?: { year?: number; store?: string
   if (!res.ok) return [];
   const data = await res.json();
   return data.items || [];
+}
+
+// ==================== USER MANAGEMENT ====================
+export async function fetchUsers(params?: { status?: string; search?: string; role?: string }): Promise<SystemUser[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.role && params.role !== "all") query.set("role", params.role);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/users?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || [];
+}
+
+export async function createUserApi(payload: Partial<SystemUser>): Promise<SystemUser> {
+  const res = await fetch(`${API_BASE_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to create user");
+  }
+  return data.data;
+}
+
+export async function updateUserApi(id: string, payload: Partial<SystemUser>): Promise<SystemUser> {
+  const res = await fetch(`${API_BASE_URL}/users/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to update user");
+  }
+  return data.data;
+}
+
+export async function deleteUserApi(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE_URL}/users/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to delete user");
+  }
+  return true;
+}
+
+export async function fetchRoles(params?: { status?: string; search?: string }): Promise<RoleItem[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/roles?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || [];
+}
+
+export async function createRoleApi(payload: Partial<RoleItem>): Promise<RoleItem> {
+  const res = await fetch(`${API_BASE_URL}/roles`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to create role");
+  }
+  return data.data;
+}
+
+export async function updateRoleApi(id: string, payload: Partial<RoleItem>): Promise<RoleItem> {
+  const res = await fetch(`${API_BASE_URL}/roles/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to update role");
+  }
+  return data.data;
+}
+
+export async function deleteRoleApi(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE_URL}/roles/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to delete role");
+  }
+  return true;
+}
+
+export async function fetchDeleteAccountRequests(params?: { search?: string }): Promise<DeleteAccountRequestItem[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/delete-account-requests?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return data.data || [];
+}
+
+export async function createDeleteAccountRequestApi(payload: Partial<DeleteAccountRequestItem>): Promise<DeleteAccountRequestItem> {
+  const res = await fetch(`${API_BASE_URL}/delete-account-requests`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to create delete request");
+  }
+  return data.data;
+}
+
+export async function deleteAccountRequestActionApi(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE_URL}/delete-account-requests/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || data.error || "Failed to delete request");
+  }
+  return true;
+}
+
+// ==================== GENERAL SETTINGS ====================
+export async function fetchProfileSettings(): Promise<UserProfileSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/profile`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch profile settings");
+  const data = await res.json();
+  return data.profile;
+}
+
+export async function updateProfileSettingsApi(payload: Partial<UserProfileSettings>): Promise<UserProfileSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/profile`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update profile");
+  return data.profile;
+}
+
+export async function fetchSecuritySettings(): Promise<{ security: UserSecuritySettings; sessionLogs: UserSessionLog[] }> {
+  const res = await fetch(`${API_BASE_URL}/settings/security`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch security settings");
+  const data = await res.json();
+  return { security: data.security, sessionLogs: data.sessionLogs || [] };
+}
+
+export async function updateSecuritySettingsApi(payload: Partial<UserSecuritySettings>): Promise<UserSecuritySettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/security`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update security settings");
+  return data.security;
+}
+
+export async function terminateSessionLogApi(id: string): Promise<boolean> {
+  const res = await fetch(`${API_BASE_URL}/settings/security/sessions/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to terminate session");
+  return true;
+}
+
+export async function fetchNotificationSettings(): Promise<UserNotificationSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/notifications`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch notification settings");
+  const data = await res.json();
+  return data.notifications;
+}
+
+export async function updateNotificationSettingsApi(payload: Partial<UserNotificationSettings>): Promise<UserNotificationSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/notifications`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update notifications");
+  return data.notifications;
+}
+
+export async function fetchConnectedApps(): Promise<ConnectedAppItem[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/connected-apps`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch connected apps");
+  const data = await res.json();
+  return data.apps || [];
+}
+
+export async function toggleConnectedAppApi(id: string, status: "CONNECTED" | "DISCONNECTED", connectedAccount?: string): Promise<ConnectedAppItem> {
+  const res = await fetch(`${API_BASE_URL}/settings/connected-apps/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ status, connectedAccount }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update connected app");
+  return data.app;
 }
 

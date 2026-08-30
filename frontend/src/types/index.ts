@@ -633,3 +633,105 @@ export interface DashboardStats {
   lowStockProducts: Product[];
   topSellingProducts: Product[];
 }
+
+export interface SystemUser {
+  id: string;
+  name: string;
+  phone?: string | null;
+  email: string;
+  role: string;
+  avatar?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  password?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ModulePermission {
+  module: string;
+  read: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+  import?: boolean;
+  export?: boolean;
+}
+
+export interface RoleItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  status: "ACTIVE" | "INACTIVE";
+  permissions?: string | null; // JSON string or parsed array
+  createdDate?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DeleteAccountRequestItem {
+  id: string;
+  userName: string;
+  userAvatar?: string | null;
+  requisitionDate: string;
+  deleteRequestDate: string;
+  status?: "PENDING" | "CONFIRMED" | "CANCELLED";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ==================== SETTINGS TYPES ====================
+export interface UserProfileSettings {
+  id?: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  userName: string;
+  address: string;
+  city: string;
+  country: string;
+  postalCode: string;
+  bio: string;
+  avatar: string;
+}
+
+export interface UserSecuritySettings {
+  id?: string;
+  twoFactorEnabled: boolean;
+  twoFactorMethod: string;
+  passwordLastChanged: string;
+  loginAlerts: boolean;
+}
+
+export interface UserSessionLog {
+  id: string;
+  device: string;
+  browser: string;
+  ipAddress: string;
+  location: string;
+  lastActive: string;
+  isCurrent: boolean;
+}
+
+export interface UserNotificationSettings {
+  id?: string;
+  emailAlerts: boolean;
+  pushAlerts: boolean;
+  smsAlerts: boolean;
+  lowStockAlerts: boolean;
+  newOrderAlerts: boolean;
+  invoicesAlerts: boolean;
+  paymentAlerts: boolean;
+  weeklyReports: boolean;
+}
+
+export interface ConnectedAppItem {
+  id: string;
+  appName: string;
+  appCategory: string;
+  appLogo: string;
+  description: string;
+  status: "CONNECTED" | "DISCONNECTED";
+  connectedAccount?: string | null;
+  connectedDate?: string | null;
+}

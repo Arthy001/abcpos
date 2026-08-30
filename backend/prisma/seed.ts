@@ -48,6 +48,11 @@ async function main() {
   await prisma.salesTaxReportItem.deleteMany();
   await prisma.profitLossReportItem.deleteMany();
   await prisma.annualReportItem.deleteMany();
+  await prisma.userProfileSettings.deleteMany();
+  await prisma.userSecuritySettings.deleteMany();
+  await prisma.userSessionLog.deleteMany();
+  await prisma.userNotificationSettings.deleteMany();
+  await prisma.connectedAppItem.deleteMany();
 
   // 1. Create Brands
   const brandsData = [
@@ -751,6 +756,118 @@ async function main() {
   ];
   for (const an of annualData) {
     await prisma.annualReportItem.create({ data: an });
+  }
+
+  // 38. Create User Profile Settings
+  await prisma.userProfileSettings.create({
+    data: {
+      firstName: "John",
+      lastName: "Doe",
+      email: "john.doe@example.com",
+      phone: "+1 (555) 234-5678",
+      userName: "johndoe_admin",
+      address: "4517 Washington Ave.",
+      city: "Manchester",
+      country: "United States",
+      postalCode: "39401",
+      bio: "Senior Store Operations Manager & Lead POS Administrator with 8+ years experience in retail logistics and multi-outlet management.",
+      avatar: "/assets/images/customer11.jpg",
+    },
+  });
+
+  // 39. Create User Security Settings & Session Logs
+  await prisma.userSecuritySettings.create({
+    data: {
+      twoFactorEnabled: true,
+      twoFactorMethod: "Authenticator App (Google Authenticator)",
+      passwordLastChanged: "25 days ago",
+      loginAlerts: true,
+    },
+  });
+
+  const sessionLogsData = [
+    { device: "MacBook Pro 16\"", browser: "Chrome 122.0.6261 (macOS Sonoma)", ipAddress: "192.168.1.104", location: "Bangkok, Thailand", lastActive: "Active Now", isCurrent: true },
+    { device: "iPhone 15 Pro Max", browser: "Mobile Safari 17.2 (iOS)", ipAddress: "182.232.14.88", location: "Bangkok, Thailand", lastActive: "2 hours ago", isCurrent: false },
+    { device: "Windows Desktop PC", browser: "Microsoft Edge 122.0", ipAddress: "115.87.192.45", location: "Chiang Mai, Thailand", lastActive: "3 days ago", isCurrent: false },
+    { device: "iPad Air (5th Gen)", browser: "Safari 17.0 (iPadOS)", ipAddress: "192.168.1.112", location: "Bangkok, Thailand", lastActive: "1 week ago", isCurrent: false },
+  ];
+  for (const log of sessionLogsData) {
+    await prisma.userSessionLog.create({ data: log });
+  }
+
+  // 40. Create User Notification Settings
+  await prisma.userNotificationSettings.create({
+    data: {
+      emailAlerts: true,
+      pushAlerts: true,
+      smsAlerts: false,
+      lowStockAlerts: true,
+      newOrderAlerts: true,
+      invoicesAlerts: true,
+      paymentAlerts: true,
+      weeklyReports: true,
+    },
+  });
+
+  // 41. Create Connected Apps Items
+  const connectedAppsData = [
+    {
+      appName: "Slack",
+      appCategory: "Team Communication",
+      appLogo: "/assets/images/apps/slack.svg",
+      description: "Receive instant notifications for online POS orders, stock quantity alerts, and daily sales summaries in dedicated channels.",
+      status: "CONNECTED",
+      connectedAccount: "pos-workspace@slack.com",
+      connectedDate: "15 Jan 2024",
+    },
+    {
+      appName: "Google Drive",
+      appCategory: "Cloud Storage & Backup",
+      appLogo: "/assets/images/apps/google-drive.svg",
+      description: "Automatically back up daily database snapshots, exported PDF receipts, and inventory spreadsheets to your cloud folder.",
+      status: "CONNECTED",
+      connectedAccount: "admin.drive@gmail.com",
+      connectedDate: "02 Feb 2024",
+    },
+    {
+      appName: "Mailchimp",
+      appCategory: "Email Marketing & CRM",
+      appLogo: "/assets/images/apps/mailchimp.svg",
+      description: "Sync registered POS customer contacts, purchase history, and birthday rewards directly into your marketing audience lists.",
+      status: "CONNECTED",
+      connectedAccount: "pos_marketing_list@mailchimp.com",
+      connectedDate: "10 Mar 2024",
+    },
+    {
+      appName: "Stripe Payments",
+      appCategory: "Payment Gateway",
+      appLogo: "/assets/images/apps/stripe.svg",
+      description: "Accept credit cards, debit cards, and Apple Pay directly at the register with real-time settlement and automated dispute alerts.",
+      status: "CONNECTED",
+      connectedAccount: "acct_1NZX49POSLive",
+      connectedDate: "18 Nov 2023",
+    },
+    {
+      appName: "QuickBooks Online",
+      appCategory: "Accounting & Tax",
+      appLogo: "/assets/images/apps/quickbooks.svg",
+      description: "Automate ledger entries, tax collection records, expense reconciliation, and balance sheet syncing with your QuickBooks account.",
+      status: "DISCONNECTED",
+      connectedAccount: null,
+      connectedDate: null,
+    },
+    {
+      appName: "GitHub",
+      appCategory: "Developer & Webhooks",
+      appLogo: "/assets/images/apps/github.svg",
+      description: "Trigger automated webhooks for third-party developer integrations, API logs, and custom system extensions.",
+      status: "DISCONNECTED",
+      connectedAccount: null,
+      connectedDate: null,
+    },
+  ];
+  for (const app of connectedAppsData) {
+    await prisma.connectedAppItem.create({ data: app });
   }
 
   console.log("Seeding finished successfully with all modules!");
