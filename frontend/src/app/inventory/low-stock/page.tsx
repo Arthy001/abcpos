@@ -132,6 +132,7 @@ export default function LowStockPage() {
     let reorderCostEst = 0;
 
     products.forEach((p) => {
+      if (p.status === "INACTIVE") return; // Ignore inactive products
       const minAlert = p.minStockAlert || 5;
       if (p.stock <= 0) {
         outOfStockCount++;
@@ -158,6 +159,7 @@ export default function LowStockPage() {
   const filteredProducts = useMemo(() => {
     return products
       .filter((item) => {
+        if (item.status === "INACTIVE") return false; // Ignore inactive products
         const minAlert = item.minStockAlert || 5;
         const isOutOfStock = item.stock <= 0;
         const isLowStock = item.stock <= minAlert && item.stock > 0;
@@ -308,12 +310,12 @@ export default function LowStockPage() {
     try {
       setActionLoading(true);
       await deleteProductApi(deleteProductTarget.id);
-      showAlert("success", `Removed "${deleteProductTarget.name}" from inventory`);
+      showAlert("success", `Deactivated "${deleteProductTarget.name}" (Status set to Inactive)`);
       setDeleteProductTarget(null);
       setSelectedIds((prev) => prev.filter((id) => id !== deleteProductTarget.id));
       await loadData();
     } catch (err: any) {
-      showAlert("error", err.message || "Failed to delete product");
+      showAlert("error", err.message || "Failed to deactivate product");
     } finally {
       setActionLoading(false);
     }
@@ -325,12 +327,12 @@ export default function LowStockPage() {
     try {
       setActionLoading(true);
       const res = await bulkDeleteProductsApi(selectedIds);
-      showAlert("success", `Deleted ${res.count || selectedIds.length} items`);
+      showAlert("success", `Deactivated ${res.count || selectedIds.length} items (Status set to Inactive)`);
       setIsBulkDeleting(false);
       setSelectedIds([]);
       await loadData();
     } catch (err: any) {
-      showAlert("error", err.message || "Failed to delete selected items");
+      showAlert("error", err.message || "Failed to deactivate selected items");
     } finally {
       setActionLoading(false);
     }

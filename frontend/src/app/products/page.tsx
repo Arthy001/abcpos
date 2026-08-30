@@ -138,12 +138,12 @@ export default function ProductsPage() {
     try {
       setActionLoading(true);
       await deleteProductApi(deleteProductTarget.id);
-      showNotification("success", `Product "${deleteProductTarget.name}" deleted successfully.`);
+      showNotification("success", `Product "${deleteProductTarget.name}" status set to Inactive.`);
       setDeleteProductTarget(null);
       setSelectedIds(selectedIds.filter((id) => id !== deleteProductTarget.id));
       await loadData();
     } catch (err: any) {
-      showNotification("error", err.message || "Failed to delete product.");
+      showNotification("error", err.message || "Failed to deactivate product.");
     } finally {
       setActionLoading(false);
     }
@@ -155,12 +155,12 @@ export default function ProductsPage() {
     try {
       setActionLoading(true);
       const res = await bulkDeleteProductsApi(selectedIds);
-      showNotification("success", `Deleted ${res.count || selectedIds.length} products successfully.`);
+      showNotification("success", `Deactivated ${res.count || selectedIds.length} products (Status set to Inactive).`);
       setIsBulkDeleting(false);
       setSelectedIds([]);
       await loadData();
     } catch (err: any) {
-      showNotification("error", err.message || "Failed to delete selected products.");
+      showNotification("error", err.message || "Failed to deactivate selected products.");
     } finally {
       setActionLoading(false);
     }

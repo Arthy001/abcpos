@@ -222,8 +222,11 @@ export const updateProduct = async (req: Request, res: Response) => {
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    await prisma.product.delete({ where: { id } });
-    res.json({ success: true, message: "Product deleted successfully" });
+    const product = await prisma.product.update({
+      where: { id },
+      data: { status: "INACTIVE" },
+    });
+    res.json({ success: true, message: "Product status set to Inactive successfully", data: product });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
@@ -236,13 +239,14 @@ export const bulkDeleteProducts = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "No product IDs provided" });
     }
 
-    const result = await prisma.product.deleteMany({
+    const result = await prisma.product.updateMany({
       where: {
         id: { in: ids },
       },
+      data: { status: "INACTIVE" },
     });
 
-    res.json({ success: true, message: `Successfully deleted ${result.count} products`, count: result.count });
+    res.json({ success: true, message: `Successfully updated ${result.count} products to Inactive`, count: result.count });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
