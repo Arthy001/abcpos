@@ -12,6 +12,7 @@ import {
   createProductApi,
 } from "@/lib/api";
 import { Category, Brand, Unit, Warehouse, Store } from "@/types";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -265,37 +266,25 @@ export default function AddProductPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             {/* Store */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Store</label>
-              <select
+            <div>
+              <SearchableSelect
+                label="Store"
+                placeholder="Select Store..."
+                options={stores.map((s) => ({ value: s.id, label: s.name }))}
                 value={storeId}
-                onChange={(e) => setStoreId(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white cursor-pointer"
-              >
-                <option value="">Default Store</option>
-                {stores.map((s) => (
-                  <option key={s.id} value={s.id}>
-                    {s.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setStoreId}
+              />
             </div>
 
             {/* Warehouse */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Warehouse</label>
-              <select
+            <div>
+              <SearchableSelect
+                label="Warehouse"
+                placeholder="Select Warehouse..."
+                options={warehouses.map((w) => ({ value: w.id, label: w.name }))}
                 value={warehouseId}
-                onChange={(e) => setWarehouseId(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white cursor-pointer"
-              >
-                <option value="">Central Warehouse</option>
-                {warehouses.map((w) => (
-                  <option key={w.id} value={w.id}>
-                    {w.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setWarehouseId}
+              />
             </div>
 
             {/* Product Name */}
@@ -351,56 +340,37 @@ export default function AddProductPage() {
             </div>
 
             {/* Category */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">
-                Category <span className="text-red-500">*</span>
-              </label>
-              <select
+            <div>
+              <SearchableSelect
+                label="Category"
+                required
+                placeholder="Search or Select Category..."
+                options={categories.map((c) => ({ value: c.id, label: c.name }))}
                 value={categoryId}
-                onChange={(e) => setCategoryId(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white cursor-pointer"
-              >
-                <option value="">Select Category</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setCategoryId}
+              />
             </div>
 
             {/* Brand */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Brand</label>
-              <select
+            <div>
+              <SearchableSelect
+                label="Brand"
+                placeholder="Search or Select Brand..."
+                options={brands.map((b) => ({ value: b.id, label: b.name }))}
                 value={brandId}
-                onChange={(e) => setBrandId(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white cursor-pointer"
-              >
-                <option value="">Select Brand</option>
-                {brands.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name}
-                  </option>
-                ))}
-              </select>
+                onChange={setBrandId}
+              />
             </div>
 
             {/* Unit */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Unit</label>
-              <select
+            <div>
+              <SearchableSelect
+                label="Unit"
+                placeholder="Search or Select Unit..."
+                options={units.map((u) => ({ value: u.id, label: `${u.name} (${u.shortName})` }))}
                 value={unitId}
-                onChange={(e) => setUnitId(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white cursor-pointer"
-              >
-                <option value="">Select Unit</option>
-                {units.map((u) => (
-                  <option key={u.id} value={u.id}>
-                    {u.name} ({u.shortName})
-                  </option>
-                ))}
-              </select>
+                onChange={setUnitId}
+              />
             </div>
 
             {/* Barcode */}
