@@ -133,21 +133,21 @@ export async function updateProductApi(
   payload: {
     name?: string;
     sku?: string;
-    barcode?: string;
-    description?: string;
+    barcode?: string | null;
+    description?: string | null;
     price?: number;
     costPrice?: number;
     stock?: number;
     minStockAlert?: number;
-    categoryId?: string;
-    brandId?: string;
-    unitId?: string;
-    warehouseId?: string;
-    storeId?: string;
-    image?: string;
+    categoryId?: string | null;
+    brandId?: string | null;
+    unitId?: string | null;
+    warehouseId?: string | null;
+    storeId?: string | null;
+    image?: string | null;
     status?: string;
-    manufacturedDate?: string;
-    expiredDate?: string;
+    manufacturedDate?: string | null;
+    expiredDate?: string | null;
   }
 ): Promise<Product> {
   const res = await fetch(`${API_BASE_URL}/products/${id}`, {

@@ -28,8 +28,8 @@
 
 - [x] **4. Low Stocks & Out of Stocks**
   - **Route**: `/inventory/low-stock`
-  - **Backend**: `GET /api/products`, `GET /api/warehouses`, `GET /api/stores`
-  - **สถานะ**: ✅ เสร็จสมบูรณ์ (แท็บ Low Stocks / Out of Stocks, สวิตช์ Notify, Filter คลังสินค้า/สาขา/หมวดหมู่, ตารางแจ้งเตือนจุดสั่งซื้อ Qty Alert, ปุ่ม Send Email)
+  - **Backend**: `GET /api/products`, `PUT /api/products/:id`, `DELETE /api/products/:id`, `POST /api/products/bulk-delete`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (เชื่อมโยง DB จริง, แยกแท็บ Low Stocks/Out of Stocks/All Alerts, การ์ดสรุปมูลค่าต้นทุนที่ต้องสั่งเติม Reorder Budget, Quick Restock Modal เติมสต็อกด่วนทันที, Adjust Min Alert Limit Modal, View Details Modal, ลบเดี่ยว/กลุ่ม Bulk Delete, ส่งอีเมลแจ้งเตือน Send Email, Export CSV / PDF)
 
 - [x] **5. Category & Sub Category**
   - **Route**: `/categories`, `/sub-categories`
@@ -43,8 +43,8 @@
 
 - [x] **7. Expired Products**
   - **Route**: `/inventory/expired`
-  - **Backend**: `GET /api/products` (Manufactured Date & Expired Date tracking)
-  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางสินค้าหมดอายุ, วันที่ผลิต, วันหมดอายุ, Filter สินค้าและ Sort By Last 7 Days, Export PDF/Excel)
+  - **Backend**: `GET /api/products`, `PUT /api/products/:id`, `DELETE /api/products/:id`, `POST /api/products/bulk-delete`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (เชื่อมโยง DB จริง, คำนวณวันหมดอายุ/ใกล้หมดอายุเรียลไทม์, ป้ายสถานะสีเตือน, การ์ดสรุปมูลค่าความเสียหาย, Quick Edit Modal แก้ไขวันหมดอายุ, View Details Modal, ตัดจำหน่าย/ลบสินค้าเดี่ยวและกลุ่ม Bulk Dispose, Export CSV / PDF)
 
 - [x] **8. Warranties**
   - **Route**: `/warranties`
