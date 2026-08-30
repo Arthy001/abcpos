@@ -511,7 +511,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
                 const Icon = item.icon;
                 const isItemActive =
                   pathname === item.href ||
-                  (item.subItems && item.subItems.some((sub) => pathname === sub.href));
+                  (item.subItems && item.subItems.some((sub) => pathname === sub.href)) ||
+                  (item.href === "/products" && pathname?.startsWith("/products/edit"));
                 const isSubMenuOpen = !!openSubMenus[item.name];
 
                 if (item.hasSub && item.subItems && isOpen) {

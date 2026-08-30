@@ -21,6 +21,8 @@ interface SearchableSelectProps {
   error?: string;
   showAllOption?: boolean;
   allOptionLabel?: string;
+  size?: "sm" | "md" | "lg";
+  searchable?: boolean;
 }
 
 export function SearchableSelect({
@@ -35,6 +37,8 @@ export function SearchableSelect({
   error,
   showAllOption = false,
   allOptionLabel = "All",
+  size = "md",
+  searchable = true,
 }: SearchableSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -66,10 +70,10 @@ export function SearchableSelect({
 
   // Focus search input on open
   useEffect(() => {
-    if (isOpen && searchInputRef.current) {
+    if (isOpen && searchable && searchInputRef.current) {
       searchInputRef.current.focus();
     }
-  }, [isOpen]);
+  }, [isOpen, searchable]);
 
   const handleSelect = (val: string) => {
     onChange(val);
@@ -81,6 +85,12 @@ export function SearchableSelect({
     e.stopPropagation();
     onChange(showAllOption ? "all" : "");
     setSearchQuery("");
+  };
+
+  const sizeClasses = {
+    sm: "min-h-[32px] px-2.5 py-1 text-xs rounded-lg bg-white",
+    md: "min-h-[38px] px-3.5 py-2 text-xs rounded-xl bg-gray-50",
+    lg: "min-h-[44px] px-4 py-2.5 text-sm rounded-xl bg-gray-50",
   };
 
   return (
@@ -100,7 +110,7 @@ export function SearchableSelect({
         onClick={() => {
           if (!disabled) setIsOpen(!isOpen);
         }}
-        className={`w-full min-h-[38px] px-3.5 py-2 bg-gray-50 border rounded-xl flex items-center justify-between text-xs transition-all cursor-pointer select-none ${
+        className={`w-full ${sizeClasses[size]} border flex items-center justify-between transition-all cursor-pointer select-none ${
           disabled
             ? "bg-gray-100 text-gray-400 cursor-not-allowed border-gray-200"
             : isOpen
@@ -112,8 +122,8 @@ export function SearchableSelect({
       >
         <span
           className={`truncate ${
-            selectedOption || (showAllOption && value === "all")
-              ? "font-semibold text-gray-900"
+            selectedOption || (showAllOption && (value === "all" || !value))
+              ? "font-medium text-gray-900"
               : "text-gray-400"
           }`}
         >
@@ -124,7 +134,7 @@ export function SearchableSelect({
             : placeholder}
         </span>
 
-        <div className="flex items-center space-x-1.5 pl-2 flex-shrink-0 text-gray-400">
+        <div className="flex items-center space-x-1 pl-1.5 flex-shrink-0 text-gray-400">
           {value && value !== "all" && !disabled && (
             <button
               type="button"
@@ -146,37 +156,39 @@ export function SearchableSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 mt-1.5 bg-white border border-gray-200 rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
-          {/* Search Input Box */}
-          <div className="p-2 border-b border-gray-100 bg-gray-50/70">
-            <div className="relative">
-              <input
-                ref={searchInputRef}
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search..."
-                className="w-full pl-7 pr-3 py-1.5 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:border-[#FE9F43]"
-              />
-              <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2 top-2" />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={() => setSearchQuery("")}
-                  className="absolute right-2 top-2 text-gray-400 hover:text-gray-600"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              )}
+        <div className="absolute z-50 left-0 right-0 min-w-[160px] mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+          {/* Search Input Box (if searchable) */}
+          {searchable && (
+            <div className="p-2 border-b border-gray-100 bg-gray-50/70">
+              <div className="relative">
+                <input
+                  ref={searchInputRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search..."
+                  className="w-full pl-7 pr-3 py-1 bg-white border border-gray-200 rounded-lg text-xs text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:border-[#FE9F43]"
+                />
+                <Search className="w-3.5 h-3.5 text-gray-400 absolute left-2 top-1.5" />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1.5 text-gray-400 hover:text-gray-600"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* Options List */}
           <div className="max-h-56 overflow-y-auto py-1 divide-y divide-gray-50 text-xs">
             {showAllOption && (
               <div
                 onClick={() => handleSelect("all")}
-                className={`px-3.5 py-2.5 flex items-center justify-between cursor-pointer transition-colors ${
+                className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
                   value === "all" || !value
                     ? "bg-orange-50/70 text-[#FE9F43] font-bold"
                     : "hover:bg-gray-50 text-gray-700"
@@ -198,7 +210,7 @@ export function SearchableSelect({
                   <div
                     key={opt.value}
                     onClick={() => handleSelect(opt.value)}
-                    className={`px-3.5 py-2 flex items-center justify-between cursor-pointer transition-colors ${
+                    className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
                       isSelected
                         ? "bg-orange-50/70 text-[#FE9F43] font-bold"
                         : "hover:bg-gray-50 text-gray-700 font-medium"

@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Product, Category, Brand } from "@/types";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   fetchProducts,
   fetchCategories,
@@ -336,43 +337,35 @@ export default function ProductsPage() {
 
             <div className="flex items-center space-x-2 flex-wrap">
               {/* Category Filter */}
-              <div className="relative">
-                <select
+              <div className="w-40">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Categories"
+                  placeholder="All Categories"
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
                   value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
+                  onChange={(val) => {
+                    setSelectedCategory(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Brand Filter */}
-              <div className="relative">
-                <select
+              <div className="w-36">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Brands"
+                  placeholder="All Brands"
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
                   value={selectedBrand}
-                  onChange={(e) => {
-                    setSelectedBrand(e.target.value);
+                  onChange={(val) => {
+                    setSelectedBrand(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Brands</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
             </div>
           </form>

@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Product, Category, Brand, Warehouse } from "@/types";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   fetchProducts,
   fetchCategories,
@@ -556,77 +557,73 @@ export default function ExpiredProductsPage() {
             {/* Dropdown Filters */}
             <div className="flex flex-wrap items-center gap-2">
               {/* Expiry Status Filter */}
-              <div className="relative">
-                <select
+              <div className="w-44">
+                <SearchableSelect
+                  size="sm"
+                  searchable={false}
+                  showAllOption
+                  allOptionLabel="All Expiry Status"
+                  placeholder="All Expiry Status"
+                  options={[
+                    { value: "expired", label: "🔴 Already Expired" },
+                    { value: "expiring_7d", label: "⚠️ Expiring in 7 Days" },
+                    { value: "expiring_30d", label: "⏳ Expiring in 30 Days" },
+                    { value: "good", label: "🟢 Good Shelf Life" },
+                  ]}
                   value={expiryFilter}
-                  onChange={(e) => {
-                    setExpiryFilter(e.target.value as any);
+                  onChange={(val) => {
+                    setExpiryFilter(val as any);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-semibold text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Expiry Status</option>
-                  <option value="expired">🔴 Already Expired</option>
-                  <option value="expiring_7d">⚠️ Expiring in 7 Days</option>
-                  <option value="expiring_30d">⏳ Expiring in 30 Days</option>
-                  <option value="good">🟢 Good Shelf Life</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Category Filter */}
-              <div className="relative">
-                <select
+              <div className="w-36">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Categories"
+                  placeholder="All Categories"
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
                   value={categoryFilter}
-                  onChange={(e) => {
-                    setCategoryFilter(e.target.value);
+                  onChange={(val) => {
+                    setCategoryFilter(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Brand Filter */}
-              <div className="relative">
-                <select
+              <div className="w-32">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Brands"
+                  placeholder="All Brands"
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
                   value={brandFilter}
-                  onChange={(e) => {
-                    setBrandFilter(e.target.value);
+                  onChange={(val) => {
+                    setBrandFilter(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Brands</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Sort By */}
-              <div className="relative">
-                <select
+              <div className="w-44">
+                <SearchableSelect
+                  size="sm"
+                  searchable={false}
+                  options={[
+                    { value: "soonest", label: "Expiring Soonest" },
+                    { value: "latest", label: "Latest Expiry" },
+                    { value: "stock_high", label: "Highest Stock" },
+                    { value: "name", label: "Name (A-Z)" },
+                  ]}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="soonest">Sort : Expiring Soonest</option>
-                  <option value="latest">Sort : Latest Expiry</option>
-                  <option value="stock_high">Sort : Highest Stock</option>
-                  <option value="name">Sort : Name (A-Z)</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                  onChange={setSortBy}
+                />
               </div>
 
               {/* Bulk Dispose Button */}

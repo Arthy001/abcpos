@@ -4,6 +4,7 @@ import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Product, Category, Brand, Warehouse, Store } from "@/types";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   fetchProducts,
   fetchCategories,
@@ -559,97 +560,82 @@ export default function LowStockPage() {
             {/* Dropdown Filters */}
             <div className="flex flex-wrap items-center gap-2">
               {/* Category Filter */}
-              <div className="relative">
-                <select
+              <div className="w-36">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Categories"
+                  placeholder="All Categories"
+                  options={categories.map((c) => ({ value: c.id, label: c.name }))}
                   value={selectedCategory}
-                  onChange={(e) => {
-                    setSelectedCategory(e.target.value);
+                  onChange={(val) => {
+                    setSelectedCategory(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Categories</option>
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Brand Filter */}
-              <div className="relative">
-                <select
+              <div className="w-32">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Brands"
+                  placeholder="All Brands"
+                  options={brands.map((b) => ({ value: b.id, label: b.name }))}
                   value={selectedBrand}
-                  onChange={(e) => {
-                    setSelectedBrand(e.target.value);
+                  onChange={(val) => {
+                    setSelectedBrand(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Brands</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.id}>
-                      {b.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Warehouse Filter */}
-              <div className="relative">
-                <select
+              <div className="w-36">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Warehouses"
+                  placeholder="All Warehouses"
+                  options={warehouses.map((wh) => ({ value: wh.id, label: wh.name }))}
                   value={selectedWarehouse}
-                  onChange={(e) => {
-                    setSelectedWarehouse(e.target.value);
+                  onChange={(val) => {
+                    setSelectedWarehouse(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Warehouses</option>
-                  {warehouses.map((wh) => (
-                    <option key={wh.id} value={wh.id}>
-                      {wh.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Store Filter */}
-              <div className="relative">
-                <select
+              <div className="w-32">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Stores"
+                  placeholder="All Stores"
+                  options={stores.map((st) => ({ value: st.id, label: st.name }))}
                   value={selectedStore}
-                  onChange={(e) => {
-                    setSelectedStore(e.target.value);
+                  onChange={(val) => {
+                    setSelectedStore(val);
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">All Stores</option>
-                  {stores.map((st) => (
-                    <option key={st.id} value={st.id}>
-                      {st.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                />
               </div>
 
               {/* Sort By */}
-              <div className="relative">
-                <select
+              <div className="w-40">
+                <SearchableSelect
+                  size="sm"
+                  searchable={false}
+                  options={[
+                    { value: "lowest", label: "Lowest Stock" },
+                    { value: "deficit", label: "Highest Deficit" },
+                    { value: "name", label: "Name (A-Z)" },
+                  ]}
                   value={sortBy}
-                  onChange={(e) => setSortBy(e.target.value)}
-                  className="appearance-none bg-gray-50 border border-gray-200 rounded-xl pl-3 pr-7 py-2 text-xs font-medium text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="lowest">Sort : Lowest Stock</option>
-                  <option value="deficit">Sort : Highest Deficit</option>
-                  <option value="name">Sort : Name (A-Z)</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2.5 top-2.5 pointer-events-none" />
+                  onChange={setSortBy}
+                />
               </div>
 
               {/* Bulk Delete Button */}
