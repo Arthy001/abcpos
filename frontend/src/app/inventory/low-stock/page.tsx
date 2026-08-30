@@ -24,7 +24,7 @@ import {
   Edit,
   Trash2,
   Eye,
-  Settings,
+  SlidersHorizontal,
   AlertTriangle,
   Package,
   CheckCircle,
@@ -875,7 +875,7 @@ export default function LowStockPage() {
                               title="Threshold Settings / ตั้งค่าจุดเตือนสต็อก"
                               className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-amber-50 text-gray-500 hover:text-amber-600 flex items-center justify-center transition-colors bg-white shadow-2xs"
                             >
-                              <Settings className="w-3.5 h-3.5" />
+                              <SlidersHorizontal className="w-3.5 h-3.5" />
                             </button>
 
                             {/* 3. View Modal Button */}
@@ -1135,7 +1135,7 @@ export default function LowStockPage() {
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div className="flex items-center space-x-2">
                   <div className="p-2 bg-amber-50 text-amber-600 rounded-xl">
-                    <Settings className="w-5 h-5" />
+                    <SlidersHorizontal className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-gray-900">Inventory Alert Settings / ตั้งค่าการแจ้งเตือน</h3>
