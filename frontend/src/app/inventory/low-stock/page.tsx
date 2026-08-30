@@ -468,78 +468,9 @@ export default function LowStockPage() {
           </div>
         </div>
 
-        {/* Summary Metric Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {/* 1. Low Stocks Card */}
-          <div
-            onClick={() => setActiveTab("low")}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white shadow-2xs hover:shadow-md ${
-              activeTab === "low" ? "border-amber-500 ring-2 ring-amber-100" : "border-gray-200"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Low Stock Level</p>
-                <h3 className="text-2xl font-black text-amber-600">{metrics.lowStockCount} Items</h3>
-                <p className="text-[11px] text-gray-500 flex items-center gap-1 font-medium">
-                  <TrendingDown className="w-3.5 h-3.5 text-amber-500" />
-                  Below Min Alert Threshold
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-500 flex items-center justify-center flex-shrink-0">
-                <ShieldAlert className="w-6 h-6" />
-              </div>
-            </div>
-          </div>
-
-          {/* 2. Out of Stock Card */}
-          <div
-            onClick={() => setActiveTab("out")}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white shadow-2xs hover:shadow-md ${
-              activeTab === "out" ? "border-rose-500 ring-2 ring-rose-100" : "border-gray-200"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Out of Stock (0 Qty)</p>
-                <h3 className="text-2xl font-black text-rose-600">{metrics.outOfStockCount} Items</h3>
-                <p className="text-[11px] text-gray-500 flex items-center gap-1 font-medium">
-                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500" />
-                  Immediate Replenish Required
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center flex-shrink-0">
-                <Package className="w-6 h-6" />
-              </div>
-            </div>
-          </div>
-
-          {/* 3. Reorder Value Card */}
-          <div
-            onClick={() => setActiveTab("all")}
-            className={`p-4 rounded-2xl border transition-all cursor-pointer bg-white shadow-2xs hover:shadow-md ${
-              activeTab === "all" ? "border-[#FE9F43] ring-2 ring-orange-100" : "border-gray-200"
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <div className="space-y-1">
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Est. Reorder Budget</p>
-                <h3 className="text-2xl font-black text-gray-900">฿{metrics.reorderCostEst.toLocaleString()}</h3>
-                <p className="text-[11px] text-gray-500 flex items-center gap-1 font-medium">
-                  <ArrowUpRight className="w-3.5 h-3.5 text-emerald-500" />
-                  Estimated Cost to Normal Stock
-                </p>
-              </div>
-              <div className="w-12 h-12 rounded-2xl bg-orange-50 border border-orange-100 text-[#FE9F43] flex items-center justify-center flex-shrink-0">
-                <Layers className="w-6 h-6" />
-              </div>
-            </div>
-          </div>
-        </div>
-
         {/* Tab Buttons & Notify Toggle Row */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => {
                 setActiveTab("low");
@@ -579,6 +510,12 @@ export default function LowStockPage() {
             >
               All Alerts ({metrics.totalAlerts})
             </button>
+
+            {/* Est. Reorder Budget Badge Next to All Alerts */}
+            <div className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-orange-50 border border-orange-200 rounded-xl text-xs font-bold text-orange-800 shadow-2xs">
+              <span className="text-gray-500 font-semibold">Est. Reorder Budget:</span>
+              <span className="text-orange-600 font-black">฿{metrics.reorderCostEst.toLocaleString()}</span>
+            </div>
           </div>
 
           <div className="flex items-center space-x-2.5 bg-white px-3 py-1.5 rounded-xl border border-gray-200 shadow-2xs">
@@ -860,16 +797,7 @@ export default function LowStockPage() {
                         {/* Actions */}
                         <td className="py-3.5 px-4 text-right">
                           <div className="flex items-center justify-end space-x-1.5">
-                            {/* 1. Edit & Reset Stock Modal Button */}
-                            <button
-                              onClick={() => handleOpenQuickEdit(item)}
-                              title="Edit & Reset Stock / แก้ไขและรีเซ็ตสต็อก"
-                              className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-orange-50 text-gray-500 hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white shadow-2xs"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </button>
-
-                            {/* 2. Settings / Min Alert Threshold Button */}
+                            {/* 1. Sliders / Min Alert Threshold Button */}
                             <button
                               onClick={() => handleOpenSettings(item)}
                               title="Threshold Settings / ตั้งค่าจุดเตือนสต็อก"
@@ -878,13 +806,22 @@ export default function LowStockPage() {
                               <SlidersHorizontal className="w-3.5 h-3.5" />
                             </button>
 
-                            {/* 3. View Modal Button */}
+                            {/* 2. View Modal Button */}
                             <button
                               onClick={() => setViewProduct(item)}
                               title="View Details / ดูรายละเอียด"
                               className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-gray-100 text-gray-500 hover:text-gray-900 flex items-center justify-center transition-colors bg-white shadow-2xs"
                             >
                               <Eye className="w-3.5 h-3.5" />
+                            </button>
+
+                            {/* 3. Edit & Reset Stock Modal Button */}
+                            <button
+                              onClick={() => handleOpenQuickEdit(item)}
+                              title="Edit & Reset Stock / แก้ไขและรีเซ็ตสต็อก"
+                              className="w-7 h-7 rounded-lg border border-gray-200 hover:bg-orange-50 text-gray-500 hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white shadow-2xs"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
                             </button>
 
                             {/* 4. Delete Product Button */}
