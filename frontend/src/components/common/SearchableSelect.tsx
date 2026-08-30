@@ -21,6 +21,8 @@ interface SearchableSelectProps {
   error?: string;
   showAllOption?: boolean;
   allOptionLabel?: string;
+  showSelectOption?: boolean;
+  selectOptionLabel?: string;
   size?: "sm" | "md" | "lg";
   searchable?: boolean;
 }
@@ -37,6 +39,8 @@ export function SearchableSelect({
   error,
   showAllOption = false,
   allOptionLabel = "All",
+  showSelectOption = true,
+  selectOptionLabel,
   size = "md",
   searchable = true,
 }: SearchableSelectProps) {
@@ -92,6 +96,9 @@ export function SearchableSelect({
     md: "min-h-[38px] px-3.5 py-2 text-xs rounded-xl bg-gray-50",
     lg: "min-h-[44px] px-4 py-2.5 text-sm rounded-xl bg-gray-50",
   };
+
+  const defaultSelectText =
+    selectOptionLabel || (placeholder && placeholder !== "Select an option..." ? placeholder : "Select...");
 
   return (
     <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -185,6 +192,7 @@ export function SearchableSelect({
 
           {/* Options List */}
           <div className="max-h-56 overflow-y-auto py-1 divide-y divide-gray-50 text-xs">
+            {/* 1. Show "All" Option (e.g. for filter bars) */}
             {showAllOption && (
               <div
                 onClick={() => handleSelect("all")}
@@ -196,6 +204,21 @@ export function SearchableSelect({
               >
                 <span>{allOptionLabel}</span>
                 {(value === "all" || !value) && <Check className="w-3.5 h-3.5 text-[#FE9F43]" />}
+              </div>
+            )}
+
+            {/* 2. Show "Select" Option as the first item (for form selects) */}
+            {showSelectOption && !showAllOption && (
+              <div
+                onClick={() => handleSelect("")}
+                className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
+                  !value || value === ""
+                    ? "bg-orange-50/70 text-[#FE9F43] font-bold"
+                    : "hover:bg-gray-50 text-gray-500 font-medium"
+                }`}
+              >
+                <span>{defaultSelectText}</span>
+                {(!value || value === "") && <Check className="w-3.5 h-3.5 text-[#FE9F43]" />}
               </div>
             )}
 
