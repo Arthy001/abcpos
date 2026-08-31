@@ -71,12 +71,20 @@
 
 ## 📦 กลุ่มที่ 2: การจัดการคลังและสต็อก (Stock Management)
 
+- [x] **11. Manage Stock (จัดการสต็อกสินค้า)**
+  - **Route**: `/stock/manage`
+  - **Backend**: `GET /api/products`, `PUT /api/products/:id`, `DELETE /api/products/:id`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (เชื่อมโยง Database จริง, SearchableSelect ตัวกรอง Warehouse, Store, Product, ป้ายสถานะ In Stock/Low Stock/Out of Stock, View Stock Details Modal, Quick Adjust Stock Modal, Delete 2-step Modal, Standard Feedback Modals, PDF Export `window.print()`, CSV Export, Pagination)
 
-- [ ] **11. Stock Transfer**
+- [x] **12. Stock Adjustment (ปรับปรุงยอดสต็อกสินค้า)**
+  - **Route**: `/stock/adjustment`
+  - **Backend**: `GET/POST/PUT/DELETE /api/stock-adjustments`, `GET /api/stock-adjustments/:id`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full CRUD เชื่อมต่อ DB จริง พร้อมคำนวณและ Reconcile ยอดสต็อก Product อัตโนมัติ, ประเภท Addition (+) / Subtraction (-), SearchableSelect สำหรับ Warehouse, Store, Product, Modal ดูใบปรับปรุงสต็อก View Details Slip, Modal เพิ่ม/แก้ไข, Standard Feedback Modals ตาม GEMINI.md, PDF & CSV Export, Pagination)
+
+- [x] **13. Stock Transfer (โอนย้ายสินค้าระหว่างคลัง/สาขา)**
   - **Route**: `/stock/transfer`
-  - **Backend**: `POST /api/stock/transfers`
-  - **สิ่งที่ต้องการ**: ฟอร์มและตารางโอนย้ายสินค้าระหว่างสาขา/คลัง
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **Backend**: `GET/POST/PUT/DELETE /api/stock-transfers`, `GET /api/stock-transfers/:id`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full CRUD เชื่อมต่อ DB จริง, แผนภาพเส้นทาง From Warehouse -> To Warehouse, SearchableSelect สำหรับคลังต้นทางและปลายทาง, สถานะ Completed/Pending/Cancelled, Modal ดูใบ Transfer Slip พร้อมปุ่ม Print Slip, Modal สร้างและแก้ไขใบโอนย้าย, Standard Feedback Modals, PDF & CSV Export, Pagination)
 
 ---
 
@@ -105,11 +113,10 @@
   - **สิ่งที่ต้องการ**: หน้าสร้างใบเสนอราคา และแปลงเป็นบิลขาย
   - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
 
-- [ ] **16. Purchases & Purchase Orders (PO)**
-  - **Route**: `/purchases`, `/purchases/orders`
-  - **Backend**: `GET/POST /api/purchases`
-  - **สิ่งที่ต้องการ**: บันทึกสั่งซื้อสินค้าจากซัพพลายเออร์ และการรับสินค้าเข้าสต็อก
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+- [x] **16. Purchases & Purchase Orders (PO) & Purchase Returns**
+  - **Route**: `/purchases`, `/purchases/orders`, `/purchases/returns`
+  - **Backend**: `GET/POST/PUT/DELETE /api/purchases`, `GET/POST/PUT/DELETE /api/purchase-returns`, `GET /api/purchase-orders`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full Real API CRUD เชื่อมต่อฐานข้อมูล SQLite/Prisma, Auto Stock Ingestion เมื่อได้รับสินค้า `RECEIVED` จะเพิ่มสต็อก `Product.stock` และปรับ `costPrice`, ระบบหักสต็อกอัตโนมัติเมื่อทำรายการคืนสินค้า `Purchase Return`, ตาราง Purchase Orders จำแนกรายสินค้าพร้อม In-stock Live Count, SearchableSelect สำหรับ Supplier/Product/Warehouse/Status, ฟอร์ม Multi-item พร้อมคำนวณ VAT/Discount/Shipping/Paid/Due, Modal ดูใบสั่งซื้อและใบคืนสินค้า View Invoice Slip พร้อม Print Slip, Delete 2-Step Confirmation, Standard Feedback Modals ตาม GEMINI.md, PDF & CSV Export, Pagination)
 
 - [ ] **17. Promo (Coupons & Discounts)**
   - **Route**: `/promo/coupons`, `/promo/discounts`

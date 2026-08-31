@@ -3,7 +3,7 @@ import {
   getAuditLogs,
   restoreFromAuditLog,
   deleteAuditLog,
-} from "../controllers/audit.controller";
+} from "../controllers/audit.controller.js";
 
 const router = Router();
 

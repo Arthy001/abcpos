@@ -82,10 +82,14 @@ import {
 } from "../controllers/biller.controller.js";
 import {
   getStockTransfers,
+  getStockTransferById,
   createStockTransfer,
+  updateStockTransfer,
   deleteStockTransfer,
   getStockAdjustments,
+  getStockAdjustmentById,
   createStockAdjustment,
+  updateStockAdjustment,
   deleteStockAdjustment,
 } from "../controllers/stock.controller.js";
 import {
@@ -191,6 +195,19 @@ import {
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder } from "../controllers/order.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
+import {
+  getPurchases,
+  getPurchaseById,
+  createPurchase,
+  updatePurchase,
+  deletePurchase,
+  getPurchaseOrders,
+  getPurchaseReturns,
+  getPurchaseReturnById,
+  createPurchaseReturn,
+  updatePurchaseReturn,
+  deletePurchaseReturn,
+} from "../controllers/purchase.controller.js";
 
 const router = Router();
 
@@ -275,13 +292,34 @@ router.delete("/billers/:id", deleteBiller);
 
 // Stock Transfers
 router.get("/stock-transfers", getStockTransfers);
+router.get("/stock-transfers/:id", getStockTransferById);
 router.post("/stock-transfers", createStockTransfer);
+router.put("/stock-transfers/:id", updateStockTransfer);
 router.delete("/stock-transfers/:id", deleteStockTransfer);
 
 // Stock Adjustments
 router.get("/stock-adjustments", getStockAdjustments);
+router.get("/stock-adjustments/:id", getStockAdjustmentById);
 router.post("/stock-adjustments", createStockAdjustment);
+router.put("/stock-adjustments/:id", updateStockAdjustment);
 router.delete("/stock-adjustments/:id", deleteStockAdjustment);
+
+// Purchases
+router.get("/purchases", getPurchases);
+router.get("/purchases/:id", getPurchaseById);
+router.post("/purchases", createPurchase);
+router.put("/purchases/:id", updatePurchase);
+router.delete("/purchases/:id", deletePurchase);
+
+// Purchase Orders (Item Breakdown)
+router.get("/purchase-orders", getPurchaseOrders);
+
+// Purchase Returns
+router.get("/purchase-returns", getPurchaseReturns);
+router.get("/purchase-returns/:id", getPurchaseReturnById);
+router.post("/purchase-returns", createPurchaseReturn);
+router.put("/purchase-returns/:id", updatePurchaseReturn);
+router.delete("/purchase-returns/:id", deletePurchaseReturn);
 
 // Products
 router.get("/products", getProducts);

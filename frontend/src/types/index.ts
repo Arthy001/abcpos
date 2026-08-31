@@ -756,3 +756,77 @@ export interface AuditLogItem {
   createdAt: string;
 }
 
+export interface PurchaseItem {
+  id?: string;
+  purchaseId?: string;
+  productId?: string | null;
+  productName: string;
+  productImage?: string | null;
+  sku?: string | null;
+  quantity: number;
+  receivedQty?: number;
+  unitCost: number;
+  subtotal: number;
+  tax?: number;
+  discount?: number;
+  total: number;
+}
+
+export interface Purchase {
+  id: string;
+  reference: string;
+  supplierId?: string | null;
+  supplierName: string;
+  supplierImage?: string | null;
+  warehouseName?: string | null;
+  storeName?: string | null;
+  date: string;
+  status: "RECEIVED" | "PENDING" | "ORDERED" | "CANCELLED";
+  paymentStatus: "PAID" | "UNPAID" | "OVERDUE" | "PARTIAL";
+  subtotal: number;
+  tax: number;
+  discount: number;
+  shipping: number;
+  total: number;
+  paid: number;
+  due: number;
+  notes?: string | null;
+  items?: PurchaseItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface PurchaseOrderItem {
+  id: string;
+  product: string;
+  productImage: string;
+  purchasedAmount: string;
+  purchasedQty: number;
+  instockQty: number;
+  sku: string;
+  supplier: string;
+  date: string;
+  status: string;
+}
+
+export interface PurchaseReturn {
+  id: string;
+  reference: string;
+  purchaseReference?: string | null;
+  supplierName: string;
+  supplierImage?: string | null;
+  warehouseName?: string | null;
+  productName?: string | null;
+  productImage?: string | null;
+  quantity: number;
+  date: string;
+  status: "COMPLETED" | "PENDING" | "CANCELLED";
+  totalAmount: number;
+  paidAmount: number;
+  dueAmount: number;
+  paymentStatus: "PAID" | "UNPAID" | "OVERDUE";
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+

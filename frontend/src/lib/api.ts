@@ -53,6 +53,10 @@ import {
   UserNotificationSettings,
   ConnectedAppItem,
   AuditLogItem,
+  Purchase,
+  PurchaseItem,
+  PurchaseOrderItem,
+  PurchaseReturn,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -190,15 +194,23 @@ export async function bulkDeleteProductsApi(ids: string[]): Promise<{ count: num
 export async function fetchStockTransfers(params?: {
   fromWarehouse?: string;
   toWarehouse?: string;
+  status?: string;
   search?: string;
 }): Promise<StockTransfer[]> {
   const query = new URLSearchParams();
   if (params?.fromWarehouse && params.fromWarehouse !== "all") query.set("fromWarehouse", params.fromWarehouse);
   if (params?.toWarehouse && params.toWarehouse !== "all") query.set("toWarehouse", params.toWarehouse);
+  if (params?.status && params.status !== "all") query.set("status", params.status);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/stock-transfers?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function fetchStockTransferById(id: string): Promise<StockTransfer> {
+  const res = await fetch(`${API_BASE_URL}/stock-transfers/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch stock transfer details");
   return await res.json();
 }
 
@@ -209,6 +221,7 @@ export async function createStockTransferApi(payload: {
   quantityTransferred: number;
   refNumber?: string;
   date?: string;
+  status?: "COMPLETED" | "PENDING" | "CANCELLED";
   notes?: string;
 }): Promise<StockTransfer> {
   const res = await fetch(`${API_BASE_URL}/stock-transfers`, {
@@ -220,6 +233,28 @@ export async function createStockTransferApi(payload: {
   return await res.json();
 }
 
+export async function updateStockTransferApi(
+  id: string,
+  payload: {
+    fromWarehouse?: string;
+    toWarehouse?: string;
+    noOfProducts?: number;
+    quantityTransferred?: number;
+    refNumber?: string;
+    date?: string;
+    status?: "COMPLETED" | "PENDING" | "CANCELLED";
+    notes?: string;
+  }
+): Promise<StockTransfer> {
+  const res = await fetch(`${API_BASE_URL}/stock-transfers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update stock transfer");
+  return await res.json();
+}
+
 export async function deleteStockTransferApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/stock-transfers/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete stock transfer");
@@ -228,14 +263,24 @@ export async function deleteStockTransferApi(id: string): Promise<void> {
 // ==================== STOCK ADJUSTMENTS ====================
 export async function fetchStockAdjustments(params?: {
   warehouse?: string;
+  store?: string;
+  type?: string;
   search?: string;
 }): Promise<StockAdjustment[]> {
   const query = new URLSearchParams();
   if (params?.warehouse && params.warehouse !== "all") query.set("warehouse", params.warehouse);
+  if (params?.store && params.store !== "all") query.set("store", params.store);
+  if (params?.type && params.type !== "all") query.set("type", params.type);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/stock-adjustments?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];
+  return await res.json();
+}
+
+export async function fetchStockAdjustmentById(id: string): Promise<StockAdjustment> {
+  const res = await fetch(`${API_BASE_URL}/stock-adjustments/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch stock adjustment details");
   return await res.json();
 }
 
@@ -246,6 +291,7 @@ export async function createStockAdjustmentApi(payload: {
   productImage?: string;
   date?: string;
   personName?: string;
+  personAvatar?: string;
   qty: number;
   type?: "ADDITION" | "SUBTRACTION";
   notes?: string;
@@ -256,6 +302,30 @@ export async function createStockAdjustmentApi(payload: {
     body: JSON.stringify(payload),
   });
   if (!res.ok) throw new Error("Failed to create stock adjustment");
+  return await res.json();
+}
+
+export async function updateStockAdjustmentApi(
+  id: string,
+  payload: {
+    warehouse?: string;
+    store?: string;
+    productName?: string;
+    productImage?: string;
+    date?: string;
+    personName?: string;
+    personAvatar?: string;
+    qty?: number;
+    type?: "ADDITION" | "SUBTRACTION";
+    notes?: string;
+  }
+): Promise<StockAdjustment> {
+  const res = await fetch(`${API_BASE_URL}/stock-adjustments/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Failed to update stock adjustment");
   return await res.json();
 }
 
@@ -1749,6 +1819,159 @@ export async function deleteAuditLogApi(id: string): Promise<void> {
     method: "DELETE",
   });
   if (!res.ok) throw new Error("Failed to delete audit log");
+}
+
+// ==================== PURCHASES ====================
+export async function fetchPurchases(params?: {
+  status?: string;
+  paymentStatus?: string;
+  supplierName?: string;
+  search?: string;
+}): Promise<Purchase[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.paymentStatus && params.paymentStatus !== "all") query.set("paymentStatus", params.paymentStatus);
+  if (params?.supplierName && params.supplierName !== "all") query.set("supplierName", params.supplierName);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/purchases?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch purchases");
+  return await res.json();
+}
+
+export async function fetchPurchaseById(id: string): Promise<Purchase> {
+  const res = await fetch(`${API_BASE_URL}/purchases/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch purchase details");
+  return await res.json();
+}
+
+export async function createPurchaseApi(payload: {
+  reference?: string;
+  supplierId?: string | null;
+  supplierName: string;
+  supplierImage?: string | null;
+  warehouseName?: string | null;
+  storeName?: string | null;
+  date?: string;
+  status?: string;
+  paymentStatus?: string;
+  subtotal?: number;
+  tax?: number;
+  discount?: number;
+  shipping?: number;
+  total?: number;
+  paid?: number;
+  due?: number;
+  notes?: string | null;
+  items?: PurchaseItem[];
+}): Promise<Purchase> {
+  const res = await fetch(`${API_BASE_URL}/purchases`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to create purchase");
+  }
+  return await res.json();
+}
+
+export async function updatePurchaseApi(id: string, payload: Partial<Purchase>): Promise<Purchase> {
+  const res = await fetch(`${API_BASE_URL}/purchases/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to update purchase");
+  }
+  return await res.json();
+}
+
+export async function deletePurchaseApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/purchases/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete purchase");
+}
+
+// ==================== PURCHASE ORDERS (ITEM BREAKDOWN) ====================
+export async function fetchPurchaseOrders(params?: { search?: string }): Promise<PurchaseOrderItem[]> {
+  const query = new URLSearchParams();
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/purchase-orders?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch purchase orders");
+  return await res.json();
+}
+
+// ==================== PURCHASE RETURNS ====================
+export async function fetchPurchaseReturns(params?: {
+  status?: string;
+  paymentStatus?: string;
+  search?: string;
+}): Promise<PurchaseReturn[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.paymentStatus && params.paymentStatus !== "all") query.set("paymentStatus", params.paymentStatus);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/purchase-returns?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch purchase returns");
+  return await res.json();
+}
+
+export async function fetchPurchaseReturnById(id: string): Promise<PurchaseReturn> {
+  const res = await fetch(`${API_BASE_URL}/purchase-returns/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch purchase return");
+  return await res.json();
+}
+
+export async function createPurchaseReturnApi(payload: {
+  reference?: string;
+  purchaseReference?: string | null;
+  supplierName: string;
+  supplierImage?: string | null;
+  warehouseName?: string | null;
+  productName?: string | null;
+  productImage?: string | null;
+  quantity?: number;
+  date?: string;
+  status?: string;
+  totalAmount?: number;
+  paidAmount?: number;
+  dueAmount?: number;
+  paymentStatus?: string;
+  notes?: string | null;
+}): Promise<PurchaseReturn> {
+  const res = await fetch(`${API_BASE_URL}/purchase-returns`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to create purchase return");
+  }
+  return await res.json();
+}
+
+export async function updatePurchaseReturnApi(id: string, payload: Partial<PurchaseReturn>): Promise<PurchaseReturn> {
+  const res = await fetch(`${API_BASE_URL}/purchase-returns/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to update purchase return");
+  }
+  return await res.json();
+}
+
+export async function deletePurchaseReturnApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/purchase-returns/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete purchase return");
 }
 
 

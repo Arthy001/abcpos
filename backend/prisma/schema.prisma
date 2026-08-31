@@ -774,3 +774,67 @@ model AuditLog {
   createdAt   DateTime @default(now())
 }
 
+model Purchase {
+  id            String         @id @default(uuid())
+  reference     String         @unique // e.g. "PT001", "PO-849201"
+  supplierId    String?
+  supplierName  String         // e.g. "Electro Mart", "Apex Computers"
+  supplierImage String?
+  warehouseName String?        @default("Lavish Warehouse")
+  storeName     String?        @default("Electro Mart")
+  date          DateTime       @default(now())
+  status        String         @default("RECEIVED") // RECEIVED, PENDING, ORDERED, CANCELLED
+  paymentStatus String         @default("PAID") // PAID, UNPAID, OVERDUE, PARTIAL
+  subtotal      Float          @default(0.0)
+  tax           Float          @default(0.0)
+  discount      Float          @default(0.0)
+  shipping      Float          @default(0.0)
+  total         Float          @default(0.0)
+  paid          Float          @default(0.0)
+  due           Float          @default(0.0)
+  notes         String?
+  items         PurchaseItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model PurchaseItem {
+  id           String    @id @default(uuid())
+  purchaseId   String
+  purchase     Purchase  @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  productId    String?
+  productName  String
+  productImage String?
+  sku          String?
+  quantity     Int       @default(1)
+  receivedQty  Int       @default(1)
+  unitCost     Float     @default(0.0)
+  subtotal     Float     @default(0.0)
+  tax          Float     @default(0.0)
+  discount     Float     @default(0.0)
+  total        Float     @default(0.0)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+}
+
+model PurchaseReturn {
+  id                String   @id @default(uuid())
+  reference         String   @unique // e.g. "PR001", "PR-489201"
+  purchaseReference String?  // e.g. "PT001"
+  supplierName      String   // e.g. "Apex Computers"
+  supplierImage     String?
+  warehouseName     String?  @default("Lavish Warehouse")
+  productName       String?  // e.g. "Lenovo IdeaPad 3"
+  productImage      String?
+  quantity          Int      @default(1)
+  date              DateTime @default(now())
+  status            String   @default("COMPLETED") // COMPLETED, PENDING, CANCELLED
+  totalAmount       Float    @default(0.0)
+  paidAmount        Float    @default(0.0)
+  dueAmount         Float    @default(0.0)
+  paymentStatus     String   @default("PAID") // PAID, UNPAID, OVERDUE
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+

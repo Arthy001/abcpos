@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import prisma from "../lib/prisma";
-import { logActivity } from "../services/audit.service";
+import { prisma } from "../lib/prisma.js";
+import { logActivity } from "../services/audit.service.js";
 
 export const getAuditLogs = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -39,7 +39,7 @@ export const getAuditLogs = async (req: Request, res: Response): Promise<void> =
 
 export const restoreFromAuditLog = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     const log = await prisma.auditLog.findUnique({ where: { id } });
 
     if (!log) {
@@ -220,7 +220,6 @@ export const restoreFromAuditLog = async (req: Request, res: Response): Promise<
           restoredItem = await prisma.product.create({
             data: {
               name: rawData.name,
-              slug,
               sku,
               barcode: rawData.barcode || null,
               description: rawData.description || null,
@@ -268,7 +267,7 @@ export const restoreFromAuditLog = async (req: Request, res: Response): Promise<
 
 export const deleteAuditLog = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { id } = req.params;
+    const id = String(req.params.id);
     await prisma.auditLog.delete({ where: { id } });
     res.json({ message: "Audit log deleted successfully" });
   } catch (error: any) {

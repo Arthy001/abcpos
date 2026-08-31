@@ -1,4 +1,4 @@
-import prisma from "../lib/prisma";
+import { prisma } from "../lib/prisma.js";
 
 export interface LogActivityParams {
   action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE";
