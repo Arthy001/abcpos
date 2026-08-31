@@ -28,6 +28,7 @@ import {
   Phone,
   Package,
   Boxes,
+  Sparkles,
 } from "lucide-react";
 
 export default function WarehousesPage() {
@@ -41,8 +42,19 @@ export default function WarehousesPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  // Feedback Modal State
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "edit_success" | "delete_success" | "error";
+    title: string;
+    message: string;
+    itemName?: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
+  });
 
   // Modal State
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -61,18 +73,18 @@ export default function WarehousesPage() {
   const [deletingWarehouse, setDeletingWarehouse] = useState<Warehouse | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const showToast = (text: string, type: "success" | "error" = "success") => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchWarehouses({ status: statusFilter, search });
       setWarehouses(data || []);
     } catch (err: any) {
-      showToast(err.message || "Failed to load warehouses", "error");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Load Warehouses",
+        message: err.message || "An error occurred while fetching warehouses.",
+      });
     } finally {
       setLoading(false);
     }
@@ -105,7 +117,12 @@ export default function WarehousesPage() {
   const handleSaveWarehouse = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim()) {
-      showToast("Please enter Warehouse Name", "error");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please enter a valid Warehouse Name before saving.",
+      });
       return;
     }
 
@@ -119,7 +136,14 @@ export default function WarehousesPage() {
           address: formAddress || undefined,
           status: formStatus as "ACTIVE" | "INACTIVE",
         });
-        showToast(`Warehouse "${formName}" updated successfully!`);
+        setShowModal(false);
+        setFeedbackModal({
+          isOpen: true,
+          type: "edit_success",
+          title: "Warehouse Updated!",
+          message: `The changes for warehouse "${formName}" have been saved successfully.`,
+          itemName: formName,
+        });
       } else {
         await createWarehouseApi({
           name: formName,
@@ -128,12 +152,23 @@ export default function WarehousesPage() {
           address: formAddress || undefined,
           status: formStatus as "ACTIVE" | "INACTIVE",
         });
-        showToast(`Warehouse "${formName}" created successfully!`);
+        setShowModal(false);
+        setFeedbackModal({
+          isOpen: true,
+          type: "add_success",
+          title: "Warehouse Created!",
+          message: `Warehouse "${formName}" has been successfully added to your inventory system.`,
+          itemName: formName,
+        });
       }
-      setShowModal(false);
       loadData();
     } catch (err: any) {
-      showToast(err.message || "Failed to save warehouse", "error");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Operation Failed",
+        message: err.message || "Failed to save warehouse. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -141,14 +176,27 @@ export default function WarehousesPage() {
 
   const handleConfirmDelete = async () => {
     if (!deletingWarehouse) return;
+    const whName = deletingWarehouse.name;
     try {
       setIsDeleting(true);
       await deleteWarehouseApi(deletingWarehouse.id);
-      showToast(`Warehouse "${deletingWarehouse.name}" removed successfully!`);
       setDeletingWarehouse(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "delete_success",
+        title: "Warehouse Deleted",
+        message: `Warehouse "${whName}" has been removed from the system.`,
+        itemName: whName,
+      });
       loadData();
     } catch (err: any) {
-      showToast(err.message || "Failed to delete warehouse", "error");
+      setDeletingWarehouse(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Delete Failed",
+        message: err.message || "Failed to delete warehouse.",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -210,32 +258,6 @@ export default function WarehousesPage() {
   return (
     <AppLayout>
       <div className="space-y-4 w-full font-sans">
-        {/* Toast Notification Banner */}
-        {toastMessage && (
-          <div
-            className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-md transition-all animate-in fade-in slide-in-from-top-2 ${
-              toastMessage.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-rose-50 border-rose-200 text-rose-800"
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              {toastMessage.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              )}
-              <span>{toastMessage.text}</span>
-            </div>
-            <button
-              onClick={() => setToastMessage(null)}
-              className="text-gray-400 hover:text-gray-600 p-0.5 rounded"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
@@ -597,7 +619,7 @@ export default function WarehousesPage() {
                       placeholder="e.g. +66 81 234 5678"
                       value={formPhone}
                       onChange={(e) => setFormPhone(e.target.value)}
-                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                      className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
                     />
                   </div>
                 </div>
@@ -677,6 +699,76 @@ export default function WarehousesPage() {
                 >
                   {isDeleting ? "Deleting..." : "Delete"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* Action Feedback / Alert Modal (Add / Edit / Delete)       */}
+        {/* ========================================================= */}
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full border border-gray-100 shadow-2xl p-6 space-y-4 text-center animate-in fade-in zoom-in duration-150">
+              {/* Top Icon Badge */}
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs ${
+                  feedbackModal.type === "add_success"
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                    : feedbackModal.type === "edit_success"
+                    ? "bg-blue-50 text-blue-600 border border-blue-100"
+                    : feedbackModal.type === "delete_success"
+                    ? "bg-amber-50 text-amber-600 border border-amber-100"
+                    : "bg-rose-50 text-rose-600 border border-rose-100"
+                }`}
+              >
+                {feedbackModal.type === "add_success" && <Sparkles className="w-7 h-7" />}
+                {feedbackModal.type === "edit_success" && <CheckCircle2 className="w-7 h-7" />}
+                {feedbackModal.type === "delete_success" && <Trash2 className="w-7 h-7" />}
+                {feedbackModal.type === "error" && <AlertTriangle className="w-7 h-7" />}
+              </div>
+
+              {/* Title & Message */}
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center space-x-2 pt-2">
+                {feedbackModal.type === "add_success" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+                        handleOpenAddModal();
+                      }}
+                      className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+                    >
+                      + Add Another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                      className="flex-1 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                    >
+                      Done
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                    className={`w-full py-2.5 text-white text-xs font-bold rounded-xl shadow-xs transition-colors ${
+                      feedbackModal.type === "error"
+                        ? "bg-rose-500 hover:bg-rose-600"
+                        : "bg-[#FE9F43] hover:bg-[#E88B32]"
+                    }`}
+                  >
+                    OK
+                  </button>
+                )}
               </div>
             </div>
           </div>

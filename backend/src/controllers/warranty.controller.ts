@@ -74,10 +74,23 @@ export const updateWarranty = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 // DELETE /api/warranties/:id
 export const deleteWarranty = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const warranty = await prisma.warranty.findUnique({ where: { id } });
+    if (warranty) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "WARRANTY",
+        entityId: warranty.id,
+        entityName: warranty.name,
+        user: "Admin",
+        data: warranty,
+      });
+    }
     await prisma.warranty.delete({ where: { id } });
     res.json({ success: true, message: "Warranty deleted successfully" });
   } catch (error: any) {

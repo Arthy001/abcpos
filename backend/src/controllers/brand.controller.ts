@@ -78,10 +78,23 @@ export const updateBrand = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 // DELETE /api/brands/:id
 export const deleteBrand = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const brand = await prisma.brand.findUnique({ where: { id } });
+    if (brand) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "BRAND",
+        entityId: brand.id,
+        entityName: brand.name,
+        user: "Admin",
+        data: brand,
+      });
+    }
     await prisma.brand.delete({ where: { id } });
     res.json({ success: true, message: "Brand deleted successfully" });
   } catch (error: any) {

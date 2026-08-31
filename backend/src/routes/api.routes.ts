@@ -1,5 +1,10 @@
 import { Router } from "express";
 import {
+  getAuditLogs,
+  restoreFromAuditLog,
+  deleteAuditLog,
+} from "../controllers/audit.controller.js";
+import {
   getUsers,
   getUserById,
   createUser,
@@ -395,5 +400,10 @@ router.get("/settings/notifications", getNotificationSettings);
 router.put("/settings/notifications", updateNotificationSettings);
 router.get("/settings/connected-apps", getConnectedApps);
 router.put("/settings/connected-apps/:id", toggleConnectedApp);
+
+// Audit Logs & Activity History
+router.get("/audit-logs", getAuditLogs);
+router.post("/audit-logs/:id/restore", restoreFromAuditLog);
+router.delete("/audit-logs/:id", deleteAuditLog);
 
 export default router;

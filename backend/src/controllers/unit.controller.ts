@@ -77,10 +77,23 @@ export const updateUnit = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 // DELETE /api/units/:id
 export const deleteUnit = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const unit = await prisma.unit.findUnique({ where: { id } });
+    if (unit) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "UNIT",
+        entityId: unit.id,
+        entityName: unit.name,
+        user: "Admin",
+        data: unit,
+      });
+    }
     await prisma.unit.delete({ where: { id } });
     res.json({ success: true, message: "Unit deleted successfully" });
   } catch (error: any) {

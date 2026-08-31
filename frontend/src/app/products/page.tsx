@@ -35,6 +35,7 @@ import {
   Warehouse as WarehouseIcon,
   CheckCircle2,
   Info,
+  Sparkles,
 } from "lucide-react";
 
 export default function ProductsPage() {
@@ -55,14 +56,20 @@ export default function ProductsPage() {
   const [deleteProductTarget, setDeleteProductTarget] = useState<Product | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
-  const [alertMessage, setAlertMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const showNotification = (type: "success" | "error", text: string) => {
-    setAlertMessage({ type, text });
-    setTimeout(() => {
-      setAlertMessage(null);
-    }, 4000);
-  };
+  // Feedback Modal State
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "edit_success" | "delete_success" | "error";
+    title: string;
+    message: string;
+    itemName?: string;
+  }>({
+    isOpen: false,
+    type: "delete_success",
+    title: "",
+    message: "",
+  });
 
   const loadData = async () => {
     try {
@@ -81,7 +88,12 @@ export default function ProductsPage() {
       setBrands(brds);
     } catch (err: any) {
       console.error(err);
-      showNotification("error", err.message || "Failed to load products");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Load Products",
+        message: err.message || "An error occurred while fetching products.",
+      });
     } finally {
       setLoading(false);
     }
@@ -136,15 +148,28 @@ export default function ProductsPage() {
   // Delete Single Product
   const handleDeleteConfirm = async () => {
     if (!deleteProductTarget) return;
+    const targetName = deleteProductTarget.name;
     try {
       setActionLoading(true);
       await deleteProductApi(deleteProductTarget.id);
-      showNotification("success", `Product "${deleteProductTarget.name}" status set to Inactive.`);
       setDeleteProductTarget(null);
       setSelectedIds(selectedIds.filter((id) => id !== deleteProductTarget.id));
+      setFeedbackModal({
+        isOpen: true,
+        type: "delete_success",
+        title: "Product Removed!",
+        message: `Product "${targetName}" has been successfully removed/deactivated.`,
+        itemName: targetName,
+      });
       await loadData();
     } catch (err: any) {
-      showNotification("error", err.message || "Failed to deactivate product.");
+      setDeleteProductTarget(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Delete Failed",
+        message: err.message || "Failed to delete product.",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -153,15 +178,27 @@ export default function ProductsPage() {
   // Bulk Delete
   const handleBulkDeleteConfirm = async () => {
     if (selectedIds.length === 0) return;
+    const count = selectedIds.length;
     try {
       setActionLoading(true);
       const res = await bulkDeleteProductsApi(selectedIds);
-      showNotification("success", `Deactivated ${res.count || selectedIds.length} products (Status set to Inactive).`);
       setIsBulkDeleting(false);
       setSelectedIds([]);
+      setFeedbackModal({
+        isOpen: true,
+        type: "delete_success",
+        title: "Bulk Delete Successful!",
+        message: `Successfully removed/deactivated ${res.count || count} selected products.`,
+      });
       await loadData();
     } catch (err: any) {
-      showNotification("error", err.message || "Failed to deactivate selected products.");
+      setIsBulkDeleting(false);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Bulk Delete Failed",
+        message: err.message || "Failed to deactivate selected products.",
+      });
     } finally {
       setActionLoading(false);
     }
@@ -229,28 +266,6 @@ export default function ProductsPage() {
   return (
     <AppLayout>
       <div className="space-y-4 w-full font-sans pb-12">
-        {/* Toast / Notification Banner */}
-        {alertMessage && (
-          <div
-            className={`p-3 rounded-xl flex items-center justify-between text-xs font-medium border transition-all ${
-              alertMessage.type === "success"
-                ? "bg-emerald-50 text-emerald-800 border-emerald-200"
-                : "bg-rose-50 text-rose-800 border-rose-200"
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              {alertMessage.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
-              )}
-              <span>{alertMessage.text}</span>
-            </div>
-            <button onClick={() => setAlertMessage(null)} className="text-gray-400 hover:text-gray-600">
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
 
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
@@ -805,35 +820,48 @@ export default function ProductsPage() {
           </div>
         )}
 
-        {/* ==================== BULK DELETE CONFIRM MODAL ==================== */}
-        {isBulkDeleting && (
+        {/* ========================================================= */}
+        {/* Action Feedback / Alert Modal (Delete / Bulk Delete)      */}
+        {/* ========================================================= */}
+        {feedbackModal.isOpen && (
           <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full border border-gray-100 shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in duration-150">
-              <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div className="text-center space-y-1">
-                <h3 className="text-base font-bold text-gray-900">Delete Selected Products</h3>
-                <p className="text-xs text-gray-500">
-                  Are you sure you want to delete <span className="font-bold text-rose-600">{selectedIds.length}</span> selected products? This action cannot be undone.
-                </p>
+            <div className="bg-white rounded-2xl max-w-sm w-full border border-gray-100 shadow-2xl p-6 space-y-4 text-center animate-in fade-in zoom-in duration-150">
+              {/* Top Icon Badge */}
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs ${
+                  feedbackModal.type === "add_success"
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                    : feedbackModal.type === "edit_success"
+                    ? "bg-blue-50 text-blue-600 border border-blue-100"
+                    : feedbackModal.type === "delete_success"
+                    ? "bg-amber-50 text-amber-600 border border-amber-100"
+                    : "bg-rose-50 text-rose-600 border border-rose-100"
+                }`}
+              >
+                {feedbackModal.type === "add_success" && <Sparkles className="w-7 h-7" />}
+                {feedbackModal.type === "edit_success" && <CheckCircle2 className="w-7 h-7" />}
+                {feedbackModal.type === "delete_success" && <Trash2 className="w-7 h-7" />}
+                {feedbackModal.type === "error" && <AlertTriangle className="w-7 h-7" />}
               </div>
 
-              <div className="flex items-center justify-center space-x-3 pt-2">
+              {/* Title & Message */}
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+              </div>
+
+              {/* Buttons */}
+              <div className="pt-2">
                 <button
-                  onClick={() => setIsBulkDeleting(false)}
-                  disabled={actionLoading}
-                  className="w-1/2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+                  type="button"
+                  onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                  className={`w-full py-2.5 text-white text-xs font-bold rounded-xl shadow-xs transition-colors ${
+                    feedbackModal.type === "error"
+                      ? "bg-rose-500 hover:bg-rose-600"
+                      : "bg-[#FE9F43] hover:bg-[#E88B32]"
+                  }`}
                 >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleBulkDeleteConfirm}
-                  disabled={actionLoading}
-                  className="w-1/2 py-2.5 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center space-x-1.5"
-                >
-                  {actionLoading ? <RotateCcw className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
-                  <span>{actionLoading ? "Deleting..." : "Delete All"}</span>
+                  OK
                 </button>
               </div>
             </div>

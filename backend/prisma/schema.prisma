@@ -762,3 +762,15 @@ model ConnectedAppItem {
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 }
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // "DELETE", "UPDATE", "CREATE", "RESTORE"
+  entityType  String   // "CATEGORY", "SUBCATEGORY", "BRAND", "UNIT", "WAREHOUSE", "STORE", "WARRANTY", "VARIANT", "PRODUCT"
+  entityId    String
+  entityName  String
+  user        String?  @default("Admin")
+  data        String   // JSON snapshot string
+  createdAt   DateTime @default(now())
+}
+

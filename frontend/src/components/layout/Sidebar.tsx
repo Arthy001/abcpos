@@ -56,6 +56,7 @@ import {
   ChevronDown,
   LayoutGrid,
   Undo2,
+  History,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -349,6 +350,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         { name: "Users", href: "/users", icon: Users },
         { name: "Roles & Permissions", href: "/roles-permissions", icon: ShieldCheck },
         { name: "Delete Account Request", href: "/delete-account-requests", icon: UserX },
+        { name: "Activity Logs", href: "/activity-logs", icon: History },
       ],
     },
     {

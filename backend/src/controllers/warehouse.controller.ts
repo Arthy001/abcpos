@@ -108,10 +108,23 @@ export const updateWarehouse = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 // DELETE /api/warehouses/:id
 export const deleteWarehouse = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const warehouse = await prisma.warehouse.findUnique({ where: { id } });
+    if (warehouse) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "WAREHOUSE",
+        entityId: warehouse.id,
+        entityName: warehouse.name,
+        user: "Admin",
+        data: warehouse,
+      });
+    }
     await prisma.warehouse.delete({ where: { id } });
     res.json({ success: true, message: "Warehouse deleted successfully" });
   } catch (error: any) {

@@ -26,6 +26,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Clock,
+  Sparkles,
 } from "lucide-react";
 
 export default function WarrantiesPage() {
@@ -39,8 +40,19 @@ export default function WarrantiesPage() {
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
 
-  // Toast
-  const [toastMessage, setToastMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
+  // Feedback Modal State
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "edit_success" | "delete_success" | "error";
+    title: string;
+    message: string;
+    itemName?: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
+  });
 
   // Modal State
   const [showModal, setShowModal] = useState<boolean>(false);
@@ -58,18 +70,18 @@ export default function WarrantiesPage() {
   const [deletingWarranty, setDeletingWarranty] = useState<Warranty | null>(null);
   const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
-  const showToast = (text: string, type: "success" | "error" = "success") => {
-    setToastMessage({ text, type });
-    setTimeout(() => setToastMessage(null), 3500);
-  };
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchWarranties({ status: statusFilter, search });
       setWarranties(data || []);
     } catch (err: any) {
-      showToast(err.message || "Failed to load warranties", "error");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Load Warranties",
+        message: err.message || "An error occurred while fetching warranties.",
+      });
     } finally {
       setLoading(false);
     }
@@ -100,7 +112,12 @@ export default function WarrantiesPage() {
   const handleSaveWarranty = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formName.trim() || !formDuration.trim()) {
-      showToast("Please enter Warranty Name and Duration", "error");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please enter both Warranty Name and Duration before saving.",
+      });
       return;
     }
 
@@ -113,7 +130,14 @@ export default function WarrantiesPage() {
           duration: formDuration,
           status: formStatus as "ACTIVE" | "INACTIVE",
         });
-        showToast(`Warranty "${formName}" updated successfully!`);
+        setShowModal(false);
+        setFeedbackModal({
+          isOpen: true,
+          type: "edit_success",
+          title: "Warranty Updated!",
+          message: `The changes for warranty "${formName}" have been saved successfully.`,
+          itemName: formName,
+        });
       } else {
         await createWarrantyApi({
           name: formName,
@@ -121,12 +145,23 @@ export default function WarrantiesPage() {
           duration: formDuration,
           status: formStatus,
         });
-        showToast(`Warranty "${formName}" created successfully!`);
+        setShowModal(false);
+        setFeedbackModal({
+          isOpen: true,
+          type: "add_success",
+          title: "Warranty Created!",
+          message: `Warranty "${formName}" (${formDuration}) has been successfully added to your inventory system.`,
+          itemName: formName,
+        });
       }
-      setShowModal(false);
       loadData();
     } catch (err: any) {
-      showToast(err.message || "Failed to save warranty", "error");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Operation Failed",
+        message: err.message || "Failed to save warranty. Please try again.",
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -134,14 +169,27 @@ export default function WarrantiesPage() {
 
   const handleConfirmDelete = async () => {
     if (!deletingWarranty) return;
+    const wName = deletingWarranty.name;
     try {
       setIsDeleting(true);
       await deleteWarrantyApi(deletingWarranty.id);
-      showToast(`Warranty "${deletingWarranty.name}" removed successfully!`);
       setDeletingWarranty(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "delete_success",
+        title: "Warranty Deleted",
+        message: `Warranty policy "${wName}" has been removed from the system.`,
+        itemName: wName,
+      });
       loadData();
     } catch (err: any) {
-      showToast(err.message || "Failed to delete warranty", "error");
+      setDeletingWarranty(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Delete Failed",
+        message: err.message || "Failed to delete warranty.",
+      });
     } finally {
       setIsDeleting(false);
     }
@@ -202,32 +250,6 @@ export default function WarrantiesPage() {
   return (
     <AppLayout>
       <div className="space-y-4 w-full font-sans">
-        {/* Toast Notification Banner */}
-        {toastMessage && (
-          <div
-            className={`p-3.5 rounded-xl border text-xs font-semibold flex items-center justify-between shadow-md transition-all animate-in fade-in slide-in-from-top-2 ${
-              toastMessage.type === "success"
-                ? "bg-emerald-50 border-emerald-200 text-emerald-800"
-                : "bg-rose-50 border-rose-200 text-rose-800"
-            }`}
-          >
-            <div className="flex items-center space-x-2">
-              {toastMessage.type === "success" ? (
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
-              ) : (
-                <AlertTriangle className="w-4 h-4 text-rose-600 flex-shrink-0" />
-              )}
-              <span>{toastMessage.text}</span>
-            </div>
-            <button
-              onClick={() => setToastMessage(null)}
-              className="text-gray-400 hover:text-gray-600 p-0.5 rounded"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        )}
-
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
@@ -668,6 +690,76 @@ export default function WarrantiesPage() {
                 >
                   {isDeleting ? "Deleting..." : "Delete"}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================= */}
+        {/* Action Feedback / Alert Modal (Add / Edit / Delete)       */}
+        {/* ========================================================= */}
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full border border-gray-100 shadow-2xl p-6 space-y-4 text-center animate-in fade-in zoom-in duration-150">
+              {/* Top Icon Badge */}
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs ${
+                  feedbackModal.type === "add_success"
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                    : feedbackModal.type === "edit_success"
+                    ? "bg-blue-50 text-blue-600 border border-blue-100"
+                    : feedbackModal.type === "delete_success"
+                    ? "bg-amber-50 text-amber-600 border border-amber-100"
+                    : "bg-rose-50 text-rose-600 border border-rose-100"
+                }`}
+              >
+                {feedbackModal.type === "add_success" && <Sparkles className="w-7 h-7" />}
+                {feedbackModal.type === "edit_success" && <CheckCircle2 className="w-7 h-7" />}
+                {feedbackModal.type === "delete_success" && <Trash2 className="w-7 h-7" />}
+                {feedbackModal.type === "error" && <AlertTriangle className="w-7 h-7" />}
+              </div>
+
+              {/* Title & Message */}
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center space-x-2 pt-2">
+                {feedbackModal.type === "add_success" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+                        handleOpenAddModal();
+                      }}
+                      className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+                    >
+                      + Add Another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                      className="flex-1 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                    >
+                      Done
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                    className={`w-full py-2.5 text-white text-xs font-bold rounded-xl shadow-xs transition-colors ${
+                      feedbackModal.type === "error"
+                        ? "bg-rose-500 hover:bg-rose-600"
+                        : "bg-[#FE9F43] hover:bg-[#E88B32]"
+                    }`}
+                  >
+                    OK
+                  </button>
+                )}
               </div>
             </div>
           </div>

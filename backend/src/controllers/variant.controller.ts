@@ -72,10 +72,23 @@ export const updateVariantAttribute = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 // DELETE /api/variant-attributes/:id
 export const deleteVariantAttribute = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const variant = await prisma.variantAttribute.findUnique({ where: { id } });
+    if (variant) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "VARIANT",
+        entityId: variant.id,
+        entityName: variant.name,
+        user: "Admin",
+        data: variant,
+      });
+    }
     await prisma.variantAttribute.delete({ where: { id } });
     res.json({ success: true, message: "Variant attribute deleted successfully" });
   } catch (error: any) {

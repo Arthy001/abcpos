@@ -150,16 +150,55 @@ export default function AddProductPage() {
     setBarcode(`885${random}`);
   };
 
+  // Feedback Modal State
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "error";
+    title: string;
+    message: string;
+    productName?: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
+  });
+
+  const resetForm = () => {
+    setName("");
+    setSlug("");
+    generateSku();
+    generateBarcode();
+    setDescription("");
+    setImages([]);
+    setPrice(0);
+    setCostPrice(0);
+    setQuantity(20);
+    setMinStockAlert(5);
+    setManufacturedDate("");
+    setExpiryDate("");
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
     if (!name.trim()) {
-      setErrorMessage("Please enter Product Name");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Product Name",
+        message: "Please enter a valid Product Name before saving.",
+      });
       return;
     }
     if (!sku.trim()) {
-      setErrorMessage("Please enter SKU");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing SKU",
+        message: "Please enter or generate a SKU for this product.",
+      });
       return;
     }
 
@@ -189,12 +228,20 @@ export default function AddProductPage() {
         expiredDate: expiryDate || undefined,
       });
 
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/products");
-      }, 1200);
+      setFeedbackModal({
+        isOpen: true,
+        type: "add_success",
+        title: "Product Created!",
+        message: `Product "${name.trim()}" (SKU: ${sku.trim()}) has been added to your inventory.`,
+        productName: name.trim(),
+      });
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to create product");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Create Product",
+        message: err.message || "An error occurred while creating product.",
+      });
     } finally {
       setLoading(false);
     }
@@ -657,11 +704,77 @@ export default function AddProductPage() {
           <button
             type="submit"
             disabled={loading}
-            className="px-6 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] disabled:bg-orange-300 text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all"
+            className="px-6 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] disabled:bg-orange-300 text-white text-xs font-bold rounded-xl shadow-md active:scale-95 transition-all flex items-center space-x-1.5"
           >
             {loading ? "Saving..." : "Add to Product"}
           </button>
         </div>
+
+        {/* ========================================================= */}
+        {/* Action Feedback / Alert Modal (Product Created / Error)   */}
+        {/* ========================================================= */}
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full border border-gray-100 shadow-2xl p-6 space-y-4 text-center animate-in fade-in zoom-in duration-150">
+              {/* Top Icon Badge */}
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs ${
+                  feedbackModal.type === "add_success"
+                    ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
+                    : "bg-rose-50 text-rose-600 border border-rose-100"
+                }`}
+              >
+                {feedbackModal.type === "add_success" ? (
+                  <Sparkles className="w-7 h-7" />
+                ) : (
+                  <AlertTriangle className="w-7 h-7" />
+                )}
+              </div>
+
+              {/* Title & Message */}
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+              </div>
+
+              {/* Buttons */}
+              <div className="flex items-center space-x-2 pt-2">
+                {feedbackModal.type === "add_success" ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+                        resetForm();
+                      }}
+                      className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors"
+                    >
+                      + Add Another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+                        router.push("/products");
+                      }}
+                      className="flex-1 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                    >
+                      View Products
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                    className="w-full py-2.5 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+                  >
+                    OK
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </form>
     </AppLayout>
   );

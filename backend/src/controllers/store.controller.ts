@@ -100,10 +100,23 @@ export const updateStore = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 // DELETE /api/stores/:id
 export const deleteStore = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const store = await prisma.store.findUnique({ where: { id } });
+    if (store) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "STORE",
+        entityId: store.id,
+        entityName: store.name,
+        user: "Admin",
+        data: store,
+      });
+    }
     await prisma.store.delete({ where: { id } });
     res.json({ success: true, message: "Store deleted successfully" });
   } catch (error: any) {

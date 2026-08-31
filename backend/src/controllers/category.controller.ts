@@ -72,9 +72,22 @@ export const updateCategory = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const category = await prisma.category.findUnique({ where: { id } });
+    if (category) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "CATEGORY",
+        entityId: category.id,
+        entityName: category.name,
+        user: "Admin",
+        data: category,
+      });
+    }
     await prisma.category.delete({ where: { id } });
     res.json({ success: true, message: "Category deleted successfully" });
   } catch (error: any) {
@@ -170,6 +183,17 @@ export const updateSubCategory = async (req: Request, res: Response) => {
 export const deleteSubCategory = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const subCategory = await prisma.subCategory.findUnique({ where: { id } });
+    if (subCategory) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "SUBCATEGORY",
+        entityId: subCategory.id,
+        entityName: subCategory.name,
+        user: "Admin",
+        data: subCategory,
+      });
+    }
     await prisma.subCategory.delete({ where: { id } });
     res.json({ success: true, message: "Sub Category deleted successfully" });
   } catch (error: any) {

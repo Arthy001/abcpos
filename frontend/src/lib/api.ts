@@ -52,6 +52,7 @@ import {
   UserSessionLog,
   UserNotificationSettings,
   ConnectedAppItem,
+  AuditLogItem,
 } from "@/types";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
@@ -1717,4 +1718,37 @@ export async function toggleConnectedAppApi(id: string, status: "CONNECTED" | "D
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to update connected app");
   return data.app;
 }
+
+// ==================== AUDIT LOGS & RESTORE ====================
+export async function fetchAuditLogsApi(params?: {
+  action?: string;
+  entityType?: string;
+  search?: string;
+}): Promise<AuditLogItem[]> {
+  const query = new URLSearchParams();
+  if (params?.action && params.action !== "all") query.set("action", params.action);
+  if (params?.entityType && params.entityType !== "all") query.set("entityType", params.entityType);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/audit-logs?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch audit logs");
+  return await res.json();
+}
+
+export async function restoreAuditLogApi(id: string): Promise<{ message: string; item: any }> {
+  const res = await fetch(`${API_BASE_URL}/audit-logs/${id}/restore`, {
+    method: "POST",
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to restore item");
+  return data;
+}
+
+export async function deleteAuditLogApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/audit-logs/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) throw new Error("Failed to delete audit log");
+}
+
 

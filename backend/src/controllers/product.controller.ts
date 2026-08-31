@@ -219,9 +219,23 @@ export const updateProduct = async (req: Request, res: Response) => {
   }
 };
 
+import { logActivity } from "../services/audit.service.js";
+
 export const deleteProduct = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const existing = await prisma.product.findUnique({ where: { id } });
+    if (existing) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "PRODUCT",
+        entityId: existing.id,
+        entityName: existing.name,
+        user: "Admin",
+        data: existing,
+      });
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: { status: "INACTIVE" },
@@ -237,6 +251,21 @@ export const bulkDeleteProducts = async (req: Request, res: Response) => {
     const { ids } = req.body;
     if (!Array.isArray(ids) || ids.length === 0) {
       return res.status(400).json({ success: false, message: "No product IDs provided" });
+    }
+
+    const productsToLog = await prisma.product.findMany({
+      where: { id: { in: ids } },
+    });
+
+    for (const p of productsToLog) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "PRODUCT",
+        entityId: p.id,
+        entityName: p.name,
+        user: "Admin",
+        data: p,
+      });
     }
 
     const result = await prisma.product.updateMany({

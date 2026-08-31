@@ -169,16 +169,39 @@ export default function EditProductPage() {
     setBarcode(`885${random}`);
   };
 
+  // Feedback Modal State
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "edit_success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "edit_success",
+    title: "",
+    message: "",
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
 
     if (!name.trim()) {
-      setErrorMessage("Please enter Product Name");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Product Name",
+        message: "Please enter a valid Product Name before saving.",
+      });
       return;
     }
     if (!sku.trim()) {
-      setErrorMessage("Please enter SKU");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing SKU",
+        message: "Please enter or generate a SKU for this product.",
+      });
       return;
     }
 
@@ -206,12 +229,19 @@ export default function EditProductPage() {
         expiredDate: expiryDate || undefined,
       });
 
-      setSuccess(true);
-      setTimeout(() => {
-        router.push("/products");
-      }, 1200);
+      setFeedbackModal({
+        isOpen: true,
+        type: "edit_success",
+        title: "Product Updated!",
+        message: `Product "${name.trim()}" (SKU: ${sku.trim()}) has been updated successfully.`,
+      });
     } catch (err: any) {
-      setErrorMessage(err.message || "Failed to update product");
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Update Product",
+        message: err.message || "An error occurred while updating product.",
+      });
     } finally {
       setLoading(false);
     }
@@ -624,6 +654,56 @@ export default function EditProductPage() {
             {loading ? "Saving..." : "Save Changes"}
           </button>
         </div>
+
+        {/* ========================================================= */}
+        {/* Action Feedback / Alert Modal (Product Updated / Error)   */}
+        {/* ========================================================= */}
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full border border-gray-100 shadow-2xl p-6 space-y-4 text-center animate-in fade-in zoom-in duration-150">
+              {/* Top Icon Badge */}
+              <div
+                className={`w-14 h-14 rounded-2xl flex items-center justify-center mx-auto shadow-xs ${
+                  feedbackModal.type === "edit_success"
+                    ? "bg-blue-50 text-blue-600 border border-blue-100"
+                    : "bg-rose-50 text-rose-600 border border-rose-100"
+                }`}
+              >
+                {feedbackModal.type === "edit_success" ? (
+                  <CheckCircle className="w-7 h-7 text-blue-600" />
+                ) : (
+                  <AlertTriangle className="w-7 h-7 text-rose-600" />
+                )}
+              </div>
+
+              {/* Title & Message */}
+              <div className="space-y-1.5">
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+              </div>
+
+              {/* Buttons */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+                    if (feedbackModal.type === "edit_success") {
+                      router.push("/products");
+                    }
+                  }}
+                  className={`w-full py-2.5 text-white text-xs font-bold rounded-xl shadow-xs transition-colors ${
+                    feedbackModal.type === "error"
+                      ? "bg-rose-500 hover:bg-rose-600"
+                      : "bg-[#FE9F43] hover:bg-[#E88B32]"
+                  }`}
+                >
+                  OK
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </form>
     </AppLayout>
   );

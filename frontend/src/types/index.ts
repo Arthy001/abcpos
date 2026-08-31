@@ -735,3 +735,24 @@ export interface ConnectedAppItem {
   connectedAccount?: string | null;
   connectedDate?: string | null;
 }
+
+export interface AuditLogItem {
+  id: string;
+  action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE" | "RESTORED";
+  entityType:
+    | "CATEGORY"
+    | "SUBCATEGORY"
+    | "BRAND"
+    | "UNIT"
+    | "WAREHOUSE"
+    | "STORE"
+    | "WARRANTY"
+    | "VARIANT"
+    | "PRODUCT";
+  entityId: string;
+  entityName: string;
+  user?: string | null;
+  data: string; // JSON snapshot string
+  createdAt: string;
+}
+
