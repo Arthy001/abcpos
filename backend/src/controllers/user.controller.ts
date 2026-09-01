@@ -1,13 +1,15 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 
-// Sample Seed data for System Users
+// Comprehensive Realistic Seed data for System Users with Warehouse & Store associations
 const INITIAL_USERS = [
   {
     name: "Henry Bryant",
     phone: "+12498345785",
     email: "henry@example.com",
     role: "Admin",
+    warehouseName: "Lavish Warehouse",
+    storeName: "ElectroMart Main",
     avatar: "/assets/images/avatar-01.jpg",
     status: "ACTIVE",
   },
@@ -16,23 +18,9 @@ const INITIAL_USERS = [
     phone: "+13178964582",
     email: "jenny@example.com",
     role: "Manager",
+    warehouseName: "Traditional Warehouse",
+    storeName: "Apex Branch",
     avatar: "/assets/images/customer12.jpg",
-    status: "ACTIVE",
-  },
-  {
-    name: "Leon Baxter",
-    phone: "+12796183487",
-    email: "leon@example.com",
-    role: "Salesman",
-    avatar: "/assets/images/customer13.jpg",
-    status: "ACTIVE",
-  },
-  {
-    name: "Karen Flores",
-    phone: "+17538647943",
-    email: "karen@example.com",
-    role: "Supervisor",
-    avatar: "/assets/images/customer14.jpg",
     status: "ACTIVE",
   },
   {
@@ -40,14 +28,38 @@ const INITIAL_USERS = [
     phone: "+13798132475",
     email: "michael@example.com",
     role: "Store Keeper",
+    warehouseName: "Lavish Warehouse",
+    storeName: "ElectroMart Main",
     avatar: "/assets/images/customer15.jpg",
+    status: "ACTIVE",
+  },
+  {
+    name: "Karen Flores",
+    phone: "+17538647943",
+    email: "karen@example.com",
+    role: "Warehouse Supervisor",
+    warehouseName: "Traditional Warehouse",
+    storeName: "Apex Branch",
+    avatar: "/assets/images/customer14.jpg",
+    status: "ACTIVE",
+  },
+  {
+    name: "Leon Baxter",
+    phone: "+12796183487",
+    email: "leon@example.com",
+    role: "Cashier",
+    warehouseName: "Lavish Warehouse",
+    storeName: "ElectroMart Main",
+    avatar: "/assets/images/customer13.jpg",
     status: "ACTIVE",
   },
   {
     name: "Karen Galvan",
     phone: "+17596341894",
     email: "galvan@example.com",
-    role: "Purchase",
+    role: "Purchase Officer",
+    warehouseName: "Lavish Warehouse",
+    storeName: "ElectroMart Main",
     avatar: "/assets/images/customer16.jpg",
     status: "ACTIVE",
   },
@@ -56,22 +68,18 @@ const INITIAL_USERS = [
     phone: "+12973548678",
     email: "thomas@example.com",
     role: "Delivery Biker",
+    warehouseName: "Traditional Warehouse",
+    storeName: "Apex Branch",
     avatar: "/assets/images/avatar-02.jpg",
-    status: "ACTIVE",
-  },
-  {
-    name: "Aliza Duncan",
-    phone: "+13147858357",
-    email: "aliza@example.com",
-    role: "Maintenance",
-    avatar: "/assets/images/customer17.jpg",
     status: "ACTIVE",
   },
   {
     name: "James Higham",
     phone: "+11978348626",
     email: "james@example.com",
-    role: "Quality Analyst",
+    role: "Inventory Auditor",
+    warehouseName: "Lavish Warehouse",
+    storeName: "Apex Branch",
     avatar: "/assets/images/avatar-03.jpg",
     status: "ACTIVE",
   },
@@ -80,43 +88,51 @@ const INITIAL_USERS = [
     phone: "+12678934561",
     email: "robinson@example.com",
     role: "Accountant",
+    warehouseName: "Lavish Warehouse",
+    storeName: "ElectroMart Main",
     avatar: "/assets/images/customer18.jpg",
+    status: "ACTIVE",
+  },
+  {
+    name: "Aliza Duncan",
+    phone: "+13147858357",
+    email: "aliza@example.com",
+    role: "Maintenance",
+    warehouseName: "Traditional Warehouse",
+    storeName: "ElectroMart Main",
+    avatar: "/assets/images/customer17.jpg",
     status: "ACTIVE",
   },
 ];
 
-// Sample Seed data for Roles
+// Seed data for Roles
 const INITIAL_ROLES = [
   { name: "Admin", createdDate: "12 Sep 2024", status: "ACTIVE", description: "Full system administrative access" },
   { name: "Manager", createdDate: "24 Oct 2024", status: "ACTIVE", description: "Branch and operational management" },
-  { name: "Salesman", createdDate: "18 Feb 2024", status: "ACTIVE", description: "POS and counter sales access" },
-  { name: "Supervisor", createdDate: "17 Oct 2024", status: "ACTIVE", description: "Team and floor supervisor" },
-  { name: "Store Keeper", createdDate: "20 Jul 2024", status: "ACTIVE", description: "Warehouse stock management" },
-  { name: "Inventory Manager", createdDate: "10 Apr 2024", status: "ACTIVE", description: "Stock control and audits" },
-  { name: "Delivery Biker", createdDate: "29 Aug 2024", status: "ACTIVE", description: "Order dispatch and delivery" },
-  { name: "Employee", createdDate: "22 Feb 2024", status: "ACTIVE", description: "Standard employee access" },
-  { name: "Cashier", createdDate: "03 Nov 2024", status: "ACTIVE", description: "Checkout and cashier desk" },
-  { name: "Quality Analyst", createdDate: "17 Dec 2024", status: "ACTIVE", description: "Quality assessment & verification" },
+  { name: "Store Keeper", createdDate: "20 Jul 2024", status: "ACTIVE", description: "Warehouse stock receiving and dispatch" },
+  { name: "Warehouse Supervisor", createdDate: "17 Oct 2024", status: "ACTIVE", description: "Multi-warehouse inventory supervisor" },
+  { name: "Purchase Officer", createdDate: "15 Jan 2024", status: "ACTIVE", description: "Procurement, purchase orders and goods receipt" },
+  { name: "Cashier", createdDate: "03 Nov 2024", status: "ACTIVE", description: "POS sales, cashier desk and billing" },
+  { name: "Salesman", createdDate: "18 Feb 2024", status: "ACTIVE", description: "Counter and showroom sales" },
+  { name: "Inventory Auditor", createdDate: "10 Apr 2024", status: "ACTIVE", description: "Stock control, adjustment and physical audits" },
+  { name: "Delivery Biker", createdDate: "29 Aug 2024", status: "ACTIVE", description: "Order dispatch and delivery logistics" },
+  { name: "Accountant", createdDate: "17 Dec 2024", status: "ACTIVE", description: "Invoices, tax, financial statements" },
+  { name: "Maintenance", createdDate: "22 Feb 2024", status: "ACTIVE", description: "Store & warehouse facilities maintenance" },
 ];
 
-// Sample Seed data for Delete Account Requests
+// Seed data for Delete Account Requests
 const INITIAL_DELETE_REQUESTS = [
   { userName: "Steven", requisitionDate: "25 Sep 2023", deleteRequestDate: "01 Oct 2023", userAvatar: "/assets/images/avatar-01.jpg" },
   { userName: "Susan Lopez", requisitionDate: "30 Sep 2023", deleteRequestDate: "05 Oct 2023", userAvatar: "/assets/images/customer12.jpg" },
   { userName: "Robert Grossman", requisitionDate: "10 Sep 2023", deleteRequestDate: "25 Sep 2023", userAvatar: "/assets/images/customer13.jpg" },
   { userName: "Janet Hembre", requisitionDate: "15 Sep 2023", deleteRequestDate: "20 Sep 2023", userAvatar: "/assets/images/customer14.jpg" },
   { userName: "Russell Belle", requisitionDate: "15 Aug 2023", deleteRequestDate: "01 Sep 2023", userAvatar: "/assets/images/customer15.jpg" },
-  { userName: "Henry Bryant", requisitionDate: "12 Aug 2023", deleteRequestDate: "01 Sep 2023", userAvatar: "/assets/images/avatar-02.jpg" },
-  { userName: "Michael Dawson", requisitionDate: "15 Sep 2023", deleteRequestDate: "01 Oct 2023", userAvatar: "/assets/images/customer16.jpg" },
-  { userName: "Thomas Ward", requisitionDate: "01 Jan 2023", deleteRequestDate: "01 Feb 2023", userAvatar: "/assets/images/avatar-03.jpg" },
-  { userName: "Jada Robinson", requisitionDate: "22 Oct 2023", deleteRequestDate: "15 Nov 2023", userAvatar: "/assets/images/customer17.jpg" },
-  { userName: "Aliza Duncan", requisitionDate: "02 Nov 2023", deleteRequestDate: "01 Dec 2023", userAvatar: "/assets/images/customer18.jpg" },
 ];
 
 // ==================== SYSTEM USERS ====================
 export const getUsers = async (req: Request, res: Response) => {
   try {
-    const { status, search, role } = req.query;
+    const { status, search, role, warehouse, store } = req.query;
 
     const count = await prisma.systemUser.count();
     if (count === 0) {
@@ -132,12 +148,20 @@ export const getUsers = async (req: Request, res: Response) => {
     if (role && role !== "all") {
       where.role = String(role);
     }
+    if (warehouse && warehouse !== "all") {
+      where.warehouseName = String(warehouse);
+    }
+    if (store && store !== "all") {
+      where.storeName = String(store);
+    }
     if (search) {
       where.OR = [
         { name: { contains: String(search) } },
         { email: { contains: String(search) } },
         { phone: { contains: String(search) } },
         { role: { contains: String(search) } },
+        { warehouseName: { contains: String(search) } },
+        { storeName: { contains: String(search) } },
       ];
     }
 
@@ -165,7 +189,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, phone, role, avatar, status, password } = req.body;
+    const { name, email, phone, role, warehouseName, storeName, avatar, status, password } = req.body;
     if (!name || !email) {
       return res.status(400).json({ success: false, message: "Name and Email are required" });
     }
@@ -181,7 +205,9 @@ export const createUser = async (req: Request, res: Response) => {
         email,
         phone: phone || null,
         role: role || "Admin",
-        avatar: avatar || "/assets/images/customer11.jpg",
+        warehouseName: warehouseName || null,
+        storeName: storeName || null,
+        avatar: avatar || "/assets/images/avatar-01.jpg",
         status: status ? String(status).toUpperCase() : "ACTIVE",
         password: password || null,
       },
@@ -196,13 +222,15 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const { name, email, phone, role, avatar, status, password } = req.body;
+    const { name, email, phone, role, warehouseName, storeName, avatar, status, password } = req.body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
     if (email !== undefined) updateData.email = email;
     if (phone !== undefined) updateData.phone = phone;
     if (role !== undefined) updateData.role = role;
+    if (warehouseName !== undefined) updateData.warehouseName = warehouseName;
+    if (storeName !== undefined) updateData.storeName = storeName;
     if (avatar !== undefined) updateData.avatar = avatar;
     if (status !== undefined) updateData.status = String(status).toUpperCase();
     if (password) updateData.password = password;

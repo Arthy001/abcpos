@@ -667,16 +667,18 @@ model OrderItem {
 }
 
 model SystemUser {
-  id        String   @id @default(uuid())
-  name      String
-  phone     String?
-  email     String   @unique
-  role      String   @default("Admin")
-  avatar    String?  @default("/assets/images/customer11.jpg")
-  status    String   @default("ACTIVE") // ACTIVE, INACTIVE
-  password  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String   @id @default(uuid())
+  name          String
+  phone         String?
+  email         String   @unique
+  role          String   @default("Admin")
+  warehouseName String?  // e.g. "Lavish Warehouse"
+  storeName     String?  // e.g. "ElectroMart Main"
+  avatar        String?  @default("/assets/images/customer11.jpg")
+  status        String   @default("ACTIVE") // ACTIVE, INACTIVE
+  password      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 }
 
 model Role {

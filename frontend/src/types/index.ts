@@ -642,6 +642,8 @@ export interface SystemUser {
   phone?: string | null;
   email: string;
   role: string;
+  warehouseName?: string | null;
+  storeName?: string | null;
   avatar?: string | null;
   status: "ACTIVE" | "INACTIVE";
   password?: string | null;
@@ -669,6 +671,8 @@ export interface RoleItem {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export type Role = RoleItem;
 
 export interface DeleteAccountRequestItem {
   id: string;

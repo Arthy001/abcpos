@@ -1,77 +1,102 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Image from "next/image";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { SystemUser } from "@/types";
+import { SystemUser, Warehouse, Store, Role } from "@/types";
 import {
   fetchUsers,
   createUserApi,
   updateUserApi,
   deleteUserApi,
+  fetchWarehouses,
+  fetchStores,
+  fetchRoles,
 } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
-  Plus,
+  PlusCircle,
+  Download,
   Search,
+  FileText,
+  FileSpreadsheet,
   RotateCcw,
-  ChevronUp,
+  Eye,
   Edit,
   Trash2,
-  Eye,
   X,
-  ChevronDown,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Shield,
+  Warehouse as WarehouseIcon,
+  Store as StoreIcon,
   Mail,
   Phone,
-  Shield,
-  User,
-  CheckCircle2,
   Lock,
-  FileSpreadsheet,
-  FileText,
   EyeOff,
+  UserCheck,
+  UserX,
+  UserPlus,
 } from "lucide-react";
 
 export default function UsersPage() {
   const [users, setUsers] = useState<SystemUser[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [roles, setRoles] = useState<Role[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+
+  // Filters & Search
   const [search, setSearch] = useState<string>("");
+  const [roleFilter, setRoleFilter] = useState<string>("all");
+  const [warehouseFilter, setWarehouseFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [pageSize, setPageSize] = useState<number>(10);
-  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Modal States
+  // Pagination
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const [pageSize, setPageSize] = useState<number>(10);
+
+  // Form Modal States
   const [showAddModal, setShowAddModal] = useState<boolean>(false);
   const [showEditModal, setShowEditModal] = useState<boolean>(false);
   const [showViewModal, setShowViewModal] = useState<boolean>(false);
-  const [showDeleteModal, setShowDeleteModal] = useState<boolean>(false);
   const [selectedUser, setSelectedUser] = useState<SystemUser | null>(null);
 
-  // Form State
+  // Delete State
+  const [deletingUser, setDeletingUser] = useState<SystemUser | null>(null);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+
+  // Form Fields
   const [formName, setFormName] = useState<string>("");
   const [formEmail, setFormEmail] = useState<string>("");
   const [formPhone, setFormPhone] = useState<string>("");
   const [formRole, setFormRole] = useState<string>("Admin");
+  const [formWarehouse, setFormWarehouse] = useState<string>("");
+  const [formStore, setFormStore] = useState<string>("");
   const [formAvatar, setFormAvatar] = useState<string>("/assets/images/avatar-01.jpg");
   const [formStatus, setFormStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
   const [formPassword, setFormPassword] = useState<string>("");
   const [formConfirmPassword, setFormConfirmPassword] = useState<string>("");
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [formError, setFormError] = useState<string>("");
 
-  const sampleUsers: SystemUser[] = [
-    { id: "1", name: "Henry Bryant", phone: "+12498345785", email: "henry@example.com", role: "Admin", avatar: "/assets/images/avatar-01.jpg", status: "ACTIVE" },
-    { id: "2", name: "Jenny Ellis", phone: "+13178964582", email: "jenny@example.com", role: "Manager", avatar: "/assets/images/customer12.jpg", status: "ACTIVE" },
-    { id: "3", name: "Leon Baxter", phone: "+12796183487", email: "leon@example.com", role: "Salesman", avatar: "/assets/images/customer13.jpg", status: "ACTIVE" },
-    { id: "4", name: "Karen Flores", phone: "+17538647943", email: "karen@example.com", role: "Supervisor", avatar: "/assets/images/customer14.jpg", status: "ACTIVE" },
-    { id: "5", name: "Michael Dawson", phone: "+13798132475", email: "michael@example.com", role: "Store Keeper", avatar: "/assets/images/customer15.jpg", status: "ACTIVE" },
-    { id: "6", name: "Karen Galvan", phone: "+17596341894", email: "galvan@example.com", role: "Purchase", avatar: "/assets/images/customer16.jpg", status: "ACTIVE" },
-    { id: "7", name: "Thomas Ward", phone: "+12973548678", email: "thomas@example.com", role: "Delivery Biker", avatar: "/assets/images/avatar-02.jpg", status: "ACTIVE" },
-    { id: "8", name: "Aliza Duncan", phone: "+13147858357", email: "aliza@example.com", role: "Maintenance", avatar: "/assets/images/customer17.jpg", status: "ACTIVE" },
-    { id: "9", name: "James Higham", phone: "+11978348626", email: "james@example.com", role: "Quality Analyst", avatar: "/assets/images/avatar-03.jpg", status: "ACTIVE" },
-    { id: "10", name: "Jada Robinson", phone: "+12678934561", email: "robinson@example.com", role: "Accountant", avatar: "/assets/images/customer18.jpg", status: "ACTIVE" },
-  ];
+  // Feedback Modal State conforming to GEMINI.md
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "edit_success" | "delete_success" | "error";
+    title: string;
+    message: string;
+    itemName?: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
+  });
 
   const availableAvatars = [
     "/assets/images/avatar-01.jpg",
@@ -87,36 +112,45 @@ export default function UsersPage() {
     "/assets/images/customer18.jpg",
   ];
 
-  const roleOptions = [
+  const defaultRoleList = [
     "Admin",
     "Manager",
-    "Salesman",
-    "Supervisor",
     "Store Keeper",
-    "Inventory Manager",
-    "Delivery Biker",
-    "Purchase",
-    "Maintenance",
-    "Quality Analyst",
-    "Accountant",
+    "Warehouse Supervisor",
+    "Purchase Officer",
     "Cashier",
-    "Employee",
+    "Salesman",
+    "Inventory Auditor",
+    "Delivery Biker",
+    "Accountant",
+    "Maintenance",
   ];
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await fetchUsers({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setUsers(data);
-      } else if (!search && statusFilter === "all") {
-        setUsers(sampleUsers);
-      } else {
-        setUsers([]);
-      }
-    } catch (err) {
-      console.error(err);
-      setUsers(sampleUsers);
+      const [userData, whData, storeData, roleData] = await Promise.all([
+        fetchUsers({
+          status: statusFilter,
+          role: roleFilter,
+          warehouse: warehouseFilter,
+          search,
+        }),
+        fetchWarehouses(),
+        fetchStores(),
+        fetchRoles(),
+      ]);
+      setUsers(userData || []);
+      setWarehouses(whData || []);
+      setStores(storeData || []);
+      setRoles(roleData || []);
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Load Users",
+        message: err.message || "An error occurred while loading system users.",
+      });
     } finally {
       setLoading(false);
     }
@@ -124,432 +158,550 @@ export default function UsersPage() {
 
   useEffect(() => {
     loadData();
-  }, [statusFilter, search]);
+  }, [statusFilter, roleFilter, warehouseFilter, search]);
 
-  const handleOpenAddModal = () => {
-    setSelectedUser(null);
-    setFormName("");
-    setFormEmail("");
-    setFormPhone("");
-    setFormRole("Admin");
-    setFormAvatar(availableAvatars[Math.floor(Math.random() * availableAvatars.length)]);
-    setFormStatus("ACTIVE");
-    setFormPassword("");
-    setFormConfirmPassword("");
-    setFormError("");
-    setShowAddModal(true);
-  };
+  // Combined Roles from DB + Defaults
+  const combinedRoleOptions = useMemo(() => {
+    const roleNamesFromDb = roles.map((r) => r.name);
+    const set = new Set([...roleNamesFromDb, ...defaultRoleList]);
+    return Array.from(set);
+  }, [roles]);
 
-  const handleOpenEditModal = (user: SystemUser) => {
-    setSelectedUser(user);
-    setFormName(user.name);
-    setFormEmail(user.email);
-    setFormPhone(user.phone || "");
-    setFormRole(user.role);
-    setFormAvatar(user.avatar || "/assets/images/avatar-01.jpg");
-    setFormStatus(user.status);
-    setFormPassword("");
-    setFormConfirmPassword("");
-    setFormError("");
-    setShowEditModal(true);
-  };
+  // Filtered Users
+  const filteredUsers = useMemo(() => {
+    return users.filter((u) => {
+      const matchSearch =
+        search === "" ||
+        u.name.toLowerCase().includes(search.toLowerCase()) ||
+        u.email.toLowerCase().includes(search.toLowerCase()) ||
+        (u.phone && u.phone.includes(search)) ||
+        u.role.toLowerCase().includes(search.toLowerCase()) ||
+        (u.warehouseName && u.warehouseName.toLowerCase().includes(search.toLowerCase())) ||
+        (u.storeName && u.storeName.toLowerCase().includes(search.toLowerCase()));
 
-  const handleOpenViewModal = (user: SystemUser) => {
-    setSelectedUser(user);
-    setShowViewModal(true);
-  };
+      const matchRole = roleFilter === "all" || u.role === roleFilter;
+      const matchWh = warehouseFilter === "all" || u.warehouseName === warehouseFilter;
+      const matchStatus = statusFilter === "all" || u.status === statusFilter;
 
-  const handleOpenDeleteModal = (user: SystemUser) => {
-    setSelectedUser(user);
-    setShowDeleteModal(true);
-  };
+      return matchSearch && matchRole && matchWh && matchStatus;
+    });
+  }, [users, search, roleFilter, warehouseFilter, statusFilter]);
 
-  const handleSubmitAdd = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formName.trim()) {
-      setFormError("User Name is required");
-      return;
-    }
-    if (!formEmail.trim()) {
-      setFormError("Email is required");
-      return;
-    }
-    if (formPassword && formPassword !== formConfirmPassword) {
-      setFormError("Passwords do not match");
-      return;
-    }
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredUsers.length / pageSize) || 1;
+  const paginatedUsers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredUsers.slice(start, start + pageSize);
+  }, [filteredUsers, currentPage, pageSize]);
 
-    try {
-      setIsSubmitting(true);
-      setFormError("");
-      const payload: Partial<SystemUser> = {
-        name: formName.trim(),
-        email: formEmail.trim(),
-        phone: formPhone.trim() || undefined,
-        role: formRole,
-        avatar: formAvatar,
-        status: formStatus,
-        password: formPassword || undefined,
-      };
-
-      try {
-        await createUserApi(payload);
-      } catch (err) {
-        // Fallback local addition if offline
-        const localNew: SystemUser = {
-          id: String(Date.now()),
-          name: formName.trim(),
-          email: formEmail.trim(),
-          phone: formPhone.trim() || null,
-          role: formRole,
-          avatar: formAvatar,
-          status: formStatus,
-        };
-        setUsers((prev) => [localNew, ...prev]);
-      }
-      setShowAddModal(false);
-      loadData();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to create user");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmitEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedUser) return;
-    if (!formName.trim()) {
-      setFormError("User Name is required");
-      return;
-    }
-    if (!formEmail.trim()) {
-      setFormError("Email is required");
-      return;
-    }
-    if (formPassword && formPassword !== formConfirmPassword) {
-      setFormError("Passwords do not match");
-      return;
-    }
-
-    try {
-      setIsSubmitting(true);
-      setFormError("");
-      const payload: Partial<SystemUser> = {
-        name: formName.trim(),
-        email: formEmail.trim(),
-        phone: formPhone.trim() || undefined,
-        role: formRole,
-        avatar: formAvatar,
-        status: formStatus,
-        password: formPassword || undefined,
-      };
-
-      try {
-        await updateUserApi(selectedUser.id, payload);
-      } catch (err) {
-        setUsers((prev) =>
-          prev.map((u) =>
-            u.id === selectedUser.id
-              ? {
-                  ...u,
-                  name: formName.trim(),
-                  email: formEmail.trim(),
-                  phone: formPhone.trim() || null,
-                  role: formRole,
-                  avatar: formAvatar,
-                  status: formStatus,
-                }
-              : u
-          )
-        );
-      }
-      setShowEditModal(false);
-      loadData();
-    } catch (err: any) {
-      setFormError(err.message || "Failed to update user");
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleConfirmDelete = async () => {
-    if (!selectedUser) return;
-    try {
-      setIsSubmitting(true);
-      try {
-        await deleteUserApi(selectedUser.id);
-      } catch (e) {
-        setUsers((prev) => prev.filter((u) => u.id !== selectedUser.id));
-      }
-      setShowDeleteModal(false);
-      loadData();
-    } catch (err: any) {
-      console.error(err);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
+  // Select all handlers
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      setSelectedIds(users.map((u) => u.id));
+      setSelectedIds(paginatedUsers.map((u) => u.id));
     } else {
       setSelectedIds([]);
     }
   };
 
   const handleSelectOne = (id: string) => {
-    if (selectedIds.includes(id)) {
-      setSelectedIds(selectedIds.filter((item) => item !== id));
-    } else {
-      setSelectedIds([...selectedIds, id]);
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  // Open Add Modal
+  const handleOpenAddModal = () => {
+    setSelectedUser(null);
+    setFormName("");
+    setFormEmail("");
+    setFormPhone("");
+    setFormRole("Store Keeper");
+    setFormWarehouse(warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse");
+    setFormStore(stores.length > 0 ? stores[0].name : "ElectroMart Main");
+    setFormAvatar(availableAvatars[Math.floor(Math.random() * availableAvatars.length)]);
+    setFormStatus("ACTIVE");
+    setFormPassword("");
+    setFormConfirmPassword("");
+    setShowAddModal(true);
+  };
+
+  // Open Edit Modal
+  const handleOpenEditModal = (user: SystemUser) => {
+    setSelectedUser(user);
+    setFormName(user.name);
+    setFormEmail(user.email);
+    setFormPhone(user.phone || "");
+    setFormRole(user.role);
+    setFormWarehouse(user.warehouseName || "");
+    setFormStore(user.storeName || "");
+    setFormAvatar(user.avatar || "/assets/images/avatar-01.jpg");
+    setFormStatus(user.status);
+    setFormPassword("");
+    setFormConfirmPassword("");
+    setShowEditModal(true);
+  };
+
+  // Open View Modal
+  const handleOpenViewModal = (user: SystemUser) => {
+    setSelectedUser(user);
+    setShowViewModal(true);
+  };
+
+  // Submit Add User
+  const handleSubmitAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please enter the user's full name.",
+      });
+      return;
+    }
+    if (!formEmail.trim()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please enter a valid email address.",
+      });
+      return;
+    }
+    if (formPassword && formPassword !== formConfirmPassword) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Password Mismatch",
+        message: "The entered passwords do not match. Please verify and try again.",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const payload: Partial<SystemUser> = {
+        name: formName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim() || undefined,
+        role: formRole,
+        warehouseName: formWarehouse || undefined,
+        storeName: formStore || undefined,
+        avatar: formAvatar,
+        status: formStatus,
+        password: formPassword || undefined,
+      };
+
+      await createUserApi(payload);
+      setShowAddModal(false);
+      setFeedbackModal({
+        isOpen: true,
+        type: "add_success",
+        title: "User Created!",
+        message: `User account for "${formName}" has been successfully created.`,
+        itemName: formName,
+      });
+      loadData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Operation Failed",
+        message: err.message || "Failed to create user account.",
+      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  // Pagination calculation
-  const totalPages = Math.ceil(users.length / pageSize) || 1;
-  const paginatedUsers = users.slice(
-    (currentPage - 1) * pageSize,
-    currentPage * pageSize
-  );
+  // Submit Edit User
+  const handleSubmitEdit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+    if (!formName.trim()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please enter the user's full name.",
+      });
+      return;
+    }
+    if (formPassword && formPassword !== formConfirmPassword) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Password Mismatch",
+        message: "The entered passwords do not match. Please verify and try again.",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const payload: Partial<SystemUser> = {
+        name: formName.trim(),
+        email: formEmail.trim(),
+        phone: formPhone.trim() || undefined,
+        role: formRole,
+        warehouseName: formWarehouse || undefined,
+        storeName: formStore || undefined,
+        avatar: formAvatar,
+        status: formStatus,
+        password: formPassword ? formPassword : undefined,
+      };
+
+      await updateUserApi(selectedUser.id, payload);
+      setShowEditModal(false);
+      setFeedbackModal({
+        isOpen: true,
+        type: "edit_success",
+        title: "User Updated!",
+        message: `User account "${formName}" has been updated successfully.`,
+        itemName: formName,
+      });
+      loadData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Operation Failed",
+        message: err.message || "Failed to update user account.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Confirm Delete User Flow
+  const handleConfirmDelete = async () => {
+    if (!deletingUser) return;
+    const name = deletingUser.name;
+    try {
+      setIsDeleting(true);
+      await deleteUserApi(deletingUser.id);
+      setDeletingUser(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "delete_success",
+        title: "User Deleted!",
+        message: `User account "${name}" has been deleted from the system.`,
+        itemName: name,
+      });
+      loadData();
+    } catch (err: any) {
+      setDeletingUser(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Operation Failed",
+        message: err.message || "Failed to delete user account.",
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Export CSV
+  const exportCSV = () => {
+    if (filteredUsers.length === 0) {
+      alert("No user data available to export.");
+      return;
+    }
+    const headers = ["Name", "Email", "Phone", "Role", "Warehouse", "Store", "Status"];
+    const rows = filteredUsers.map((u) => [
+      `"${u.name}"`,
+      `"${u.email}"`,
+      `"${u.phone || "-"}"`,
+      `"${u.role}"`,
+      `"${u.warehouseName || "-"}"`,
+      `"${u.storeName || "-"}"`,
+      u.status,
+    ]);
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `system_users_${new Date().toISOString().split("T")[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <AppLayout>
-      <div className="space-y-5">
-        {/* Page Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="space-y-4 w-full font-sans pb-10">
+        {/* Top Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
-            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Users</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Manage your users</p>
+            <h1 className="text-lg font-bold text-[#111827] tracking-tight">Users List</h1>
+            <p className="text-xs text-[#6B7280] mt-0.5">
+              Manage system users, assigned roles, warehouses, and branches
+            </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center space-x-2">
             {/* PDF Export */}
             <button
+              title="Export PDF / Print"
               onClick={() => window.print()}
-              title="Export to PDF"
-              className="w-8 h-8 flex items-center justify-center rounded bg-red-50 text-red-600 hover:bg-red-100 transition-colors border border-red-200"
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#EF4444] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer"
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="w-3.5 h-3.5 fill-red-50 stroke-red-500" />
             </button>
 
             {/* Excel Export */}
             <button
-              onClick={() => alert("Exporting Users to Excel (.xlsx)...")}
-              title="Export to Excel"
-              className="w-8 h-8 flex items-center justify-center rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 transition-colors border border-emerald-200"
+              title="Export CSV"
+              onClick={exportCSV}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#10B981] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer"
             >
-              <FileSpreadsheet className="w-4 h-4" />
+              <FileSpreadsheet className="w-3.5 h-3.5 fill-emerald-50 stroke-emerald-600" />
             </button>
 
             {/* Refresh */}
             <button
-              onClick={() => loadData()}
               title="Refresh"
-              className="w-8 h-8 flex items-center justify-center rounded bg-white text-gray-600 hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
+              onClick={loadData}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#FE9F43]" : ""}`} />
             </button>
 
-            {/* Collapse */}
-            <button
-              title="Collapse"
-              className="w-8 h-8 flex items-center justify-center rounded bg-white text-gray-600 hover:bg-gray-50 transition-colors border border-gray-200 shadow-sm"
-            >
-              <ChevronUp className="w-4 h-4" />
-            </button>
-
-            {/* Add User Button */}
+            {/* + Add User Button */}
             <button
               onClick={handleOpenAddModal}
-              className="inline-flex items-center gap-1.5 px-3.5 py-1.5 bg-[#fe9f43] hover:bg-[#e88e35] text-white text-xs font-medium rounded-md shadow-sm transition-colors"
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
             >
-              <Plus className="w-4 h-4" />
+              <PlusCircle className="w-3.5 h-3.5" />
               <span>Add User</span>
             </button>
           </div>
         </div>
 
-        {/* Main Content Card */}
-        <div className="bg-white rounded-lg border border-gray-100 shadow-sm overflow-hidden">
-          {/* Top Filter Bar */}
-          <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3">
-            {/* Search */}
-            <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        {/* Users Table Card Container */}
+        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
+          {/* Search & 3 Filters Bar */}
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="relative w-full lg:w-64">
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search user name, email, role..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-9 pr-3 py-1.5 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
               />
+              <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
             </div>
 
-            {/* Status Dropdown Filter */}
-            <div className="relative w-full sm:w-auto">
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full sm:w-36 px-3 py-1.5 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43] text-gray-700 bg-white"
-              >
-                <option value="all">Status</option>
-                <option value="ACTIVE">Active</option>
-                <option value="INACTIVE">Inactive</option>
-              </select>
+            <div className="flex flex-wrap items-center gap-2">
+              {/* Role Filter */}
+              <div className="w-40">
+                <SearchableSelect
+                  placeholder="Role: All"
+                  value={roleFilter}
+                  onChange={(val) => {
+                    setRoleFilter(val);
+                    setCurrentPage(1);
+                  }}
+                  options={[
+                    { value: "all", label: "Role: All" },
+                    ...combinedRoleOptions.map((r) => ({ value: r, label: r })),
+                  ]}
+                />
+              </div>
+
+              {/* Warehouse Filter */}
+              <div className="w-44">
+                <SearchableSelect
+                  placeholder="Warehouse: All"
+                  value={warehouseFilter}
+                  onChange={(val) => {
+                    setWarehouseFilter(val);
+                    setCurrentPage(1);
+                  }}
+                  options={[
+                    { value: "all", label: "Warehouse: All" },
+                    ...warehouses.map((w) => ({ value: w.name, label: w.name })),
+                  ]}
+                />
+              </div>
+
+              {/* Status Filter */}
+              <div className="w-36">
+                <SearchableSelect
+                  placeholder="Status: All"
+                  value={statusFilter}
+                  onChange={(val) => {
+                    setStatusFilter(val);
+                    setCurrentPage(1);
+                  }}
+                  options={[
+                    { value: "all", label: "Status: All" },
+                    { value: "ACTIVE", label: "Active" },
+                    { value: "INACTIVE", label: "Inactive" },
+                  ]}
+                />
+              </div>
             </div>
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-gray-100 text-[12px] font-semibold text-gray-700 bg-gray-50/50">
-                  <th className="py-3.5 px-4 w-10">
+          <div className="overflow-x-auto min-h-[300px]">
+            <table className="w-full text-left text-xs">
+              <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
+                <tr>
+                  <th className="py-2 px-3 w-8">
                     <input
                       type="checkbox"
                       checked={
-                        users.length > 0 && selectedIds.length === users.length
+                        paginatedUsers.length > 0 &&
+                        paginatedUsers.every((u) => selectedIds.includes(u.id))
                       }
                       onChange={handleSelectAll}
-                      className="rounded border-gray-300 text-[#fe9f43] focus:ring-[#fe9f43] cursor-pointer"
+                      className="rounded border-[#D1D5DB] text-[#FE9F43] focus:ring-[#FE9F43] w-3.5 h-3.5"
                     />
                   </th>
-                  <th className="py-3.5 px-4">User Name</th>
-                  <th className="py-3.5 px-4">Phone</th>
-                  <th className="py-3.5 px-4">Email</th>
-                  <th className="py-3.5 px-4">Role</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right"></th>
+                  <th className="py-2.5 px-3 font-semibold">User Name</th>
+                  <th className="py-2.5 px-3 font-semibold">Phone</th>
+                  <th className="py-2.5 px-3 font-semibold">Email</th>
+                  <th className="py-2.5 px-3 font-semibold">Role</th>
+                  <th className="py-2.5 px-3 font-semibold">Warehouse / Store</th>
+                  <th className="py-2.5 px-3 font-semibold">Status</th>
+                  <th className="py-2.5 px-3 font-semibold text-center w-28">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
+              <tbody className="divide-y divide-[#F1F3F5]">
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400">
-                      <div className="flex flex-col items-center justify-center gap-2">
-                        <RotateCcw className="w-5 h-5 animate-spin text-[#fe9f43]" />
-                        <span>Loading users...</span>
-                      </div>
+                    <td colSpan={8} className="py-12 text-center text-gray-400">
+                      <RotateCcw className="w-5 h-5 animate-spin mx-auto text-[#FE9F43] mb-2" />
+                      Loading user accounts...
                     </td>
                   </tr>
                 ) : paginatedUsers.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-12 text-center text-gray-400">
-                      No users found.
+                    <td colSpan={8} className="py-12 text-center text-gray-400">
+                      No users found matching your criteria.
                     </td>
                   </tr>
                 ) : (
-                  paginatedUsers.map((user) => (
-                    <tr
-                      key={user.id}
-                      className="hover:bg-gray-50/70 transition-colors"
-                    >
-                      {/* Checkbox */}
-                      <td className="py-3.5 px-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(user.id)}
-                          onChange={() => handleSelectOne(user.id)}
-                          className="rounded border-gray-300 text-[#fe9f43] focus:ring-[#fe9f43] cursor-pointer"
-                        />
-                      </td>
-
-                      {/* User Name + Avatar */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-lg overflow-hidden relative bg-gray-100 flex-shrink-0 border border-gray-200">
-                            {user.avatar ? (
-                              <Image
-                                src={user.avatar}
+                  paginatedUsers.map((user) => {
+                    const isSelected = selectedIds.includes(user.id);
+                    return (
+                      <tr
+                        key={user.id}
+                        className={`hover:bg-[#F8FAFC] transition-colors ${
+                          isSelected ? "bg-orange-50/30" : ""
+                        }`}
+                      >
+                        <td className="py-2 px-3">
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => handleSelectOne(user.id)}
+                            className="rounded border-[#D1D5DB] text-[#FE9F43] focus:ring-[#FE9F43] w-3.5 h-3.5"
+                          />
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex items-center space-x-2.5">
+                            <div className="relative w-7 h-7 rounded-full overflow-hidden bg-gray-100 shrink-0 border border-gray-200">
+                              <img
+                                src={user.avatar || "/assets/images/avatar-01.jpg"}
                                 alt={user.name}
-                                fill
-                                className="object-cover"
+                                className="w-full h-full object-cover"
                               />
-                            ) : (
-                              <div className="w-full h-full flex items-center justify-center text-gray-400">
-                                <User className="w-5 h-5" />
-                              </div>
+                            </div>
+                            <span className="font-bold text-[#111827]">{user.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-2 px-3 text-[#4B5563] font-mono text-[11px]">
+                          {user.phone || "-"}
+                        </td>
+                        <td className="py-2 px-3 text-[#4B5563]">{user.email}</td>
+                        <td className="py-2 px-3">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-gray-100 text-gray-700 border border-gray-200">
+                            <Shield className="w-3 h-3 mr-1 text-[#FE9F43]" />
+                            {user.role}
+                          </span>
+                        </td>
+                        <td className="py-2 px-3">
+                          <div className="flex flex-col space-y-0.5">
+                            {user.warehouseName ? (
+                              <span className="text-[11px] font-medium text-gray-800 flex items-center">
+                                <WarehouseIcon className="w-3 h-3 text-[#3B82F6] mr-1 shrink-0" />
+                                {user.warehouseName}
+                              </span>
+                            ) : null}
+                            {user.storeName ? (
+                              <span className="text-[10px] text-gray-500 flex items-center">
+                                <StoreIcon className="w-2.5 h-2.5 text-emerald-500 mr-1 shrink-0" />
+                                {user.storeName}
+                              </span>
+                            ) : null}
+                            {!user.warehouseName && !user.storeName && (
+                              <span className="text-[11px] text-gray-400 italic">Central / All</span>
                             )}
                           </div>
-                          <span className="font-semibold text-gray-800 text-[13px]">
-                            {user.name}
-                          </span>
-                        </div>
-                      </td>
+                        </td>
+                        <td className="py-2 px-3">
+                          {user.status === "ACTIVE" ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E6F4EA] text-[#137333]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#137333] mr-1"></span>
+                              Active
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FCE8E6] text-[#C5221F]">
+                              <span className="w-1.5 h-1.5 rounded-full bg-[#C5221F] mr-1"></span>
+                              Inactive
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-2 px-3 text-center">
+                          {/* Standard Action Order: View (Eye) -> Edit (Edit) -> Delete (Trash2) */}
+                          <div className="flex items-center justify-center space-x-1.5">
+                            {/* View Button */}
+                            <button
+                              onClick={() => handleOpenViewModal(user)}
+                              title="View Profile"
+                              className="w-7 h-7 rounded-lg border border-[#E5E7EB] hover:bg-gray-100 text-[#6B7280] hover:text-[#111827] flex items-center justify-center transition-colors bg-white cursor-pointer"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                            </button>
 
-                      {/* Phone */}
-                      <td className="py-3.5 px-4 text-gray-600 font-normal">
-                        {user.phone || "-"}
-                      </td>
+                            {/* Edit Button */}
+                            <button
+                              onClick={() => handleOpenEditModal(user)}
+                              title="Edit User"
+                              className="w-7 h-7 rounded-lg border border-[#E5E7EB] hover:bg-gray-100 text-[#6B7280] hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white cursor-pointer"
+                            >
+                              <Edit className="w-3.5 h-3.5" />
+                            </button>
 
-                      {/* Email */}
-                      <td className="py-3.5 px-4 text-gray-600 font-normal">
-                        {user.email}
-                      </td>
-
-                      {/* Role */}
-                      <td className="py-3.5 px-4 text-gray-700 font-medium">
-                        {user.role}
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3.5 px-4">
-                        {user.status === "ACTIVE" ? (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-medium bg-[#28C76F] text-white">
-                            <span className="w-1.5 h-1.5 rounded-full bg-white mr-1.5 inline-block" />
-                            Active
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded text-[11px] font-medium bg-gray-100 text-gray-600">
-                            <span className="w-1.5 h-1.5 rounded-full bg-gray-400 mr-1.5 inline-block" />
-                            Inactive
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          {/* View */}
-                          <button
-                            onClick={() => handleOpenViewModal(user)}
-                            title="View Profile"
-                            className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:text-[#fe9f43] hover:border-[#fe9f43] transition-colors"
-                          >
-                            <Eye className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Edit */}
-                          <button
-                            onClick={() => handleOpenEditModal(user)}
-                            title="Edit User"
-                            className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:text-[#28C76F] hover:border-[#28C76F] transition-colors"
-                          >
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-
-                          {/* Delete */}
-                          <button
-                            onClick={() => handleOpenDeleteModal(user)}
-                            title="Delete User"
-                            className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-600 hover:text-red-500 hover:border-red-500 transition-colors"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                            {/* Delete Button */}
+                            <button
+                              onClick={() => setDeletingUser(user)}
+                              title="Delete User"
+                              className="w-7 h-7 rounded-lg border border-[#E5E7EB] hover:bg-rose-50 text-[#6B7280] hover:text-[#EF4444] flex items-center justify-center transition-colors bg-white cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
           </div>
 
-          {/* Table Footer / Pagination */}
-          <div className="p-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-gray-500">
-            <div className="flex items-center gap-2">
+          {/* Table Pagination Footer */}
+          <div className="flex flex-col sm:flex-row items-center justify-between px-1 pt-3 text-xs text-[#64748B] gap-3 border-t border-[#F1F3F5]">
+            <div className="flex items-center space-x-2">
               <span>Row Per Page</span>
               <select
                 value={pageSize}
@@ -557,520 +709,687 @@ export default function UsersPage() {
                   setPageSize(Number(e.target.value));
                   setCurrentPage(1);
                 }}
-                className="px-2 py-1 border border-gray-200 rounded text-xs text-gray-700 bg-white focus:outline-none focus:border-[#fe9f43]"
+                className="bg-white border border-[#E2E8F0] rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
               >
                 <option value={10}>10</option>
                 <option value={20}>20</option>
                 <option value={50}>50</option>
               </select>
-              <span>Entries</span>
+              <span>
+                Showing {filteredUsers.length === 0 ? 0 : (currentPage - 1) * pageSize + 1} -{" "}
+                {Math.min(currentPage * pageSize, filteredUsers.length)} of {filteredUsers.length}
+              </span>
             </div>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center space-x-1">
               <button
-                disabled={currentPage === 1}
+                disabled={currentPage <= 1}
                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs"
+                className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 text-[#64748B] disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                &lt;
+                <ChevronLeft className="w-3.5 h-3.5" />
               </button>
 
-              {Array.from({ length: totalPages }).map((_, idx) => (
-                <button
-                  key={idx + 1}
-                  onClick={() => setCurrentPage(idx + 1)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-full text-xs font-semibold ${
-                    currentPage === idx + 1
-                      ? "bg-[#fe9f43] text-white"
-                      : "text-gray-700 hover:bg-gray-100"
-                  }`}
-                >
-                  {idx + 1}
-                </button>
-              ))}
+              {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setCurrentPage(pageNum)}
+                    className={`w-7 h-7 rounded text-xs font-semibold flex items-center justify-center transition-colors ${
+                      currentPage === pageNum
+                        ? "bg-[#FE9F43] text-white"
+                        : "border border-gray-200 text-[#64748B] hover:bg-gray-100"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
 
               <button
-                disabled={currentPage === totalPages}
+                disabled={currentPage >= totalPages}
                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className="w-7 h-7 flex items-center justify-center rounded border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed text-xs"
+                className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center hover:bg-gray-100 text-[#64748B] disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                &gt;
+                <ChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>
         </div>
-      </div>
 
-      {/* ==================== ADD USER MODAL ==================== */}
-      {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-800">Add User</h2>
-              <button
-                onClick={() => setShowAddModal(false)}
-                className="text-gray-400 hover:text-gray-600 rounded-lg p-1 hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitAdd} className="flex-1 overflow-y-auto p-6 space-y-4">
-              {formError && (
-                <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-600 rounded-md">
-                  {formError}
+        {/* ========================================================================= */}
+        {/* ADD USER MODAL */}
+        {/* ========================================================================= */}
+        {showAddModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#FE9F43] flex items-center justify-center">
+                    <UserPlus className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900">Add New User</h3>
                 </div>
-              )}
-
-              {/* Avatar Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Select Profile Avatar
-                </label>
-                <div className="flex items-center gap-2 overflow-x-auto py-1">
-                  {availableAvatars.map((av, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => setFormAvatar(av)}
-                      className={`relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                        formAvatar === av
-                          ? "border-[#fe9f43] scale-105 shadow-sm"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <Image src={av} alt="Avatar option" fill className="object-cover" />
-                    </button>
-                  ))}
-                </div>
+                <button
+                  onClick={() => setShowAddModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* User Name */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  User Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. John Doe"
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                />
-              </div>
-
-              {/* Email & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="e.g. user@example.com"
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    placeholder="e.g. +1234567890"
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                  />
-                </div>
-              </div>
-
-              {/* Role & Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43] bg-white"
-                  >
-                    {roleOptions.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
+              <form onSubmit={handleSubmitAdd} className="space-y-4">
+                {/* Avatar Picker */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700">Choose Profile Picture</label>
+                  <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+                    {availableAvatars.map((av, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setFormAvatar(av)}
+                        className={`relative w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                          formAvatar === av ? "border-[#FE9F43] ring-2 ring-orange-200" : "border-transparent opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <img src={av} alt="avatar" className="w-full h-full object-cover" />
+                      </button>
                     ))}
-                  </select>
+                  </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
-                    value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43] bg-white"
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                  </select>
-                </div>
-              </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">
+                      User Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. John Doe"
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    />
+                  </div>
 
-              {/* Password & Confirm Password */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Password
-                  </label>
-                  <div className="relative">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      placeholder="john@example.com"
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Phone Number</label>
+                    <input
+                      type="text"
+                      placeholder="+1 234 567 890"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">
+                      Role <span className="text-red-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      placeholder="Select Role..."
+                      value={formRole}
+                      onChange={(val) => setFormRole(val)}
+                      options={combinedRoleOptions.map((r) => ({ value: r, label: r }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Warehouse & Store Assignment */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Assigned Warehouse</label>
+                    <SearchableSelect
+                      placeholder="Select Warehouse..."
+                      value={formWarehouse}
+                      onChange={(val) => setFormWarehouse(val)}
+                      options={[
+                        { value: "", label: "None / Central" },
+                        ...warehouses.map((w) => ({ value: w.name, label: w.name })),
+                      ]}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Assigned Store / Branch</label>
+                    <SearchableSelect
+                      placeholder="Select Store..."
+                      value={formStore}
+                      onChange={(val) => setFormStore(val)}
+                      options={[
+                        { value: "", label: "None / Central" },
+                        ...stores.map((s) => ({ value: s.name, label: s.name })),
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Password & Confirm */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Password</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formPassword}
+                        onChange={(e) => setFormPassword(e.target.value)}
+                        className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Confirm Password</label>
                     <input
                       type={showPassword ? "text" : "password"}
                       placeholder="••••••••"
-                      value={formPassword}
-                      onChange={(e) => setFormPassword(e.target.value)}
-                      className="w-full px-3 py-2 pr-8 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
+                      value={formConfirmPassword}
+                      onChange={(e) => setFormConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formConfirmPassword}
-                    onChange={(e) => setFormConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                  />
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-xs font-medium text-white bg-[#fe9f43] hover:bg-[#e88e35] rounded-md transition-colors shadow-sm disabled:opacity-50"
-                >
-                  {isSubmitting ? "Creating..." : "Create User"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== EDIT USER MODAL ==================== */}
-      {showEditModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg overflow-hidden animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-base font-bold text-gray-800">Edit User</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="text-gray-400 hover:text-gray-600 rounded-lg p-1 hover:bg-gray-100 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmitEdit} className="flex-1 overflow-y-auto p-6 space-y-4">
-              {formError && (
-                <div className="p-3 text-xs bg-red-50 border border-red-200 text-red-600 rounded-md">
-                  {formError}
-                </div>
-              )}
-
-              {/* Avatar Selector */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1.5">
-                  Select Profile Avatar
-                </label>
-                <div className="flex items-center gap-2 overflow-x-auto py-1">
-                  {availableAvatars.map((av, index) => (
-                    <button
-                      key={index}
-                      type="button"
-                      onClick={() => setFormAvatar(av)}
-                      className={`relative w-11 h-11 rounded-lg overflow-hidden flex-shrink-0 border-2 transition-all ${
-                        formAvatar === av
-                          ? "border-[#fe9f43] scale-105 shadow-sm"
-                          : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      <Image src={av} alt="Avatar option" fill className="object-cover" />
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* User Name */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  User Name <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formName}
-                  onChange={(e) => setFormName(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                />
-              </div>
-
-              {/* Email & Phone */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    required
-                    value={formEmail}
-                    onChange={(e) => setFormEmail(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Phone
-                  </label>
-                  <input
-                    type="text"
-                    value={formPhone}
-                    onChange={(e) => setFormPhone(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
-                  />
-                </div>
-              </div>
-
-              {/* Role & Status */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Role <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={formRole}
-                    onChange={(e) => setFormRole(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43] bg-white"
-                  >
-                    {roleOptions.map((r) => (
-                      <option key={r} value={r}>
-                        {r}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Status
-                  </label>
-                  <select
+                {/* Status Toggle */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-700">Account Status</label>
+                  <SearchableSelect
+                    placeholder="Select Status..."
                     value={formStatus}
-                    onChange={(e) => setFormStatus(e.target.value as any)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43] bg-white"
-                  >
-                    <option value="ACTIVE">Active</option>
-                    <option value="INACTIVE">Inactive</option>
-                  </select>
+                    onChange={(val) => setFormStatus(val as any)}
+                    options={[
+                      { value: "ACTIVE", label: "Active" },
+                      { value: "INACTIVE", label: "Inactive" },
+                    ]}
+                  />
                 </div>
+
+                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Saving...</span>
+                      </>
+                    ) : (
+                      <span>Create User</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* EDIT USER MODAL */}
+        {/* ========================================================================= */}
+        {showEditModal && selectedUser && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#FE9F43] flex items-center justify-center">
+                    <Edit className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900">Edit User Account</h3>
+                </div>
+                <button
+                  onClick={() => setShowEditModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
 
-              {/* New Password optional */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    New Password (optional)
-                  </label>
-                  <div className="relative">
+              <form onSubmit={handleSubmitEdit} className="space-y-4">
+                {/* Avatar Picker */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-gray-700">Change Profile Picture</label>
+                  <div className="flex items-center space-x-2 overflow-x-auto pb-1">
+                    {availableAvatars.map((av, idx) => (
+                      <button
+                        key={idx}
+                        type="button"
+                        onClick={() => setFormAvatar(av)}
+                        className={`relative w-9 h-9 rounded-full overflow-hidden border-2 shrink-0 transition-all ${
+                          formAvatar === av ? "border-[#FE9F43] ring-2 ring-orange-200" : "border-transparent opacity-70 hover:opacity-100"
+                        }`}
+                      >
+                        <img src={av} alt="avatar" className="w-full h-full object-cover" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">
+                      User Name <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={formName}
+                      onChange={(e) => setFormName(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">
+                      Email Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={formEmail}
+                      onChange={(e) => setFormEmail(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Phone Number</label>
+                    <input
+                      type="text"
+                      value={formPhone}
+                      onChange={(e) => setFormPhone(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Role</label>
+                    <SearchableSelect
+                      placeholder="Select Role..."
+                      value={formRole}
+                      onChange={(val) => setFormRole(val)}
+                      options={combinedRoleOptions.map((r) => ({ value: r, label: r }))}
+                    />
+                  </div>
+                </div>
+
+                {/* Warehouse & Store Assignment */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Assigned Warehouse</label>
+                    <SearchableSelect
+                      placeholder="Select Warehouse..."
+                      value={formWarehouse}
+                      onChange={(val) => setFormWarehouse(val)}
+                      options={[
+                        { value: "", label: "None / Central" },
+                        ...warehouses.map((w) => ({ value: w.name, label: w.name })),
+                      ]}
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Assigned Store / Branch</label>
+                    <SearchableSelect
+                      placeholder="Select Store..."
+                      value={formStore}
+                      onChange={(val) => setFormStore(val)}
+                      options={[
+                        { value: "", label: "None / Central" },
+                        ...stores.map((s) => ({ value: s.name, label: s.name })),
+                      ]}
+                    />
+                  </div>
+                </div>
+
+                {/* Optional Change Password */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">New Password (Leave blank to keep)</label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? "text" : "password"}
+                        placeholder="••••••••"
+                        value={formPassword}
+                        onChange={(e) => setFormPassword(e.target.value)}
+                        className="w-full pl-3 pr-8 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2.5 top-2.5 text-gray-400 hover:text-gray-600 cursor-pointer"
+                      >
+                        {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-gray-700">Confirm New Password</label>
                     <input
                       type={showPassword ? "text" : "password"}
-                      placeholder="Leave blank to keep same"
-                      value={formPassword}
-                      onChange={(e) => setFormPassword(e.target.value)}
-                      className="w-full px-3 py-2 pr-8 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
+                      placeholder="••••••••"
+                      value={formConfirmPassword}
+                      onChange={(e) => setFormConfirmPassword(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    >
-                      {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
-                    </button>
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Confirm Password
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Confirm new password"
-                    value={formConfirmPassword}
-                    onChange={(e) => setFormConfirmPassword(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-md border border-gray-200 focus:outline-none focus:border-[#fe9f43] focus:ring-1 focus:ring-[#fe9f43]"
+                {/* Status Toggle */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-gray-700">Account Status</label>
+                  <SearchableSelect
+                    placeholder="Select Status..."
+                    value={formStatus}
+                    onChange={(val) => setFormStatus(val as any)}
+                    options={[
+                      { value: "ACTIVE", label: "Active" },
+                      { value: "INACTIVE", label: "Inactive" },
+                    ]}
                   />
+                </div>
+
+                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowEditModal(false)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl shadow-xs transition-colors flex items-center space-x-1.5 cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <RotateCcw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Updating...</span>
+                      </>
+                    ) : (
+                      <span>Save Changes</span>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* VIEW USER PROFILE MODAL */}
+        {/* ========================================================================= */}
+        {showViewModal && selectedUser && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150">
+              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div className="flex items-center space-x-2">
+                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#FE9F43] flex items-center justify-center">
+                    <UserCheck className="w-4 h-4" />
+                  </div>
+                  <h3 className="text-base font-bold text-gray-900">User Profile Details</h3>
+                </div>
+                <button
+                  onClick={() => setShowViewModal(false)}
+                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="flex flex-col items-center text-center space-y-2 py-2">
+                <div className="relative w-20 h-20 rounded-full overflow-hidden border-3 border-[#FE9F43]/30 shadow-md">
+                  <img
+                    src={selectedUser.avatar || "/assets/images/avatar-01.jpg"}
+                    alt={selectedUser.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-gray-900">{selectedUser.name}</h4>
+                  <span className="inline-flex items-center px-2.5 py-0.5 mt-1 rounded-full text-xs font-bold bg-orange-50 text-[#FE9F43] border border-orange-200">
+                    <Shield className="w-3 h-3 mr-1" />
+                    {selectedUser.role}
+                  </span>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-2">
+              <div className="bg-gray-50 rounded-xl p-4 space-y-2.5 text-xs">
+                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                  <span className="text-gray-500 font-medium flex items-center">
+                    <Mail className="w-3.5 h-3.5 mr-1.5 text-gray-400" /> Email:
+                  </span>
+                  <span className="font-bold text-gray-900">{selectedUser.email}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                  <span className="text-gray-500 font-medium flex items-center">
+                    <Phone className="w-3.5 h-3.5 mr-1.5 text-gray-400" /> Phone:
+                  </span>
+                  <span className="font-bold text-gray-900">{selectedUser.phone || "-"}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                  <span className="text-gray-500 font-medium flex items-center">
+                    <WarehouseIcon className="w-3.5 h-3.5 mr-1.5 text-[#3B82F6]" /> Assigned Warehouse:
+                  </span>
+                  <span className="font-bold text-gray-900">{selectedUser.warehouseName || "Central / All"}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                  <span className="text-gray-500 font-medium flex items-center">
+                    <StoreIcon className="w-3.5 h-3.5 mr-1.5 text-emerald-500" /> Assigned Store:
+                  </span>
+                  <span className="font-bold text-gray-900">{selectedUser.storeName || "Central / All"}</span>
+                </div>
+
+                <div className="flex justify-between items-center py-1">
+                  <span className="text-gray-500 font-medium">Status:</span>
+                  <span className={`font-bold ${selectedUser.status === "ACTIVE" ? "text-emerald-600" : "text-rose-600"}`}>
+                    {selectedUser.status}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex justify-end pt-2">
                 <button
                   type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
+                  onClick={() => setShowViewModal(false)}
+                  className="w-full py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                >
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* DELETE CONFIRMATION MODAL (Step 1 - Rose) */}
+        {/* ========================================================================= */}
+        {deletingUser && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150">
+              <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto text-rose-500">
+                <Trash2 className="w-7 h-7" />
+              </div>
+              <div className="space-y-1">
+                <h3 className="text-base font-bold text-gray-900">Confirm User Deletion</h3>
+                <p className="text-xs text-gray-500">
+                  Are you sure you want to delete user account{" "}
+                  <span className="font-bold text-gray-800">"{deletingUser.name}"</span>?
+                </p>
+                <p className="text-[11px] text-rose-500 font-medium pt-1">
+                  This action cannot be undone.
+                </p>
+              </div>
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setDeletingUser(null)}
+                  className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-4 py-2 text-xs font-medium text-white bg-[#fe9f43] hover:bg-[#e88e35] rounded-md transition-colors shadow-sm disabled:opacity-50"
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-2 bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50"
                 >
-                  {isSubmitting ? "Saving..." : "Save Changes"}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ==================== VIEW USER PROFILE MODAL ==================== */}
-      {showViewModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-150">
-            {/* Header with background */}
-            <div className="bg-gradient-to-r from-[#fe9f43] to-[#ffb870] px-6 pt-6 pb-12 relative text-white">
-              <button
-                onClick={() => setShowViewModal(false)}
-                className="absolute top-4 right-4 text-white/80 hover:text-white rounded-full p-1 bg-black/10 hover:bg-black/20 transition-colors"
-              >
-                <X className="w-4 h-4" />
-              </button>
-              <h2 className="text-base font-bold">User Profile</h2>
-              <p className="text-xs text-white/80">Account details & permissions</p>
-            </div>
-
-            {/* Profile Avatar & Details */}
-            <div className="px-6 pb-6 relative pt-0">
-              <div className="flex items-end justify-between -mt-10 mb-4">
-                <div className="w-20 h-20 rounded-xl overflow-hidden relative border-4 border-white shadow bg-white">
-                  {selectedUser.avatar ? (
-                    <Image src={selectedUser.avatar} alt={selectedUser.name} fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-gray-100 text-gray-400">
-                      <User className="w-8 h-8" />
-                    </div>
-                  )}
-                </div>
-                <div>
-                  {selectedUser.status === "ACTIVE" ? (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-[#28C76F] text-white">
-                      ● Active
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center px-2.5 py-1 rounded text-xs font-medium bg-gray-100 text-gray-600">
-                      ● Inactive
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <h3 className="text-base font-bold text-gray-900">{selectedUser.name}</h3>
-                <p className="text-xs text-[#fe9f43] font-semibold">{selectedUser.role}</p>
-              </div>
-
-              <div className="mt-5 space-y-3 border-t border-gray-100 pt-4 text-xs text-gray-600">
-                <div className="flex items-center gap-3">
-                  <Mail className="w-4 h-4 text-gray-400" />
-                  <span className="font-medium text-gray-800">{selectedUser.email}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Phone className="w-4 h-4 text-gray-400" />
-                  <span>{selectedUser.phone || "No phone provided"}</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Shield className="w-4 h-4 text-gray-400" />
-                  <span>Role: <strong className="text-gray-800">{selectedUser.role}</strong></span>
-                </div>
-              </div>
-
-              <div className="mt-6 flex justify-end">
-                <button
-                  onClick={() => setShowViewModal(false)}
-                  className="px-4 py-1.5 text-xs font-medium bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-md transition-colors"
-                >
-                  Close
+                  {isDeleting ? "Deleting..." : "Delete User"}
                 </button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* ==================== DELETE USER MODAL ==================== */}
-      {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden p-6 text-center animate-in fade-in zoom-in-95 duration-150">
-            <div className="w-12 h-12 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto mb-4">
-              <Trash2 className="w-6 h-6" />
-            </div>
-            <h3 className="text-base font-bold text-gray-800 mb-1">Delete User?</h3>
-            <p className="text-xs text-gray-500 mb-5">
-              Are you sure you want to delete user{" "}
-              <span className="font-semibold text-gray-800">{selectedUser.name}</span>?
-              This action cannot be undone.
-            </p>
-            <div className="flex items-center justify-center gap-2">
-              <button
-                type="button"
-                onClick={() => setShowDeleteModal(false)}
-                className="px-4 py-2 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                disabled={isSubmitting}
-                onClick={handleConfirmDelete}
-                className="px-4 py-2 text-xs font-medium text-white bg-red-500 hover:bg-red-600 rounded-md transition-colors shadow-sm disabled:opacity-50"
-              >
-                {isSubmitting ? "Deleting..." : "Delete User"}
-              </button>
+        {/* ========================================================================= */}
+        {/* FEEDBACK MODALS CONFORMING TO GEMINI.md */}
+        {/* ========================================================================= */}
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150">
+              {/* 1. Add Success Modal (Sparkles - Emerald) */}
+              {feedbackModal.type === "add_success" && (
+                <>
+                  <div className="w-14 h-14 bg-emerald-50 rounded-2xl flex items-center justify-center mx-auto text-emerald-600">
+                    <Sparkles className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                    <p className="text-xs text-gray-500">{feedbackModal.message}</p>
+                  </div>
+                  <div className="flex space-x-2 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFeedbackModal({ ...feedbackModal, isOpen: false });
+                        handleOpenAddModal();
+                      }}
+                      className="flex-1 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                    >
+                      + Add Another
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+                      className="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* 2. Edit Success Modal (CheckCircle2 - Blue) */}
+              {feedbackModal.type === "edit_success" && (
+                <>
+                  <div className="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mx-auto text-blue-600">
+                    <CheckCircle2 className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                    <p className="text-xs text-gray-500">{feedbackModal.message}</p>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+                      className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* 3. Delete Success Modal (Trash2 - Amber) */}
+              {feedbackModal.type === "delete_success" && (
+                <>
+                  <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center mx-auto text-amber-600">
+                    <Trash2 className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                    <p className="text-xs text-gray-500">{feedbackModal.message}</p>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+                      className="w-full py-2 bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </>
+              )}
+
+              {/* 4. Error Modal (AlertTriangle - Rose) */}
+              {feedbackModal.type === "error" && (
+                <>
+                  <div className="w-14 h-14 bg-rose-50 rounded-2xl flex items-center justify-center mx-auto text-rose-600">
+                    <AlertTriangle className="w-7 h-7" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                    <p className="text-xs text-rose-600">{feedbackModal.message}</p>
+                  </div>
+                  <div className="pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+                      className="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      OK
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </AppLayout>
   );
 }

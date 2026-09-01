@@ -1591,10 +1591,12 @@ export async function fetchAnnualReport(params?: { year?: number; store?: string
 }
 
 // ==================== USER MANAGEMENT ====================
-export async function fetchUsers(params?: { status?: string; search?: string; role?: string }): Promise<SystemUser[]> {
+export async function fetchUsers(params?: { status?: string; search?: string; role?: string; warehouse?: string; store?: string }): Promise<SystemUser[]> {
   const query = new URLSearchParams();
   if (params?.status && params.status !== "all") query.set("status", params.status);
   if (params?.role && params.role !== "all") query.set("role", params.role);
+  if (params?.warehouse && params.warehouse !== "all") query.set("warehouse", params.warehouse);
+  if (params?.store && params.store !== "all") query.set("store", params.store);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/users?${query.toString()}`, { cache: "no-store" });
