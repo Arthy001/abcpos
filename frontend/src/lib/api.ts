@@ -66,7 +66,20 @@ import {
   StockMovement,
 } from "@/types";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api";
+export function getApiBaseUrl(): string {
+  if (process.env.NEXT_PUBLIC_API_URL) {
+    return process.env.NEXT_PUBLIC_API_URL;
+  }
+  // Server-side (SSR/API route): ใช้ localhost ตรงๆ
+  if (typeof window === "undefined") {
+    return "http://127.0.0.1:5000/api";
+  }
+  // Browser: ใช้ /api relative path → Next.js App Route Handler proxy ไปที่ localhost:5000
+  return "/api";
+}
+
+// ต้องเรียก getApiBaseUrl() ทุกครั้งที่ใช้ เพื่อให้รู้ว่าอยู่ฝั่งไหน
+const API_BASE_URL = getApiBaseUrl();
 
 // ==================== DASHBOARD ====================
 export async function fetchDashboardStats(): Promise<DashboardStats> {
