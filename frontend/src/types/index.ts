@@ -565,6 +565,8 @@ export interface Product {
   warehouse?: Warehouse | null;
   storeId?: string | null;
   store?: Store | null;
+  stocks?: ProductStock[];
+  movements?: StockMovement[];
   createdAt: string;
   updatedAt: string;
 }
@@ -829,4 +831,156 @@ export interface PurchaseReturn {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface SaleItem {
+  id?: string;
+  saleId?: string;
+  productId?: string | null;
+  productName: string;
+  productImage?: string | null;
+  sku?: string | null;
+  quantity: number;
+  unitPrice: number;
+  tax?: number;
+  discount?: number;
+  subtotal: number;
+  total: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Sale {
+  id: string;
+  reference: string;
+  customerId?: string | null;
+  customerName: string;
+  customerAvatar?: string | null;
+  billerName?: string | null;
+  storeName?: string | null;
+  warehouseName?: string | null;
+  date: string;
+  status: "COMPLETED" | "PENDING" | "ORDERED" | "CANCELLED";
+  paymentStatus: "PAID" | "UNPAID" | "OVERDUE" | "PARTIAL";
+  paymentMethod: "CASH" | "CREDIT_CARD" | "PROMPTPAY" | "BANK_TRANSFER";
+  subtotal: number;
+  tax: number;
+  discount: number;
+  shipping: number;
+  grandTotal: number;
+  paid: number;
+  due: number;
+  notes?: string | null;
+  items?: SaleItem[];
+  invoices?: Invoice[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Invoice {
+  id: string;
+  invoiceNo: string;
+  saleId?: string | null;
+  sale?: Sale | null;
+  saleReference?: string | null;
+  customerId?: string | null;
+  customerName: string;
+  customerAvatar?: string | null;
+  issueDate: string;
+  dueDate: string;
+  amount: number;
+  paid: number;
+  amountDue: number;
+  status: "PAID" | "UNPAID" | "OVERDUE" | "PARTIAL";
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SalesReturn {
+  id: string;
+  reference: string;
+  saleReference?: string | null;
+  customerId?: string | null;
+  customerName: string;
+  customerAvatar?: string | null;
+  warehouseName?: string | null;
+  productId?: string | null;
+  productName?: string | null;
+  productImage?: string | null;
+  quantity: number;
+  date: string;
+  status: "RECEIVED" | "PENDING" | "CANCELLED";
+  totalAmount: number;
+  paidAmount: number;
+  dueAmount: number;
+  paymentStatus: "PAID" | "UNPAID" | "OVERDUE";
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Quotation {
+  id: string;
+  reference: string;
+  customerId?: string | null;
+  customerName: string;
+  customerAvatar?: string | null;
+  productId?: string | null;
+  productName: string;
+  productImage?: string | null;
+  quantity: number;
+  unitPrice: number;
+  tax: number;
+  discount: number;
+  total: number;
+  status: "SENT" | "ORDERED" | "PENDING";
+  validUntil?: string | null;
+  notes?: string | null;
+  convertedSaleId?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductStock {
+  id: string;
+  productId: string;
+  product?: Product;
+  warehouseId: string;
+  warehouse?: Warehouse;
+  quantity: number;
+  reservedQuantity?: number;
+  minAlert?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface StockMovement {
+  id: string;
+  productId: string;
+  product?: Product;
+  warehouseId: string;
+  warehouse?: Warehouse;
+  type:
+    | "INITIAL_STOCK"
+    | "PURCHASE_RECEIPT"
+    | "CUSTOMER_RETURN"
+    | "TRANSFER_IN"
+    | "ADJUSTMENT_PLUS"
+    | "SALE_ISSUE"
+    | "TRANSFER_OUT"
+    | "INTERNAL_ISSUE"
+    | "DAMAGE_ISSUE"
+    | "SUPPLIER_RETURN"
+    | "ADJUSTMENT_MINUS";
+  referenceNo?: string | null;
+  quantity: number;
+  balanceAfter: number;
+  unitCost?: number | null;
+  department?: string | null;
+  notes?: string | null;
+  createdBy?: string | null;
+  createdAt?: string;
+}
+
+
 

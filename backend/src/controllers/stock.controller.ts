@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { recordStockMovement, executeStockTransfer, StockMovementType } from "../services/stock.service.js";
 
 // ==================== STOCK TRANSFERS ====================
 export const getStockTransfers = async (req: Request, res: Response) => {
@@ -62,7 +63,7 @@ export const createStockTransfer = async (req: Request, res: Response) => {
       quantityTransferred,
       refNumber,
       date,
-      status,
+      status = "COMPLETED",
       notes,
     } = req.body;
 
@@ -70,18 +71,38 @@ export const createStockTransfer = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "From Warehouse and To Warehouse are required" });
     }
 
+    const ref = refNumber || `#TR-${Math.floor(100000 + Math.random() * 900000)}`;
+    const qty = Number(quantityTransferred) || 1;
+
     const transfer = await prisma.stockTransfer.create({
       data: {
         fromWarehouse,
         toWarehouse,
         noOfProducts: Number(noOfProducts) || 1,
-        quantityTransferred: Number(quantityTransferred) || 1,
-        refNumber: refNumber || `#TR-${Math.floor(100000 + Math.random() * 900000)}`,
+        quantityTransferred: qty,
+        refNumber: ref,
         date: date ? new Date(date) : new Date(),
-        status: status || "COMPLETED",
+        status,
         notes: notes || null,
       },
     });
+
+    // Execute Multi-Warehouse Stock Transfer & Ledger
+    if (status === "COMPLETED") {
+      const sampleProduct = await prisma.product.findFirst({
+        where: { warehouse: { name: fromWarehouse } },
+      }) || await prisma.product.findFirst();
+
+      await executeStockTransfer({
+        productId: sampleProduct?.id,
+        productName: sampleProduct?.name,
+        fromWarehouseName: fromWarehouse,
+        toWarehouseName: toWarehouse,
+        quantity: qty,
+        referenceNo: ref,
+        notes,
+      });
+    }
 
     res.status(201).json(transfer);
   } catch (error: any) {
@@ -138,7 +159,7 @@ export const deleteStockTransfer = async (req: Request, res: Response) => {
   }
 };
 
-// ==================== STOCK ADJUSTMENTS ====================
+// ==================== STOCK ADJUSTMENTS & GOODS ISSUE ====================
 export const getStockAdjustments = async (req: Request, res: Response) => {
   try {
     const { warehouse, store, type, search } = req.query;
@@ -221,30 +242,27 @@ export const createStockAdjustment = async (req: Request, res: Response) => {
         productName,
         productImage: productImage || null,
         date: date ? new Date(date) : new Date(),
-        personName: personName || "James Kirwin",
-        personAvatar: personAvatar || "/assets/images/customer11.jpg",
+        personName: personName || "Admin",
+        personAvatar: personAvatar || "/assets/images/avatar-01.jpg",
         qty: adjustmentQty,
         type: adjustmentType,
         notes: notes || null,
       },
     });
 
-    // Sync with Product stock in database if found
-    const matchingProduct = await prisma.product.findFirst({
-      where: { name: { equals: productName } },
-    });
+    // Record in ProductStock and StockMovement Ledger
+    const movementType: StockMovementType = adjustmentType === "ADDITION" ? "ADJUSTMENT_PLUS" : "ADJUSTMENT_MINUS";
+    const delta = adjustmentType === "ADDITION" ? adjustmentQty : -adjustmentQty;
 
-    if (matchingProduct) {
-      const stockChange = adjustmentType === "ADDITION" ? adjustmentQty : -adjustmentQty;
-      const newStock = Math.max(0, matchingProduct.stock + stockChange);
-      await prisma.product.update({
-        where: { id: matchingProduct.id },
-        data: {
-          stock: newStock,
-          status: newStock === 0 ? "OUT_OF_STOCK" : "ACTIVE",
-        },
-      });
-    }
+    await recordStockMovement({
+      productName,
+      warehouseName: warehouse,
+      quantityDelta: delta,
+      type: movementType,
+      referenceNo: `ADJ-${Math.floor(1000 + Math.random() * 9000)}`,
+      notes: notes || `Stock Adjustment (${adjustmentType})`,
+      createdBy: personName || "Admin",
+    });
 
     res.status(201).json(adjustment);
   } catch (error: any) {
@@ -294,23 +312,21 @@ export const updateStockAdjustment = async (req: Request, res: Response) => {
       },
     });
 
-    // Reconcile Product stock delta if applicable
+    // Reconcile ProductStock delta
     const targetProdName = productName || existing.productName;
-    const matchingProduct = await prisma.product.findFirst({
-      where: { name: { equals: targetProdName } },
-    });
+    const targetWarehouse = warehouse || existing.warehouse;
+    const oldNet = oldType === "ADDITION" ? oldQty : -oldQty;
+    const newNet = newType === "ADDITION" ? newQty : -newQty;
+    const delta = newNet - oldNet;
 
-    if (matchingProduct) {
-      const oldNet = oldType === "ADDITION" ? oldQty : -oldQty;
-      const newNet = newType === "ADDITION" ? newQty : -newQty;
-      const delta = newNet - oldNet;
-      const newStock = Math.max(0, matchingProduct.stock + delta);
-      await prisma.product.update({
-        where: { id: matchingProduct.id },
-        data: {
-          stock: newStock,
-          status: newStock === 0 ? "OUT_OF_STOCK" : "ACTIVE",
-        },
+    if (delta !== 0) {
+      await recordStockMovement({
+        productName: targetProdName,
+        warehouseName: targetWarehouse,
+        quantityDelta: delta,
+        type: delta > 0 ? "ADJUSTMENT_PLUS" : "ADJUSTMENT_MINUS",
+        notes: `Adjustment updated from ${oldQty} to ${newQty}`,
+        createdBy: personName || "Admin",
       });
     }
 
@@ -326,22 +342,15 @@ export const deleteStockAdjustment = async (req: Request, res: Response) => {
     const existing = await prisma.stockAdjustment.findUnique({ where: { id } });
 
     if (existing) {
-      // Revert product stock
-      const matchingProduct = await prisma.product.findFirst({
-        where: { name: { equals: existing.productName } },
+      // Revert product stock movement
+      const revertDelta = existing.type === "ADDITION" ? -existing.qty : existing.qty;
+      await recordStockMovement({
+        productName: existing.productName,
+        warehouseName: existing.warehouse,
+        quantityDelta: revertDelta,
+        type: existing.type === "ADDITION" ? "ADJUSTMENT_MINUS" : "ADJUSTMENT_PLUS",
+        notes: `Reverting deleted adjustment ${existing.id}`,
       });
-
-      if (matchingProduct) {
-        const revertDelta = existing.type === "ADDITION" ? -existing.qty : existing.qty;
-        const revertedStock = Math.max(0, matchingProduct.stock + revertDelta);
-        await prisma.product.update({
-          where: { id: matchingProduct.id },
-          data: {
-            stock: revertedStock,
-            status: revertedStock === 0 ? "OUT_OF_STOCK" : "ACTIVE",
-          },
-        });
-      }
 
       await prisma.stockAdjustment.delete({ where: { id } });
     }
@@ -349,5 +358,47 @@ export const deleteStockAdjustment = async (req: Request, res: Response) => {
     res.json({ success: true, message: "Stock adjustment deleted successfully" });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to delete stock adjustment" });
+  }
+};
+
+// ==================== STOCK MOVEMENTS (STOCK CARD AUDIT TRAIL) ====================
+export const getStockMovements = async (req: Request, res: Response) => {
+  try {
+    const { productId, warehouseId, type, search } = req.query;
+
+    const where: any = {};
+    if (productId && productId !== "all") {
+      where.productId = String(productId);
+    }
+    if (warehouseId && warehouseId !== "all") {
+      where.warehouseId = String(warehouseId);
+    }
+    if (type && type !== "all") {
+      where.type = String(type);
+    }
+    if (search) {
+      const q = String(search).trim();
+      where.OR = [
+        { referenceNo: { contains: q } },
+        { notes: { contains: q } },
+        { department: { contains: q } },
+        { product: { name: { contains: q } } },
+        { warehouse: { name: { contains: q } } },
+      ];
+    }
+
+    const movements = await prisma.stockMovement.findMany({
+      where,
+      include: {
+        product: true,
+        warehouse: true,
+      },
+      orderBy: { createdAt: "desc" },
+      take: 100, // safety limit
+    });
+
+    res.json(movements);
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Failed to fetch stock movements" });
   }
 };

@@ -91,6 +91,7 @@ import {
   createStockAdjustment,
   updateStockAdjustment,
   deleteStockAdjustment,
+  getStockMovements,
 } from "../controllers/stock.controller.js";
 import {
   getProducts,
@@ -208,6 +209,24 @@ import {
   updatePurchaseReturn,
   deletePurchaseReturn,
 } from "../controllers/purchase.controller.js";
+import {
+  getSales,
+  getSaleById,
+  createSale,
+  updateSale,
+  deleteSale,
+  getInvoices,
+  updateInvoicePayment,
+  getSalesReturns,
+  createSalesReturn,
+  updateSalesReturn,
+  deleteSalesReturn,
+  getQuotations,
+  createQuotation,
+  updateQuotation,
+  deleteQuotation,
+  convertQuotationToSale,
+} from "../controllers/sale.controller.js";
 
 const router = Router();
 
@@ -304,6 +323,9 @@ router.post("/stock-adjustments", createStockAdjustment);
 router.put("/stock-adjustments/:id", updateStockAdjustment);
 router.delete("/stock-adjustments/:id", deleteStockAdjustment);
 
+// Stock Movements (Stock Card / Audit Trail)
+router.get("/stock-movements", getStockMovements);
+
 // Purchases
 router.get("/purchases", getPurchases);
 router.get("/purchases/:id", getPurchaseById);
@@ -320,6 +342,30 @@ router.get("/purchase-returns/:id", getPurchaseReturnById);
 router.post("/purchase-returns", createPurchaseReturn);
 router.put("/purchase-returns/:id", updatePurchaseReturn);
 router.delete("/purchase-returns/:id", deletePurchaseReturn);
+
+// Sales
+router.get("/sales", getSales);
+router.get("/sales/:id", getSaleById);
+router.post("/sales", createSale);
+router.put("/sales/:id", updateSale);
+router.delete("/sales/:id", deleteSale);
+
+// Invoices
+router.get("/invoices", getInvoices);
+router.put("/invoices/:id/pay", updateInvoicePayment);
+
+// Sales Returns
+router.get("/sales-returns", getSalesReturns);
+router.post("/sales-returns", createSalesReturn);
+router.put("/sales-returns/:id", updateSalesReturn);
+router.delete("/sales-returns/:id", deleteSalesReturn);
+
+// Quotations
+router.get("/quotations", getQuotations);
+router.post("/quotations", createQuotation);
+router.put("/quotations/:id", updateQuotation);
+router.delete("/quotations/:id", deleteQuotation);
+router.post("/quotations/:id/convert", convertQuotationToSale);
 
 // Products
 router.get("/products", getProducts);

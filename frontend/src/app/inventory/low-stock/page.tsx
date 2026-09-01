@@ -134,13 +134,17 @@ export default function LowStockPage() {
 
     products.forEach((p) => {
       if (p.status === "INACTIVE") return; // Ignore inactive products
-      const minAlert = p.minStockAlert || 5;
-      if (p.stock <= 0) {
+
+      const whStock = selectedWarehouse !== "all" ? p.stocks?.find((s) => s.warehouseId === selectedWarehouse) : null;
+      const currentStock = selectedWarehouse !== "all" ? (whStock ? whStock.quantity : 0) : p.stock;
+      const minAlert = (whStock?.minAlert) || p.minStockAlert || 5;
+
+      if (currentStock <= 0) {
         outOfStockCount++;
         reorderCostEst += minAlert * 2 * (p.costPrice || p.price || 0);
-      } else if (p.stock <= minAlert) {
+      } else if (currentStock <= minAlert) {
         lowStockCount++;
-        const deficit = Math.max(0, minAlert * 2 - p.stock);
+        const deficit = Math.max(0, minAlert * 2 - currentStock);
         reorderCostEst += deficit * (p.costPrice || p.price || 0);
       } else {
         healthyCount++;
@@ -154,16 +158,20 @@ export default function LowStockPage() {
       reorderCostEst,
       totalAlerts: lowStockCount + outOfStockCount,
     };
-  }, [products]);
+  }, [products, selectedWarehouse]);
 
   // Filtered & Sorted Products
   const filteredProducts = useMemo(() => {
     return products
       .filter((item) => {
         if (item.status === "INACTIVE") return false; // Ignore inactive products
-        const minAlert = item.minStockAlert || 5;
-        const isOutOfStock = item.stock <= 0;
-        const isLowStock = item.stock <= minAlert && item.stock > 0;
+
+        const whStock = selectedWarehouse !== "all" ? item.stocks?.find((s) => s.warehouseId === selectedWarehouse) : null;
+        const currentStock = selectedWarehouse !== "all" ? (whStock ? whStock.quantity : 0) : item.stock;
+        const minAlert = (whStock?.minAlert) || item.minStockAlert || 5;
+
+        const isOutOfStock = currentStock <= 0;
+        const isLowStock = currentStock <= minAlert && currentStock > 0;
 
         // Tab Filter
         let matchesTab = true;
@@ -190,7 +198,10 @@ export default function LowStockPage() {
         const matchesBrand = selectedBrand === "all" || item.brandId === selectedBrand;
 
         // Warehouse Filter
-        const matchesWarehouse = selectedWarehouse === "all" || item.warehouseId === selectedWarehouse;
+        const matchesWarehouse =
+          selectedWarehouse === "all" ||
+          item.warehouseId === selectedWarehouse ||
+          (item.stocks && item.stocks.some((s) => s.warehouseId === selectedWarehouse));
 
         // Store Filter
         const matchesStore = selectedStore === "all" || item.storeId === selectedStore;
@@ -198,11 +209,14 @@ export default function LowStockPage() {
         return matchesTab && matchesSearch && matchesCategory && matchesBrand && matchesWarehouse && matchesStore;
       })
       .sort((a, b) => {
+        const stockA = selectedWarehouse !== "all" ? (a.stocks?.find((s) => s.warehouseId === selectedWarehouse)?.quantity ?? a.stock) : a.stock;
+        const stockB = selectedWarehouse !== "all" ? (b.stocks?.find((s) => s.warehouseId === selectedWarehouse)?.quantity ?? b.stock) : b.stock;
+
         if (sortBy === "lowest") {
-          return a.stock - b.stock;
+          return stockA - stockB;
         } else if (sortBy === "deficit") {
-          const deficitA = Math.max(0, (a.minStockAlert || 5) - a.stock);
-          const deficitB = Math.max(0, (b.minStockAlert || 5) - b.stock);
+          const deficitA = Math.max(0, (a.minStockAlert || 5) - stockA);
+          const deficitB = Math.max(0, (b.minStockAlert || 5) - stockB);
           return deficitB - deficitA;
         } else {
           return a.name.localeCompare(b.name);

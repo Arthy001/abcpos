@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { logActivity } from "../services/audit.service.js";
 
 // GET /api/stores
 export const getStores = async (req: Request, res: Response) => {
@@ -21,10 +22,19 @@ export const getStores = async (req: Request, res: Response) => {
 
     const stores = await prisma.store.findMany({
       where,
+      include: {
+        products: true,
+      },
       orderBy: { createdAt: "desc" },
     });
 
-    res.json({ success: true, data: stores });
+    const enhanced = stores.map((st) => ({
+      ...st,
+      totalProducts: st.products?.length || 0,
+      stock: st.products?.reduce((sum, p) => sum + (p.stock || 0), 0) || 0,
+    }));
+
+    res.json({ success: true, data: enhanced });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch stores" });
   }
@@ -36,13 +46,22 @@ export const getStoreById = async (req: Request, res: Response) => {
     const id = String(req.params.id);
     const store = await prisma.store.findUnique({
       where: { id },
+      include: {
+        products: true,
+      },
     });
 
     if (!store) {
       return res.status(404).json({ success: false, message: "Store not found" });
     }
 
-    res.json({ success: true, data: store });
+    const enhanced = {
+      ...store,
+      totalProducts: store.products?.length || 0,
+      stock: store.products?.reduce((sum, p) => sum + (p.stock || 0), 0) || 0,
+    };
+
+    res.json({ success: true, data: enhanced });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch store" });
   }
@@ -63,7 +82,7 @@ export const createStore = async (req: Request, res: Response) => {
         userName: userName || null,
         email: email || null,
         phone: phone || null,
-        code: code || null,
+        code: code || `STR-${Math.floor(100 + Math.random() * 900)}`,
         address: address || null,
         status: status ? String(status).toUpperCase() : "ACTIVE",
       },
@@ -99,8 +118,6 @@ export const updateStore = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: error.message || "Failed to update store" });
   }
 };
-
-import { logActivity } from "../services/audit.service.js";
 
 // DELETE /api/stores/:id
 export const deleteStore = async (req: Request, res: Response) => {

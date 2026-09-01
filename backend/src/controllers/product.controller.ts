@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
+import { recordStockMovement, ensureProductStockRecords } from "../services/stock.service.js";
+import { logActivity } from "../services/audit.service.js";
 
 export const getProducts = async (req: Request, res: Response) => {
   try {
@@ -40,9 +42,31 @@ export const getProducts = async (req: Request, res: Response) => {
         unit: true,
         warehouse: true,
         store: true,
+        stocks: {
+          include: {
+            warehouse: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
+
+    // Auto ensure ProductStock snapshot exists for any legacy products
+    for (const p of products) {
+      if (!p.stocks || p.stocks.length === 0) {
+        if (p.warehouseId && p.stock > 0) {
+          await recordStockMovement({
+            productId: p.id,
+            warehouseId: p.warehouseId,
+            quantityDelta: p.stock,
+            type: "INITIAL_STOCK",
+            notes: "Initial stock snapshot initialization",
+          });
+        } else {
+          await ensureProductStockRecords(p.id);
+        }
+      }
+    }
 
     res.json({ success: true, data: products });
   } catch (error: any) {
@@ -61,6 +85,11 @@ export const getProductById = async (req: Request, res: Response) => {
         unit: true,
         warehouse: true,
         store: true,
+        stocks: {
+          include: {
+            warehouse: true,
+          },
+        },
       },
     });
 
@@ -108,6 +137,8 @@ export const createProduct = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: `Product with SKU '${sku}' already exists` });
     }
 
+    const initStock = Number(stock || 0);
+
     const product = await prisma.product.create({
       data: {
         name,
@@ -116,7 +147,7 @@ export const createProduct = async (req: Request, res: Response) => {
         description: description || null,
         price: Number(price || 0),
         costPrice: Number(costPrice || 0),
-        stock: Number(stock || 0),
+        stock: initStock,
         minStockAlert: Number(minStockAlert || 5),
         categoryId: categoryId || null,
         brandId: brandId || null,
@@ -124,7 +155,7 @@ export const createProduct = async (req: Request, res: Response) => {
         warehouseId: warehouseId || null,
         storeId: storeId || null,
         image: image || null,
-        status: status || (Number(stock) > 0 ? "ACTIVE" : "OUT_OF_STOCK"),
+        status: status || (initStock > 0 ? "ACTIVE" : "OUT_OF_STOCK"),
         manufacturedDate: manufacturedDate ? new Date(manufacturedDate) : null,
         expiredDate: expiredDate ? new Date(expiredDate) : null,
       },
@@ -134,8 +165,23 @@ export const createProduct = async (req: Request, res: Response) => {
         unit: true,
         warehouse: true,
         store: true,
+        stocks: true,
       },
     });
+
+    // Populate ProductStock and StockMovement ledger
+    if (initStock > 0) {
+      await recordStockMovement({
+        productId: product.id,
+        warehouseId: warehouseId || null,
+        quantityDelta: initStock,
+        type: "INITIAL_STOCK",
+        unitCost: Number(costPrice || 0),
+        notes: "Initial product stock opening balance",
+      });
+    } else {
+      await ensureProductStockRecords(product.id);
+    }
 
     res.status(201).json({ success: true, data: product });
   } catch (error: any) {
@@ -179,6 +225,11 @@ export const updateProduct = async (req: Request, res: Response) => {
       }
     }
 
+    const existingProduct = await prisma.product.findUnique({ where: { id } });
+    if (!existingProduct) {
+      return res.status(404).json({ success: false, message: "Product not found" });
+    }
+
     const product = await prisma.product.update({
       where: { id },
       data: {
@@ -210,16 +261,31 @@ export const updateProduct = async (req: Request, res: Response) => {
         unit: true,
         warehouse: true,
         store: true,
+        stocks: {
+          include: {
+            warehouse: true,
+          },
+        },
       },
     });
+
+    // If direct stock adjustment occurred
+    if (stock !== undefined && Number(stock) !== existingProduct.stock) {
+      const delta = Number(stock) - existingProduct.stock;
+      await recordStockMovement({
+        productId: product.id,
+        warehouseId: warehouseId || existingProduct.warehouseId || null,
+        quantityDelta: delta,
+        type: delta > 0 ? "ADJUSTMENT_PLUS" : "ADJUSTMENT_MINUS",
+        notes: `Product stock manually updated from ${existingProduct.stock} to ${stock}`,
+      });
+    }
 
     res.json({ success: true, data: product });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-import { logActivity } from "../services/audit.service.js";
 
 export const deleteProduct = async (req: Request, res: Response) => {
   try {

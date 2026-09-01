@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { recordStockMovement } from "../services/stock.service.js";
 
 // ==================== PURCHASES ====================
 export const getPurchases = async (req: Request, res: Response) => {
@@ -127,31 +128,19 @@ export const createPurchase = async (req: Request, res: Response) => {
     });
 
     // If status is RECEIVED, add stock to products
+    // Auto Stock Ingest when PO status is RECEIVED
     if (normalizedStatus === "RECEIVED" && items.length > 0) {
       for (const item of items) {
-        let matchingProd = null;
-        if (item.productId) {
-          matchingProd = await prisma.product.findUnique({ where: { id: item.productId } });
-        }
-        if (!matchingProd && item.sku) {
-          matchingProd = await prisma.product.findUnique({ where: { sku: item.sku } });
-        }
-        if (!matchingProd && item.productName) {
-          matchingProd = await prisma.product.findFirst({ where: { name: item.productName } });
-        }
-
-        if (matchingProd) {
-          const addQty = Number(item.quantity) || 0;
-          const newStock = matchingProd.stock + addQty;
-          await prisma.product.update({
-            where: { id: matchingProd.id },
-            data: {
-              stock: newStock,
-              costPrice: item.unitCost ? Number(item.unitCost) : matchingProd.costPrice,
-              status: newStock > 0 ? "ACTIVE" : matchingProd.status,
-            },
-          });
-        }
+        await recordStockMovement({
+          productId: item.productId,
+          productName: item.productName,
+          warehouseName: warehouseName || "Lavish Warehouse",
+          quantityDelta: Number(item.quantity) || 0,
+          type: "PURCHASE_RECEIPT",
+          referenceNo: refNo,
+          unitCost: item.unitCost ? Number(item.unitCost) : null,
+          notes: `Purchase Receipt from ${supplierName}`,
+        });
       }
     }
 
@@ -224,35 +213,29 @@ export const updatePurchase = async (req: Request, res: Response) => {
     if (oldStatus !== "RECEIVED" && newStatus === "RECEIVED") {
       // Add stock
       for (const item of existing.items) {
-        const prod = await prisma.product.findFirst({
-          where: { OR: [{ id: item.productId || "" }, { sku: item.sku || "" }, { name: item.productName }] },
+        await recordStockMovement({
+          productId: item.productId,
+          productName: item.productName,
+          warehouseName: warehouseName || existing.warehouseName || "Lavish Warehouse",
+          quantityDelta: item.quantity,
+          type: "PURCHASE_RECEIPT",
+          referenceNo: existing.reference,
+          unitCost: item.unitCost,
+          notes: `Purchase updated to RECEIVED`,
         });
-        if (prod) {
-          await prisma.product.update({
-            where: { id: prod.id },
-            data: {
-              stock: prod.stock + item.quantity,
-              status: prod.stock + item.quantity > 0 ? "ACTIVE" : prod.status,
-            },
-          });
-        }
       }
     } else if (oldStatus === "RECEIVED" && (newStatus === "CANCELLED" || newStatus === "PENDING")) {
       // Revert stock
       for (const item of existing.items) {
-        const prod = await prisma.product.findFirst({
-          where: { OR: [{ id: item.productId || "" }, { sku: item.sku || "" }, { name: item.productName }] },
+        await recordStockMovement({
+          productId: item.productId,
+          productName: item.productName,
+          warehouseName: warehouseName || existing.warehouseName || "Lavish Warehouse",
+          quantityDelta: -item.quantity,
+          type: "SUPPLIER_RETURN",
+          referenceNo: existing.reference,
+          notes: `Purchase status changed from RECEIVED to ${newStatus}`,
         });
-        if (prod) {
-          const revStock = Math.max(0, prod.stock - item.quantity);
-          await prisma.product.update({
-            where: { id: prod.id },
-            data: {
-              stock: revStock,
-              status: revStock === 0 ? "OUT_OF_STOCK" : prod.status,
-            },
-          });
-        }
       }
     }
 
@@ -442,17 +425,14 @@ export const createPurchaseReturn = async (req: Request, res: Response) => {
 
     // Deduct stock if status is COMPLETED
     if (String(status).toUpperCase() === "COMPLETED" && productName) {
-      const prod = await prisma.product.findFirst({ where: { name: productName } });
-      if (prod) {
-        const newStock = Math.max(0, prod.stock - (Number(quantity) || 1));
-        await prisma.product.update({
-          where: { id: prod.id },
-          data: {
-            stock: newStock,
-            status: newStock === 0 ? "OUT_OF_STOCK" : prod.status,
-          },
-        });
-      }
+      await recordStockMovement({
+        productName,
+        warehouseName: warehouseName || "Lavish Warehouse",
+        quantityDelta: -(Number(quantity) || 1),
+        type: "SUPPLIER_RETURN",
+        referenceNo: refNo,
+        notes: notes || `Purchase Return to ${supplierName}`,
+      });
     }
 
     res.status(201).json(returnItem);

@@ -84,10 +84,12 @@ model Warehouse {
   qty           Int       @default(0)
   code          String?
   address       String?
-  status        String    @default("ACTIVE") // ACTIVE, INACTIVE
+  status        String          @default("ACTIVE") // ACTIVE, INACTIVE
   products      Product[]
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  productStocks ProductStock[]
+  stockMovements StockMovement[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 }
 
 model Store {
@@ -607,11 +609,13 @@ model Product {
   warehouse        Warehouse?  @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
 
   storeId          String?
-  store            Store?      @relation(fields: [storeId], references: [id], onDelete: SetNull)
+  store            Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
+  stocks           ProductStock[]
+  movements        StockMovement[]
   orderItems       OrderItem[]
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
 }
 
 model Customer {
@@ -837,4 +841,155 @@ model PurchaseReturn {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 }
+
+model Sale {
+  id             String      @id @default(uuid())
+  reference      String      @unique // e.g. "SL001", "SL-849201"
+  customerId     String?
+  customerName   String      // e.g. "Carl Evans"
+  customerAvatar String?     @default("/assets/images/avatar-01.jpg")
+  billerName     String?     @default("Admin")
+  storeName      String?     @default("Electro Mart")
+  warehouseName  String?     @default("Lavish Warehouse")
+  date           DateTime    @default(now())
+  status         String      @default("COMPLETED") // COMPLETED, PENDING, ORDERED, CANCELLED
+  paymentStatus  String      @default("PAID") // PAID, UNPAID, OVERDUE, PARTIAL
+  paymentMethod  String      @default("CASH") // CASH, CREDIT_CARD, PROMPTPAY, BANK_TRANSFER
+  subtotal       Float       @default(0.0)
+  tax            Float       @default(0.0)
+  discount       Float       @default(0.0)
+  shipping       Float       @default(0.0)
+  grandTotal     Float       @default(0.0)
+  paid           Float       @default(0.0)
+  due            Float       @default(0.0)
+  notes          String?
+  items          SaleItem[]
+  invoices       Invoice[]
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+}
+
+model SaleItem {
+  id           String   @id @default(uuid())
+  saleId       String
+  sale         Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  productId    String?
+  productName  String
+  productImage String?
+  sku          String?
+  quantity     Int      @default(1)
+  unitPrice    Float    @default(0.0)
+  tax          Float    @default(0.0)
+  discount     Float    @default(0.0)
+  subtotal     Float    @default(0.0)
+  total        Float    @default(0.0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Invoice {
+  id             String    @id @default(uuid())
+  invoiceNo      String    @unique // e.g. "INV001", "INV-48201"
+  saleId         String?
+  sale           Sale?     @relation(fields: [saleId], references: [id], onDelete: SetNull)
+  saleReference  String?   // e.g. "SL001"
+  customerId     String?
+  customerName   String    // e.g. "Carl Evans"
+  customerAvatar String?   @default("/assets/images/avatar-01.jpg")
+  issueDate      DateTime  @default(now())
+  dueDate        DateTime  @default(now())
+  amount         Float     @default(0.0)
+  paid           Float     @default(0.0)
+  amountDue      Float     @default(0.0)
+  status         String    @default("PAID") // PAID, UNPAID, OVERDUE
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model SalesReturn {
+  id             String   @id @default(uuid())
+  reference      String   @unique // e.g. "SR001", "SR-48201"
+  saleReference  String?  // e.g. "SL001"
+  customerId     String?
+  customerName   String   // e.g. "Carl Evans"
+  customerAvatar String?  @default("/assets/images/avatar-01.jpg")
+  warehouseName  String?  @default("Lavish Warehouse")
+  productId      String?
+  productName    String?  // e.g. "Lenovo IdeaPad 3"
+  productImage   String?  @default("/assets/images/product-01.jpg")
+  quantity       Int      @default(1)
+  date           DateTime @default(now())
+  status         String   @default("RECEIVED") // RECEIVED, PENDING, CANCELLED
+  totalAmount    Float    @default(0.0)
+  paidAmount     Float    @default(0.0)
+  dueAmount      Float    @default(0.0)
+  paymentStatus  String   @default("PAID") // PAID, UNPAID, OVERDUE
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Quotation {
+  id              String    @id @default(uuid())
+  reference       String    @unique // e.g. "QT001", "QT-48201"
+  customerId      String?
+  customerName    String    // e.g. "Carl Evans"
+  customerAvatar  String?   @default("/assets/images/avatar-01.jpg")
+  productId       String?
+  productName     String    // e.g. "Lenovo 3rd Generation"
+  productImage    String?   @default("/assets/images/product-01.jpg")
+  quantity        Int       @default(1)
+  unitPrice       Float     @default(0.0)
+  tax             Float     @default(0.0)
+  discount        Float     @default(0.0)
+  total           Float     @default(0.0)
+  status          String    @default("SENT") // SENT, ORDERED, PENDING
+  validUntil      DateTime?
+  notes           String?
+  convertedSaleId String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model ProductStock {
+  id               String      @id @default(uuid())
+  productId        String
+  product          Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId      String
+  warehouse        Warehouse   @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  quantity         Int         @default(0)
+  reservedQuantity Int         @default(0)
+  minAlert         Int         @default(5)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@unique([productId, warehouseId])
+  @@index([warehouseId])
+  @@index([productId])
+}
+
+model StockMovement {
+  id           String    @id @default(uuid())
+  productId    String
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId  String
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  type         String    // INITIAL_STOCK, PURCHASE_RECEIPT, SALE_ISSUE, TRANSFER_OUT, TRANSFER_IN, ADJUSTMENT_PLUS, ADJUSTMENT_MINUS, INTERNAL_ISSUE, DAMAGE_ISSUE, CUSTOMER_RETURN, SUPPLIER_RETURN
+  referenceNo  String?   // e.g. PO001, SL001, TR001, ADJ001, SR001
+  quantity     Int       // delta (+/-)
+  balanceAfter Int       // stock balance after movement in this warehouse
+  unitCost     Float?
+  department   String?
+  notes        String?
+  createdBy    String?   @default("Admin")
+  createdAt    DateTime  @default(now())
+
+  @@index([productId, createdAt])
+  @@index([warehouseId, createdAt])
+  @@index([referenceNo])
+  @@index([type])
+}
+
+
 

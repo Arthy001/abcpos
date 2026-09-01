@@ -764,6 +764,27 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Multi-Warehouse Stock Breakdown */}
+                {viewProduct.stocks && viewProduct.stocks.length > 0 && (
+                  <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-100/80 text-xs space-y-2">
+                    <div className="flex items-center justify-between font-semibold text-blue-900 pb-1 border-b border-blue-200/50">
+                      <div className="flex items-center space-x-1.5">
+                        <WarehouseIcon className="w-3.5 h-3.5 text-blue-600" />
+                        <span>Multi-Warehouse Stock Breakdown</span>
+                      </div>
+                      <span className="text-[11px] font-bold text-blue-700">Total: {viewProduct.stock} {viewProduct.unit?.shortName || "Pcs"}</span>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                      {viewProduct.stocks.map((stk) => (
+                        <div key={stk.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-blue-100 shadow-2xs">
+                          <span className="text-gray-700 font-medium">{stk.warehouse?.name || "Warehouse"}</span>
+                          <span className="font-bold text-blue-700">{stk.quantity} <span className="text-[10px] text-gray-400 font-normal">{viewProduct.unit?.shortName || "Pcs"}</span></span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Modal Footer */}

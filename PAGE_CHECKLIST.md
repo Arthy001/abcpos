@@ -95,23 +95,20 @@
   - **Backend**: `GET /api/orders`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ประวัติรายการขายย้อนหลัง, Modal ดูใบเสร็จ, พิมพ์ซ้ำ)
 
-- [ ] **13. Sales List & Invoices**
-  - **Route**: `/sales`, `/invoices`
-  - **Backend**: `GET /api/invoices`
-  - **สิ่งที่ต้องการ**: ตารางใบแจ้งหนี้/ใบเสร็จรับเงินเต็มรูปแบบ และดาวน์โหลด PDF
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+- [x] **13. Sales List & Invoices**
+  - **Route**: `/sales`, `/sales/pos-orders`, `/sales/online-orders`, `/invoices`
+  - **Backend**: `GET/POST/PUT/DELETE /api/sales`, `GET /api/sales/:id`, `GET /api/invoices`, `PUT /api/invoices/:id/pay`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full Real API CRUD เชื่อมต่อ DB SQLite/Prisma, ระบบตัดสต็อกอัตโนมัติเมื่อทำรายการขายเสร็จสิ้น `COMPLETED`, เชื่อมโยงใบแจ้งหนี้ Invoices อัตโนมัติ, SearchableSelect สำหรับ Customer/Warehouse/Store/Status/Payment, Multi-item Line Builder พร้อมคำนวณ VAT 7%/Discount/Shipping/Paid/Due, Modal ดูใบแจ้งหนี้ View Tax Invoice Slip พร้อมปุ่ม Print Receipt, Modal บันทึกรับชำระเงิน Quick Payment Modal, Delete 2-Step Confirmation, Standard Feedback Modals ตาม GEMINI.md, PDF & CSV Export, Pagination)
 
-- [ ] **14. Sales Return**
+- [x] **14. Sales Return (รับคืนสินค้าจากการขาย)**
   - **Route**: `/sales/returns`
-  - **Backend**: `POST /api/sales/returns`
-  - **สิ่งที่ต้องการ**: ฟอร์มรับคืนสินค้าหน้าร้าน, คืนเงิน และเพิ่มสต็อกกลับคืนคลัง
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **Backend**: `GET/POST/PUT/DELETE /api/sales-returns`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full Real API CRUD เชื่อมต่อ DB จริง, ระบบ Ingest นำสินค้าคืนกลับเข้าสต็อก `Product.stock` อัตโนมัติเมื่อสถานะ `RECEIVED`, SearchableSelect สำหรับ Customer/Product/Warehouse/Status/Payment, ฟอร์มคำนวณยอดเงินคืนและสถานะการคืนเงิน Refund Status, Modal ดูใบรับคืนสินค้า View Return Slip พร้อม Print Slip, Delete 2-Step Confirmation, Standard Feedback Modals ตาม GEMINI.md, PDF & CSV Export, Pagination)
 
-- [ ] **15. Quotation (ใบเสนอราคา)**
+- [x] **15. Quotation (ใบเสนอราคา)**
   - **Route**: `/quotations`
-  - **Backend**: `GET/POST /api/quotations`
-  - **สิ่งที่ต้องการ**: หน้าสร้างใบเสนอราคา และแปลงเป็นบิลขาย
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **Backend**: `GET/POST/PUT/DELETE /api/quotations`, `POST /api/quotations/:id/convert`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full Real API CRUD เชื่อมต่อ DB จริง, ระบบ Convert to Order แปลงใบเสนอราคาเป็นคำสั่งขาย `Sale` & `Invoice` ทันทีในคลิกเดียว พร้อมตัดสต็อกสินค้าอัตโนมัติ, SearchableSelect สำหรับ Customer/Product/Status, คำนวณราคา Price Proposal/Tax/Discount/Total, Modal ดูใบเสนอราคา View Quotation Slip พร้อม Print Slip, Delete 2-Step Confirmation, Standard Feedback Modals ตาม GEMINI.md, PDF & CSV Export, Pagination)
 
 - [x] **16. Purchases & Purchase Orders (PO) & Purchase Returns**
   - **Route**: `/purchases`, `/purchases/orders`, `/purchases/returns`
