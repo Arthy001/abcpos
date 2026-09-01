@@ -384,9 +384,9 @@ export default function PurchaseOrderPage() {
                   }}
                   options={[
                     { value: "all", label: "Status: All" },
-                    { value: "RECEIVED", label: "Received" },
                     { value: "PENDING", label: "Pending" },
                     { value: "ORDERED", label: "Ordered" },
+                    { value: "RECEIVED", label: "Received" },
                   ]}
                 />
               </div>
@@ -716,9 +716,9 @@ export default function PurchaseOrderPage() {
                     value={orderStatus}
                     onChange={(val) => setOrderStatus(val)}
                     options={[
-                      { value: "RECEIVED", label: "Received (Ingest Stock immediately)" },
-                      { value: "PENDING", label: "Pending (Await Delivery)" },
-                      { value: "ORDERED", label: "Ordered" },
+                      { value: "PENDING", label: "Pending (Draft / Await Delivery)" },
+                      { value: "ORDERED", label: "Ordered (PO Placed)" },
+                      { value: "RECEIVED", label: "Received (Ingest Stock Immediately)" },
                     ]}
                   />
                 </div>

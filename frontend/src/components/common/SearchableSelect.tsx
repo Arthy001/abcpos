@@ -163,7 +163,7 @@ export function SearchableSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-50 left-0 right-0 min-w-[160px] mt-1.5 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute z-[9999] left-0 right-0 min-w-[200px] mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           {/* Search Input Box (if searchable) */}
           {searchable && (
             <div className="p-2 border-b border-gray-100 bg-gray-50/70">

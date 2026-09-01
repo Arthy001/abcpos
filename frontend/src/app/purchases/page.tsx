@@ -566,9 +566,9 @@ export default function PurchasesPage() {
                   }}
                   options={[
                     { value: "all", label: "Status: All" },
-                    { value: "RECEIVED", label: "Received" },
                     { value: "PENDING", label: "Pending" },
                     { value: "ORDERED", label: "Ordered" },
+                    { value: "RECEIVED", label: "Received" },
                     { value: "CANCELLED", label: "Cancelled" },
                   ]}
                 />
@@ -892,9 +892,9 @@ export default function PurchasesPage() {
                       value={formStatus}
                       onChange={(val) => setFormStatus(val as any)}
                       options={[
-                        { value: "RECEIVED", label: "Received (Stock In)" },
-                        { value: "PENDING", label: "Pending" },
-                        { value: "ORDERED", label: "Ordered" },
+                        { value: "PENDING", label: "Pending (Draft / Awaiting Approval)" },
+                        { value: "ORDERED", label: "Ordered (PO Sent / In Transit)" },
+                        { value: "RECEIVED", label: "Received (Stock Ingested)" },
                         { value: "CANCELLED", label: "Cancelled" },
                       ]}
                     />
@@ -932,31 +932,33 @@ export default function PurchasesPage() {
                     </button>
                   </div>
 
-                  <div className="border border-gray-200 rounded-xl overflow-hidden">
+                  <div className="border border-gray-200 rounded-xl bg-white overflow-visible relative min-h-[180px] pb-16">
                     <table className="w-full text-xs text-left">
                       <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
                         <tr>
-                          <th className="py-2 px-3">Product Name</th>
-                          <th className="py-2 px-3 w-28">Quantity</th>
-                          <th className="py-2 px-3 w-28">Unit Cost ($)</th>
-                          <th className="py-2 px-3 w-28 text-right">Subtotal</th>
-                          <th className="py-2 px-2 w-10 text-center"></th>
+                          <th className="py-2.5 px-3">Product Name</th>
+                          <th className="py-2.5 px-3 w-28">Quantity</th>
+                          <th className="py-2.5 px-3 w-28">Unit Cost ($)</th>
+                          <th className="py-2.5 px-3 w-28 text-right">Subtotal</th>
+                          <th className="py-2.5 px-2 w-10 text-center"></th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-gray-100 bg-white">
                         {formItems.map((item, idx) => (
-                          <tr key={idx}>
-                            <td className="py-2 px-3">
+                          <tr key={idx} className="hover:bg-gray-50/50">
+                            <td className="py-2 px-3 relative">
                               {products.length > 0 ? (
-                                <SearchableSelect
-                                  placeholder="Select Product..."
-                                  value={item.productId || ""}
-                                  onChange={(val) => handleUpdateItemLine(idx, "productId", val)}
-                                  options={products.map((p) => ({
-                                    value: p.id,
-                                    label: `${p.name} (${p.sku})`,
-                                  }))}
-                                />
+                                <div className="relative min-w-[220px]">
+                                  <SearchableSelect
+                                    placeholder="Select Product..."
+                                    value={item.productId || ""}
+                                    onChange={(val) => handleUpdateItemLine(idx, "productId", val)}
+                                    options={products.map((p) => ({
+                                      value: p.id,
+                                      label: `${p.name} (${p.sku})`,
+                                    }))}
+                                  />
+                                </div>
                               ) : (
                                 <input
                                   type="text"
@@ -972,7 +974,7 @@ export default function PurchasesPage() {
                                 min={1}
                                 value={item.quantity}
                                 onChange={(e) => handleUpdateItemLine(idx, "quantity", Number(e.target.value))}
-                                className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs font-bold"
+                                className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs font-bold text-center"
                               />
                             </td>
                             <td className="py-2 px-3">
@@ -982,7 +984,7 @@ export default function PurchasesPage() {
                                 min={0}
                                 value={item.unitCost}
                                 onChange={(e) => handleUpdateItemLine(idx, "unitCost", Number(e.target.value))}
-                                className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs"
+                                className="w-full px-2 py-1 bg-gray-50 border border-gray-200 rounded text-xs text-right"
                               />
                             </td>
                             <td className="py-2 px-3 text-right font-bold text-gray-900">
@@ -993,7 +995,7 @@ export default function PurchasesPage() {
                                 type="button"
                                 onClick={() => handleRemoveItemLine(idx)}
                                 disabled={formItems.length === 1}
-                                className="p-1 text-gray-400 hover:text-red-500 disabled:opacity-30 cursor-pointer"
+                                className="p-1 text-gray-400 hover:text-red-500 disabled:opacity-30 cursor-pointer rounded hover:bg-red-50"
                               >
                                 <X className="w-3.5 h-3.5" />
                               </button>
