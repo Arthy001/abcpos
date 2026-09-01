@@ -11,6 +11,7 @@ import {
   fetchWarehouses,
 } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   PlusCircle,
   Download,
@@ -35,6 +36,7 @@ import {
 } from "lucide-react";
 
 export default function StockTransferPage() {
+  const { user, isAdmin, canManageWarehouse } = useAuthStore();
   const [transfers, setTransfers] = useState<StockTransfer[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -64,19 +66,19 @@ export default function StockTransferPage() {
     message: "",
   });
 
-  // Modal State (Add / Edit)
+  // Modal Form State (Add / Edit)
   const [showModal, setShowModal] = useState<boolean>(false);
   const [editingTransfer, setEditingTransfer] = useState<StockTransfer | null>(null);
   const [fromWh, setFromWh] = useState<string>("");
   const [toWh, setToWh] = useState<string>("");
   const [noOfProds, setNoOfProds] = useState<number>(1);
-  const [qtyTransferred, setQtyTransferred] = useState<number>(1);
+  const [qtyTransferred, setQtyTransferred] = useState<number>(10);
   const [refNum, setRefNum] = useState<string>("");
   const [formStatus, setFormStatus] = useState<"COMPLETED" | "PENDING" | "CANCELLED">("COMPLETED");
   const [formNotes, setFormNotes] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // View Modal
+  // View Details Modal
   const [viewTransfer, setViewTransfer] = useState<StockTransfer | null>(null);
 
   // Delete Confirmation Modal
@@ -86,7 +88,7 @@ export default function StockTransferPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [tData, whData] = await Promise.all([
+      const [transData, whData] = await Promise.all([
         fetchStockTransfers({
           fromWarehouse: fromWarehouseFilter,
           toWarehouse: toWarehouseFilter,
@@ -95,8 +97,13 @@ export default function StockTransferPage() {
         }),
         fetchWarehouses(),
       ]);
-      setTransfers(tData || []);
+      setTransfers(transData || []);
       setWarehouses(whData || []);
+
+      // Smart Default: Auto-select fromWarehouseFilter if not Admin
+      if (whData && user?.warehouseName && !isAdmin() && fromWarehouseFilter === "all") {
+        setFromWarehouseFilter(user.warehouseName);
+      }
     } catch (err: any) {
       setFeedbackModal({
         isOpen: true,
@@ -161,8 +168,11 @@ export default function StockTransferPage() {
   // Open Add Modal
   const handleOpenAddModal = () => {
     setEditingTransfer(null);
-    setFromWh(warehouses.length > 0 ? warehouses[0].name : "");
-    setToWh(warehouses.length > 1 ? warehouses[1].name : "");
+    const defaultFrom = user?.warehouseName || (warehouses.length > 0 ? warehouses[0].name : "");
+    const defaultTo = warehouses.find((w) => w.name !== defaultFrom)?.name || (warehouses.length > 1 ? warehouses[1].name : "");
+
+    setFromWh(defaultFrom);
+    setToWh(defaultTo);
     setNoOfProds(1);
     setQtyTransferred(10);
     setRefNum(`#TR-${Math.floor(100000 + Math.random() * 900000)}`);
@@ -173,6 +183,15 @@ export default function StockTransferPage() {
 
   // Open Edit Modal
   const handleOpenEditModal = (t: StockTransfer) => {
+    if (!canManageWarehouse(t.fromWarehouse) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `You are assigned to "${user.warehouseName}". You do not have permission to edit transfers originating from "${t.fromWarehouse}".`,
+      });
+      return;
+    }
     setEditingTransfer(t);
     setFromWh(t.fromWarehouse);
     setToWh(t.toWarehouse);
@@ -202,6 +221,16 @@ export default function StockTransferPage() {
         type: "error",
         title: "Validation Error",
         message: "Source Warehouse and Destination Warehouse cannot be identical.",
+      });
+      return;
+    }
+
+    if (!canManageWarehouse(fromWh) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `You are assigned to "${user.warehouseName}". You can only initiate transfers from your assigned warehouse.`,
       });
       return;
     }

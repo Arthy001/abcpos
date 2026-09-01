@@ -13,6 +13,7 @@ import {
   fetchStores,
 } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   PlusCircle,
   Search,
@@ -39,6 +40,7 @@ import {
 } from "lucide-react";
 
 export default function StockAdjustmentPage() {
+  const { user, isAdmin, canManageWarehouse } = useAuthStore();
   const [adjustments, setAdjustments] = useState<StockAdjustment[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -106,6 +108,11 @@ export default function StockAdjustmentPage() {
       setProducts(prodData || []);
       setWarehouses(whData || []);
       setStores(stData || []);
+
+      // Smart Default: Auto-select user's warehouse filter if not Admin
+      if (whData && user?.warehouseName && !isAdmin() && warehouseFilter === "all") {
+        setWarehouseFilter(user.warehouseName);
+      }
     } catch (err: any) {
       setFeedbackModal({
         isOpen: true,
@@ -168,11 +175,11 @@ export default function StockAdjustmentPage() {
   // Open Add Modal
   const handleOpenAddModal = () => {
     setEditingAdjustment(null);
-    setFormWarehouse(warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse");
-    setFormStore(stores.length > 0 ? stores[0].name : "Electro Mart");
+    setFormWarehouse(user?.warehouseName || (warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse"));
+    setFormStore(user?.storeName || (stores.length > 0 ? stores[0].name : "ElectroMart Main"));
     setFormProductName(products.length > 0 ? products[0].name : "");
     setFormProductImage(products.length > 0 ? products[0].image || "" : "");
-    setFormPersonName("James Kirwin");
+    setFormPersonName(user?.name || "James Kirwin");
     setFormQty(10);
     setFormType("ADDITION");
     setFormNotes("");
@@ -181,6 +188,15 @@ export default function StockAdjustmentPage() {
 
   // Open Edit Modal
   const handleOpenEditModal = (adj: StockAdjustment) => {
+    if (!canManageWarehouse(adj.warehouse) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `You are assigned to "${user.warehouseName}". You do not have permission to edit adjustments in "${adj.warehouse}".`,
+      });
+      return;
+    }
     setEditingAdjustment(adj);
     setFormWarehouse(adj.warehouse);
     setFormStore(adj.store);
@@ -202,6 +218,16 @@ export default function StockAdjustmentPage() {
         type: "error",
         title: "Missing Information",
         message: "Please ensure Warehouse, Store, and Product are selected.",
+      });
+      return;
+    }
+
+    if (!canManageWarehouse(formWarehouse) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `You are assigned to "${user.warehouseName}". You cannot submit adjustments for "${formWarehouse}".`,
       });
       return;
     }

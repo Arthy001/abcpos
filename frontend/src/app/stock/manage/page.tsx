@@ -12,6 +12,7 @@ import {
   deleteProductApi,
 } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   PlusCircle,
   Search,
@@ -33,9 +34,11 @@ import {
   Sparkles,
   ArrowUpDown,
   Tag,
+  ShieldAlert,
 } from "lucide-react";
 
 export default function ManageStockPage() {
+  const { user, isAdmin, canManageWarehouse } = useAuthStore();
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -92,6 +95,16 @@ export default function ManageStockPage() {
       setProducts(prodsData || []);
       setWarehouses(whData || []);
       setStores(stData || []);
+
+      // Smart Default: Auto-select user's warehouse if not Admin and not already filtered
+      if (whData && user?.warehouseName && !isAdmin() && warehouseFilter === "all") {
+        const match = whData.find(
+          (w) => w.name.toLowerCase().trim() === user.warehouseName?.toLowerCase().trim()
+        );
+        if (match) {
+          setWarehouseFilter(match.id);
+        }
+      }
     } catch (err: any) {
       setFeedbackModal({
         isOpen: true,
@@ -169,6 +182,16 @@ export default function ManageStockPage() {
 
   // Open Quick Edit / Adjust Modal
   const handleOpenAdjust = (prod: Product) => {
+    const prodWarehouseName = getWarehouseName(prod.warehouseId);
+    if (!canManageWarehouse(prodWarehouseName) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `You are assigned to "${user.warehouseName}". You do not have permission to adjust inventory in "${prodWarehouseName}". Please switch to your assigned warehouse.`,
+      });
+      return;
+    }
     setAdjustingProduct(prod);
     setAdjustQty(prod.stock);
     setAdjustMinAlert(prod.minStockAlert || 5);
@@ -215,6 +238,18 @@ export default function ManageStockPage() {
   const handleConfirmDelete = async () => {
     if (!deletingProduct) return;
     const prodName = deletingProduct.name;
+    const prodWarehouseName = getWarehouseName(deletingProduct.warehouseId);
+
+    if (!canManageWarehouse(prodWarehouseName) && !isAdmin()) {
+      setDeletingProduct(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `You are assigned to "${user.warehouseName}". You do not have permission to delete items from "${prodWarehouseName}".`,
+      });
+      return;
+    }
     try {
       setIsDeleting(true);
       await deleteProductApi(deletingProduct.id);

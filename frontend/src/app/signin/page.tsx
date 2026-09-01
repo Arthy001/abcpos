@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   Eye,
   EyeOff,
@@ -101,6 +102,20 @@ export default function SignInPage() {
     if (e) e.preventDefault();
     const accountToUse = customAccount || selectedAccount;
     setIsLoading(true);
+
+    try {
+      useAuthStore.getState().setUser({
+        id: accountToUse.id,
+        name: accountToUse.name,
+        email: accountToUse.email,
+        role: accountToUse.role,
+        warehouseName: accountToUse.warehouseName,
+        storeName: accountToUse.storeName,
+        avatar: accountToUse.avatar,
+      });
+    } catch (err) {
+      console.error(err);
+    }
 
     setTimeout(() => {
       setIsLoading(false);

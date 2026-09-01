@@ -92,3 +92,17 @@ model SystemUser {
   - `Delete Flow`: Step 1 ถามยืนยัน (`Trash2` สีแดง Rose) $\rightarrow$ Step 2 สำเร็จ (`Trash2` สีเหลือง Amber)
   - `Error Modal`: ไอคอนเตือนสีแดง (`AlertTriangle`) พร้อมปุ่ม `OK`
 - **Exporting**: รองรับทั้ง **PDF (`window.print()`)** และ **CSV Export**
+
+---
+
+## 🔒 6. นโยบายสิทธิ์การจัดการคลัง (Multi-Warehouse Permission & Smart Defaults)
+
+1. **Smart Auto-Select Dropdown**:
+   - เมื่อผู้ใช้ล็อกอิน (เช่น *Michael Dawson - Lavish Warehouse*) เข้ามาที่หน้าจัดการสต็อก Dropdown ตัวกรองคลังจะ **Auto-Select เป็นคลังที่สังกัดให้อัตโนมัติ**
+   - ผู้ใช้ยังสามารถสลับไปดูสต็อกของคลังอื่นได้แบบ Read-Only เพื่อเช็กยอดสินค้า
+2. **Action Guards (การป้องกันการแก้ไขข้ามคลัง)**:
+   - **`/stock/manage` (ปรับปรุงสต็อกด่วน / ลบสินค้า)**: ปรับปรุงหรือลบสินค้าได้เฉพาะในคลังที่ตนเองสังกัด
+   - **`/stock/adjustment` (ปรับยอดสต็อกเกิน/ขาด)**: บันทึกใบ Adjustment ได้เฉพาะคลังตนเองเท่านั้น
+   - **`/stock/transfer` (โอนย้ายสินค้าข้ามคลัง)**: คลังต้นทาง (*From Warehouse*) ถูกจำกัดให้เป็นคลังตนเอง ส่วนคลังปลายทาง (*To Warehouse*) สามารถเลือกส่งไปยังคลังใดก็ได้
+   - **`Admin`**: มีสิทธิ์เต็มรูปแบบในการจัดการทุกคลังสินค้า (All Warehouses)
+

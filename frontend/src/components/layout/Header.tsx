@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { useThemeStore } from "@/store/useThemeStore";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -30,6 +31,7 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) => {
   const router = useRouter();
   const { topBarColor, isGradientTopBar } = useThemeStore();
+  const { user, logout } = useAuthStore();
   const isDarkTopBar = topBarColor !== "#ffffff";
 
   const [userDropdownOpen, setUserDropdownOpen] = useState<boolean>(false);
@@ -48,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
 
   const handleLogout = () => {
     setUserDropdownOpen(false);
+    logout();
     router.push("/signin");
   };
 
@@ -188,32 +191,43 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
         <div ref={userDropdownRef} className="relative pl-1">
           <div
             onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-            className="relative cursor-pointer select-none"
+            className="relative cursor-pointer select-none flex items-center space-x-2"
           >
-            <img
-              src="/assets/images/avatar-01.jpg"
-              alt="User Profile"
-              className="w-8 h-8 rounded-lg object-cover ring-2 ring-gray-100 hover:ring-[#FE9F43] transition-all"
-              onError={(e) => {
-                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop";
-              }}
-            />
-            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+            <div className="relative">
+              <img
+                src={user.avatar || "/assets/images/avatar-01.jpg"}
+                alt={user.name}
+                className="w-8 h-8 rounded-lg object-cover ring-2 ring-gray-100 hover:ring-[#FE9F43] transition-all"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop";
+                }}
+              />
+              <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+            </div>
           </div>
 
           {/* User Profile Popup Menu (matching Image 1) */}
           {userDropdownOpen && (
-            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 px-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+            <div className="absolute right-0 mt-2 w-60 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 px-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
               {/* Header Info */}
               <div className="flex items-center space-x-3 px-2 py-2 border-b border-gray-100 mb-1">
                 <img
-                  src="/assets/images/avatar-01.jpg"
-                  alt="John Smilga"
-                  className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                  src={user.avatar || "/assets/images/avatar-01.jpg"}
+                  alt={user.name}
+                  className="w-10 h-10 rounded-full object-cover border border-gray-200 shrink-0"
                 />
-                <div>
-                  <h4 className="font-bold text-gray-900 text-xs leading-tight">John Smilga</h4>
-                  <p className="text-[11px] text-gray-500 mt-0.5">Admin</p>
+                <div className="min-w-0 flex-1">
+                  <h4 className="font-bold text-gray-900 text-xs leading-tight truncate">{user.name}</h4>
+                  <div className="flex items-center space-x-1 mt-0.5">
+                    <span className="text-[10px] font-semibold text-[#FE9F43] bg-orange-50 px-1.5 py-0.2 rounded">
+                      {user.role}
+                    </span>
+                  </div>
+                  {user.warehouseName && (
+                    <p className="text-[10px] text-gray-400 truncate mt-0.5">
+                      📍 {user.warehouseName}
+                    </p>
+                  )}
                 </div>
               </div>
 
