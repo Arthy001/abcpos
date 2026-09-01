@@ -1,7 +1,8 @@
 "use client";
 
-import React from "react";
+import React, { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Store,
@@ -14,7 +15,9 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Monitor,
-  ShoppingBag,
+  User,
+  FileText,
+  LogOut,
 } from "lucide-react";
 
 import { useThemeStore } from "@/store/useThemeStore";
@@ -25,8 +28,28 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) => {
+  const router = useRouter();
   const { topBarColor, isGradientTopBar } = useThemeStore();
   const isDarkTopBar = topBarColor !== "#ffffff";
+
+  const [userDropdownOpen, setUserDropdownOpen] = useState<boolean>(false);
+  const userDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
+        setUserDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleLogout = () => {
+    setUserDropdownOpen(false);
+    router.push("/signin");
+  };
 
   return (
     <header
@@ -40,14 +63,16 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
     >
       {/* Left Section: A POS Logo, Circle Toggle Button (<< / >>), Search Bar */}
       <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
-        {/* Brand Logo: A POS */}
+        {/* Brand Logo: ABCPOS */}
         <Link href="/" className="flex items-center space-x-2 mr-1 sm:mr-2 flex-shrink-0 group">
-          <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FE9F43] to-[#FF8008] flex items-center justify-center text-white font-black text-base shadow-sm group-hover:scale-105 transition-transform">
-            A
-          </div>
-          <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#111827]">
-            A <span className="text-[#FE9F43]">POS</span>
-          </span>
+          <img
+            src="/assets/images/abcposlogo.png"
+            alt="ABCPOS Logo"
+            className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = "/assets/images/logo.svg";
+            }}
+          />
         </Link>
 
         {/* Circular Toggle Button (Orange << / >>) - Not hamburger */}
@@ -159,17 +184,81 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
           <Settings className="w-4 h-4" />
         </Link>
 
-        {/* User Profile Avatar */}
-        <div className="relative pl-1 cursor-pointer">
-          <img
-            src="/assets/images/avatar-01.jpg"
-            alt="User Profile"
-            className="w-8 h-8 rounded-lg object-cover ring-2 ring-gray-100"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop";
-            }}
-          />
-          <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+        {/* User Profile Avatar with Dropdown */}
+        <div ref={userDropdownRef} className="relative pl-1">
+          <div
+            onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+            className="relative cursor-pointer select-none"
+          >
+            <img
+              src="/assets/images/avatar-01.jpg"
+              alt="User Profile"
+              className="w-8 h-8 rounded-lg object-cover ring-2 ring-gray-100 hover:ring-[#FE9F43] transition-all"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&h=100&fit=crop";
+              }}
+            />
+            <span className="absolute bottom-0 right-0 w-2 h-2 bg-emerald-500 rounded-full ring-2 ring-white"></span>
+          </div>
+
+          {/* User Profile Popup Menu (matching Image 1) */}
+          {userDropdownOpen && (
+            <div className="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2.5 px-2 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+              {/* Header Info */}
+              <div className="flex items-center space-x-3 px-2 py-2 border-b border-gray-100 mb-1">
+                <img
+                  src="/assets/images/avatar-01.jpg"
+                  alt="John Smilga"
+                  className="w-10 h-10 rounded-full object-cover border border-gray-200"
+                />
+                <div>
+                  <h4 className="font-bold text-gray-900 text-xs leading-tight">John Smilga</h4>
+                  <p className="text-[11px] text-gray-500 mt-0.5">Admin</p>
+                </div>
+              </div>
+
+              {/* Menu Links */}
+              <div className="space-y-0.5">
+                <Link
+                  href="/settings/profile"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center space-x-2.5 px-3 py-2 text-gray-700 hover:bg-gray-50 hover:text-[#FE9F43] rounded-xl font-medium transition-colors"
+                >
+                  <User className="w-4 h-4 text-gray-400" />
+                  <span>My Profile</span>
+                </Link>
+
+                <Link
+                  href="/reports/sales"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center space-x-2.5 px-3 py-2 text-gray-700 hover:bg-gray-50 hover:text-[#FE9F43] rounded-xl font-medium transition-colors"
+                >
+                  <FileText className="w-4 h-4 text-gray-400" />
+                  <span>Reports</span>
+                </Link>
+
+                <Link
+                  href="/settings"
+                  onClick={() => setUserDropdownOpen(false)}
+                  className="flex items-center space-x-2.5 px-3 py-2 text-gray-700 hover:bg-gray-50 hover:text-[#FE9F43] rounded-xl font-medium transition-colors"
+                >
+                  <Settings className="w-4 h-4 text-gray-400" />
+                  <span>Settings</span>
+                </Link>
+              </div>
+
+              {/* Divider & Logout */}
+              <div className="border-t border-gray-100 mt-1.5 pt-1.5">
+                <button
+                  onClick={handleLogout}
+                  className="w-full flex items-center space-x-2.5 px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-xl font-semibold transition-colors cursor-pointer text-left"
+                >
+                  <LogOut className="w-4 h-4 text-rose-500" />
+                  <span>Logout</span>
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
