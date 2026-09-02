@@ -565,10 +565,10 @@ export default function ProductsPage() {
         </div>
 
         {/* Product Table Card Container */}
-        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
+        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-4 sm:p-5 space-y-4">
           {/* Inner Search & Filter Bar */}
-          <form onSubmit={handleSearchSubmit} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative w-full sm:w-72">
+          <form onSubmit={handleSearchSubmit} className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+            <div className="relative w-full lg:w-72">
               <input
                 type="text"
                 placeholder="Search by SKU, Name, Barcode..."
@@ -590,10 +590,9 @@ export default function ProductsPage() {
               )}
             </div>
 
-            <div className="flex items-center space-x-2 flex-wrap">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-2 w-full lg:w-auto">
               {/* Warehouse Filter */}
-              {/* Warehouse Filter */}
-              <div className="w-60">
+              <div className="w-full lg:w-56">
                 <SearchableSelect
                   size="sm"
                   showSelectOption={false}
@@ -610,7 +609,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Category Filter */}
-              <div className="w-40">
+              <div className="w-full lg:w-40">
                 <SearchableSelect
                   size="sm"
                   showAllOption
@@ -626,7 +625,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Brand Filter */}
-              <div className="w-36">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   size="sm"
                   showAllOption
@@ -642,7 +641,7 @@ export default function ProductsPage() {
               </div>
 
               {/* Stock Status Filter (On Hand / Low Stock / Out of Stock) */}
-              <div className="w-40">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   size="sm"
                   showSelectOption={false}
@@ -665,8 +664,8 @@ export default function ProductsPage() {
           </form>
 
           {/* Clean Table matching template */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[980px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
@@ -680,15 +679,15 @@ export default function ProductsPage() {
                       className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
                     />
                   </th>
-                  <th className="py-3 px-3 font-bold text-[#111827]">SKU</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Product Name</th>
+                  <th className="py-3 px-3 font-bold text-[#111827] w-24">SKU</th>
+                  <th className="py-3 px-4 font-bold text-[#111827] min-w-[220px]">Product Name</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Category</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Brand</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Price</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Unit</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Qty</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Status</th>
-                  <th className="py-3 px-3 text-right font-bold text-[#111827]">Action</th>
+                  <th className="py-3 px-3 text-right font-bold text-[#111827] w-28">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F8F9FA]">

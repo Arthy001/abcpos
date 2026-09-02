@@ -70,6 +70,7 @@ function getModuleFromPath(path: string): string | null {
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { toggleCustomizer, layoutMode, layoutWidth } = useThemeStore();
   const { user, isAdmin, hasModulePermission, fetchRolePermissions } = useAuthStore();
@@ -77,7 +78,27 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   useEffect(() => {
     setMounted(true);
     fetchRolePermissions();
+
+    // Check window size on initial load and resize
+    const checkScreenSize = () => {
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      }
+    };
+
+    checkScreenSize();
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    if (isMobile) {
+      setSidebarOpen(false);
+    }
+  }, [pathname, isMobile]);
 
   const requiredModule = getModuleFromPath(pathname || "");
   const isDenied =
@@ -87,34 +108,54 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     !hasModulePermission(requiredModule, "view");
 
   // If layout mode is "mini", force collapsed sidebar
-  const isMini = layoutMode === "mini" || !sidebarOpen;
+  const isMini = layoutMode === "mini" || (!sidebarOpen && !isMobile);
   const isWithoutHeader = layoutMode === "without-header";
   const isRtl = layoutMode === "rtl";
 
   return (
     <div
       dir={isRtl ? "rtl" : "ltr"}
-      className="min-h-screen bg-[#f2f2f2] flex flex-col antialiased"
+      className="min-h-screen bg-[#f2f2f2] flex flex-col antialiased relative"
     >
       {/* Top Navbar (hidden if without-header layout) */}
       {!isWithoutHeader && (
         <Header
-          sidebarOpen={!isMini}
+          sidebarOpen={isMobile ? sidebarOpen : !isMini}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        />
+      )}
+
+      {/* Backdrop for Mobile Sidebar */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 bg-black/40 z-35 backdrop-blur-[2px] transition-opacity lg:hidden"
         />
       )}
 
       <div className="flex flex-1 relative bg-[#f2f2f2]">
         {/* Left Sidebar */}
-        <Sidebar isOpen={!isMini} />
+        <Sidebar
+          isOpen={isMobile ? sidebarOpen : !isMini}
+          isMobile={isMobile}
+          onClose={() => setSidebarOpen(false)}
+        />
 
         {/* Main Content Area */}
         <main
-          className={`flex-1 transition-all duration-300 p-4 md:p-6 min-h-[calc(100vh-4rem)] flex flex-col justify-between bg-[#f2f2f2] w-full ${
-            !isMini ? (isRtl ? "mr-56" : "ml-56") : isRtl ? "mr-16" : "ml-16"
+          className={`flex-1 transition-all duration-300 p-3 sm:p-4 md:p-6 min-h-[calc(100vh-4rem)] flex flex-col justify-between bg-[#f2f2f2] w-full min-w-0 ${
+            isMobile
+              ? "ml-0 mr-0"
+              : !isMini
+              ? isRtl
+                ? "mr-56"
+                : "ml-56"
+              : isRtl
+              ? "mr-16"
+              : "ml-16"
           }`}
         >
-          <div className={`${layoutWidth === "boxed" ? "max-w-6xl mx-auto w-full" : "w-full"}`}>
+          <div className={`${layoutWidth === "boxed" ? "max-w-6xl mx-auto w-full" : "w-full min-w-0"}`}>
             {isDenied ? (
               <div className="min-h-[500px] flex items-center justify-center p-6">
                 <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
@@ -170,13 +211,13 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       </div>
 
       {/* Floating Orange Settings Cog Button (Right screen edge) */}
-      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-40">
+      <div className="fixed right-0 top-1/2 -translate-y-1/2 z-20 opacity-80 hover:opacity-100 transition-opacity">
         <button
           onClick={toggleCustomizer}
-          className="w-8 h-8 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-l-lg flex items-center justify-center shadow-lg transition-transform active:scale-95 cursor-pointer"
+          className="w-7 h-7 sm:w-8 sm:h-8 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-l-md sm:rounded-l-lg flex items-center justify-center shadow-md transition-transform active:scale-95 cursor-pointer"
           title="Theme Customizer"
         >
-          <Settings className="w-4 h-4 animate-spin-slow" />
+          <Settings className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin-slow" />
         </button>
       </div>
 

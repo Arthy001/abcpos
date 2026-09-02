@@ -62,6 +62,8 @@ import {
 
 interface SidebarProps {
   isOpen: boolean;
+  isMobile?: boolean;
+  onClose?: () => void;
 }
 
 interface SubMenuItem {
@@ -97,7 +99,7 @@ const GROUP_MODULE_MAP: Record<string, string> = {
   "Settings": "System Settings",
 };
 
-export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
+export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onClose }) => {
   const pathname = usePathname();
   const { hasModulePermission, isAdmin, canCreateProduct, fetchRolePermissions } = useAuthStore();
   const [mounted, setMounted] = useState<boolean>(false);
@@ -512,14 +514,19 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
         sessionStorage.setItem("sidebar_scroll_top", String(sidebarRef.current.scrollTop));
       } catch (e) {}
     }
+    if (isMobile && onClose) {
+      onClose();
+    }
   };
 
   return (
     <aside
       ref={sidebarRef}
       onScroll={handleScroll}
-      className={`fixed top-16 left-0 bottom-0 z-30 bg-white border-r border-gray-100 transition-all duration-300 overflow-y-auto ${
-        isOpen ? "w-56" : "w-16"
+      className={`fixed top-16 left-0 bottom-0 bg-white border-r border-gray-100 transition-all duration-300 overflow-y-auto ${
+        isMobile
+          ? `z-40 w-64 shadow-2xl ${isOpen ? "translate-x-0" : "-translate-x-full"}`
+          : `z-30 ${isOpen ? "w-56" : "w-16"}`
       }`}
     >
       <div className={`py-4 space-y-4 ${isOpen ? "px-3" : "px-1.5"}`}>
