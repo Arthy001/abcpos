@@ -647,6 +647,13 @@ export interface SystemUser {
   avatar?: string | null;
   status: "ACTIVE" | "INACTIVE";
   password?: string | null;
+  assignedWarehouses?: {
+    id: string;
+    userId: string;
+    warehouseId: string;
+    warehouse: Warehouse;
+  }[];
+  warehouseIds?: string[];
   createdAt?: string;
   updatedAt?: string;
 }

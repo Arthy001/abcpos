@@ -167,6 +167,11 @@ export const getUsers = async (req: Request, res: Response) => {
 
     const users = await prisma.systemUser.findMany({
       where,
+      include: {
+        assignedWarehouses: {
+          include: { warehouse: true },
+        },
+      },
       orderBy: { createdAt: "desc" },
     });
 
@@ -179,7 +184,14 @@ export const getUsers = async (req: Request, res: Response) => {
 export const getUserById = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const user = await prisma.systemUser.findUnique({ where: { id } });
+    const user = await prisma.systemUser.findUnique({
+      where: { id },
+      include: {
+        assignedWarehouses: {
+          include: { warehouse: true },
+        },
+      },
+    });
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
     res.json({ success: true, data: user });
   } catch (error: any) {
@@ -189,7 +201,7 @@ export const getUserById = async (req: Request, res: Response) => {
 
 export const createUser = async (req: Request, res: Response) => {
   try {
-    const { name, email, phone, role, warehouseName, storeName, avatar, status, password } = req.body;
+    const { name, email, phone, role, warehouseName, storeName, avatar, status, password, warehouseIds } = req.body;
     if (!name || !email) {
       return res.status(400).json({ success: false, message: "Name and Email are required" });
     }
@@ -213,7 +225,34 @@ export const createUser = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ success: true, data: user });
+    // Create user warehouse assignments if provided
+    if (Array.isArray(warehouseIds) && warehouseIds.length > 0) {
+      for (const whId of warehouseIds) {
+        if (whId) {
+          try {
+            await prisma.userWarehouse.create({
+              data: {
+                userId: user.id,
+                warehouseId: String(whId),
+              },
+            });
+          } catch (e) {
+            console.error("Failed to link warehouse:", whId, e);
+          }
+        }
+      }
+    }
+
+    const createdUser = await prisma.systemUser.findUnique({
+      where: { id: user.id },
+      include: {
+        assignedWarehouses: {
+          include: { warehouse: true },
+        },
+      },
+    });
+
+    res.status(201).json({ success: true, data: createdUser });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create user" });
   }
@@ -222,7 +261,7 @@ export const createUser = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const { name, email, phone, role, warehouseName, storeName, avatar, status, password } = req.body;
+    const { name, email, phone, role, warehouseName, storeName, avatar, status, password, warehouseIds } = req.body;
 
     const updateData: any = {};
     if (name !== undefined) updateData.name = name;
@@ -235,12 +274,42 @@ export const updateUser = async (req: Request, res: Response) => {
     if (status !== undefined) updateData.status = String(status).toUpperCase();
     if (password) updateData.password = password;
 
-    const user = await prisma.systemUser.update({
+    await prisma.systemUser.update({
       where: { id },
       data: updateData,
     });
 
-    res.json({ success: true, data: user });
+    // Sync user warehouse assignments if warehouseIds is explicitly passed
+    if (warehouseIds !== undefined) {
+      await prisma.userWarehouse.deleteMany({ where: { userId: id } });
+      if (Array.isArray(warehouseIds) && warehouseIds.length > 0) {
+        for (const whId of warehouseIds) {
+          if (whId) {
+            try {
+              await prisma.userWarehouse.create({
+                data: {
+                  userId: id,
+                  warehouseId: String(whId),
+                },
+              });
+            } catch (e) {
+              console.error("Failed to link warehouse:", whId, e);
+            }
+          }
+        }
+      }
+    }
+
+    const updatedUser = await prisma.systemUser.findUnique({
+      where: { id },
+      include: {
+        assignedWarehouses: {
+          include: { warehouse: true },
+        },
+      },
+    });
+
+    res.json({ success: true, data: updatedUser });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to update user" });
   }

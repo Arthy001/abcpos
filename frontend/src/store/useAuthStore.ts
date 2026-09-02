@@ -9,6 +9,12 @@ export interface AuthUser {
   warehouseName?: string;
   storeName?: string;
   avatar?: string;
+  warehouseIds?: string[];
+  assignedWarehouses?: {
+    id: string;
+    warehouseId: string;
+    warehouseName?: string;
+  }[];
 }
 
 export const DEFAULT_USER: AuthUser = {
@@ -16,8 +22,8 @@ export const DEFAULT_USER: AuthUser = {
   name: "Henry Bryant",
   email: "henry@example.com",
   role: "Admin",
-  warehouseName: "Lavish Warehouse",
-  storeName: "ElectroMart Main",
+  warehouseName: "All Warehouses",
+  storeName: "All Stores",
   avatar: "/assets/images/avatar-01.jpg",
 };
 
@@ -116,10 +122,15 @@ export const useAuthStore = create<AuthState>()(
         const { user, isAdmin } = get();
         if (isAdmin()) return true;
         if (!user.warehouseName || user.warehouseName.includes("All")) return true;
-        return (
-          user.warehouseName.toLowerCase().trim() ===
-          targetWarehouse.toLowerCase().trim()
-        );
+        if (user.warehouseName.toLowerCase().trim() === targetWarehouse.toLowerCase().trim()) return true;
+        if (Array.isArray(user.assignedWarehouses)) {
+          return user.assignedWarehouses.some(
+            (aw) =>
+              aw.warehouseId === targetWarehouse ||
+              (aw.warehouseName && aw.warehouseName.toLowerCase().trim() === targetWarehouse.toLowerCase().trim())
+          );
+        }
+        return false;
       },
 
       fetchRolePermissions: async () => {
@@ -143,6 +154,32 @@ export const useAuthStore = create<AuthState>()(
             }
           }
           set({ rolePermissions: map });
+
+          // Also sync active user warehouse assignments from DB if possible
+          const currentUser = get().user;
+          if (currentUser?.email) {
+            try {
+              const uRes = await fetch(`/api/users?search=${encodeURIComponent(currentUser.email)}`, { cache: "no-store" });
+              if (uRes.ok) {
+                const uJson = await uRes.json();
+                const matched = uJson.data?.find((u: any) => u.email.toLowerCase() === currentUser.email.toLowerCase());
+                if (matched) {
+                  set({
+                    user: {
+                      ...currentUser,
+                      name: matched.name,
+                      role: matched.role,
+                      warehouseName: matched.warehouseName || "All Warehouses",
+                      storeName: matched.storeName || "All Stores",
+                      avatar: matched.avatar || currentUser.avatar,
+                      assignedWarehouses: matched.assignedWarehouses || [],
+                      warehouseIds: matched.assignedWarehouses?.map((aw: any) => aw.warehouseId) || [],
+                    },
+                  });
+                }
+              }
+            } catch {}
+          }
         } catch (err) {
           console.error("fetchRolePermissions error:", err);
         }

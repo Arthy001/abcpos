@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Product, Category, Brand, Warehouse } from "@/types";
-import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { SearchableSelect, OptionItem } from "@/components/common/SearchableSelect";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   fetchProducts,
@@ -38,6 +38,7 @@ import {
   CheckCircle2,
   Info,
   Sparkles,
+  UserCheck,
 } from "lucide-react";
 
 export default function ProductsPage() {
@@ -57,11 +58,102 @@ export default function ProductsPage() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
   const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
+  const [selectedStockStatus, setSelectedStockStatus] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
+
+  // Helper to compute effective stock of a product for the currently selected warehouse
+  const getProductWhStock = (item: Product): number => {
+    if (selectedWarehouse === "all") {
+      return item.stock;
+    }
+    if (selectedWarehouse.includes(",")) {
+      const ids = selectedWarehouse.split(",").map((s) => s.trim());
+      const myStocks = item.stocks?.filter((s) => ids.includes(s.warehouseId)) || [];
+      return myStocks.reduce((sum, s) => sum + s.quantity, 0);
+    }
+    const whStockItem = item.stocks?.find((s) => s.warehouseId === selectedWarehouse);
+    return whStockItem?.quantity ?? (item.warehouseId === selectedWarehouse ? item.stock : 0);
+  };
+
+  // Determine permitted warehouses for currently logged-in user
+  const isAdminUser = isAdmin() || !user?.warehouseName || user?.warehouseName === "All Warehouses";
+
+  const allowedWarehouses = useMemo(() => {
+    if (isAdminUser) return warehouses;
+
+    // Check user.assignedWarehouses
+    if (user?.assignedWarehouses && user.assignedWarehouses.length > 0) {
+      const assignedIds = user.assignedWarehouses.map((aw) => aw.warehouseId);
+      const matched = warehouses.filter((w) => assignedIds.includes(w.id));
+      if (matched.length > 0) return matched;
+    }
+
+    // Check user.warehouseIds
+    if (user?.warehouseIds && user.warehouseIds.length > 0) {
+      const matched = warehouses.filter((w) => user.warehouseIds?.includes(w.id));
+      if (matched.length > 0) return matched;
+    }
+
+    // Check user.warehouseName
+    if (user?.warehouseName) {
+      const names = user.warehouseName.split(",").map((s) => s.trim().toLowerCase());
+      const matched = warehouses.filter((w) => names.includes(w.name.toLowerCase()));
+      if (matched.length > 0) return matched;
+    }
+
+    return warehouses;
+  }, [warehouses, user, isAdminUser]);
+
+  // Dropdown options for warehouse filter (Global Visibility with clean icons)
+  const warehouseOptions = useMemo(() => {
+    const assignedIds = allowedWarehouses.map((w) => w.id);
+    const options: OptionItem[] = [];
+
+    // If non-admin has multiple assigned warehouses, provide shortcut to view all their warehouses combined
+    if (!isAdminUser && allowedWarehouses.length > 1) {
+      options.push({
+        value: allowedWarehouses.map((w) => w.id).join(","),
+        label: `All Assigned (${allowedWarehouses.length})`,
+        icon: <UserCheck className="w-3.5 h-3.5 text-blue-600 shrink-0" />,
+      });
+    }
+
+    // List all warehouses in the company
+    for (const w of warehouses) {
+      const isMyWh = assignedIds.includes(w.id);
+      options.push({
+        value: w.id,
+        label: w.name,
+        icon: isMyWh ? (
+          <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+        ) : (
+          <WarehouseIcon className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+        ),
+      });
+    }
+
+    return options;
+  }, [isAdminUser, warehouses, allowedWarehouses]);
+
+  // Smart initial default: Default to user's assigned warehouse on initial load without blocking manual selection
+  const [hasDefaultedWarehouse, setHasDefaultedWarehouse] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (!isMounted || hasDefaultedWarehouse || warehouses.length === 0) return;
+
+    if (!isAdminUser && allowedWarehouses.length > 0) {
+      if (allowedWarehouses.length === 1) {
+        setSelectedWarehouse(allowedWarehouses[0].id);
+      } else {
+        setSelectedWarehouse(allowedWarehouses.map((w) => w.id).join(","));
+      }
+    }
+    setHasDefaultedWarehouse(true);
+  }, [isMounted, hasDefaultedWarehouse, isAdminUser, allowedWarehouses, warehouses]);
 
   // Modals state
   const [viewProduct, setViewProduct] = useState<Product | null>(null);
@@ -69,6 +161,91 @@ export default function ProductsPage() {
   const [deleteProductTarget, setDeleteProductTarget] = useState<Product | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState<boolean>(false);
   const [actionLoading, setActionLoading] = useState<boolean>(false);
+
+  // Calculation for View Modal consistent with selectedWarehouse dropdown
+  const selectedWhName = useMemo(() => {
+    if (selectedWarehouse === "all") return "All Warehouses (ทุกคลังสินค้า)";
+    if (selectedWarehouse.includes(",")) return `คลังที่คุณดูแลทั้งหมด (${selectedWarehouse.split(",").length} คลัง)`;
+    const matched = warehouses.find((w) => w.id === selectedWarehouse);
+    return matched?.name || "คลังที่เลือก";
+  }, [selectedWarehouse, warehouses]);
+
+  const viewModalStockData = useMemo(() => {
+    if (!viewProduct) return { qty: 0, label: "All Warehouses", isFiltered: false };
+
+    if (selectedWarehouse === "all") {
+      return {
+        qty: viewProduct.stock,
+        label: "ทุกคลังสินค้า",
+        isFiltered: false,
+      };
+    }
+
+    if (selectedWarehouse.includes(",")) {
+      const ids = selectedWarehouse.split(",");
+      const myStocks = viewProduct.stocks?.filter((s) => ids.includes(s.warehouseId)) || [];
+      const totalMyQty = myStocks.reduce((sum, s) => sum + s.quantity, 0);
+      return {
+        qty: totalMyQty,
+        label: `รวมคลังที่คุณดูแล (${ids.length} คลัง)`,
+        isFiltered: true,
+      };
+    }
+
+    // Single specific warehouse selected in dropdown
+    const stk = viewProduct.stocks?.find((s) => s.warehouseId === selectedWarehouse);
+    const whQty = stk?.quantity ?? (viewProduct.warehouseId === selectedWarehouse ? viewProduct.stock : 0);
+    const wh = warehouses.find((w) => w.id === selectedWarehouse);
+    return {
+      qty: whQty,
+      label: `ในคลัง: ${wh?.name || "คลังนี้"}`,
+      isFiltered: true,
+    };
+  }, [viewProduct, selectedWarehouse, warehouses]);
+
+  // Filter stocks to display in View Modal strictly according to selectedWarehouse in dropdown
+  const modalDisplayStocks = useMemo(() => {
+    if (!viewProduct) return [];
+    const allStocks = viewProduct.stocks || [];
+
+    if (selectedWarehouse === "all") {
+      return allStocks;
+    }
+
+    if (selectedWarehouse.includes(",")) {
+      const ids = selectedWarehouse.split(",").map((s) => s.trim());
+      const matched = allStocks.filter((stk) => ids.includes(stk.warehouseId));
+      for (const id of ids) {
+        if (!matched.some((m) => m.warehouseId === id)) {
+          const wh = warehouses.find((w) => w.id === id);
+          if (wh) {
+            matched.push({
+              id: `fallback-${id}`,
+              warehouseId: id,
+              warehouse: wh,
+              quantity: viewProduct.warehouseId === id ? viewProduct.stock : 0,
+            } as any);
+          }
+        }
+      }
+      return matched;
+    }
+
+    // Single selected warehouse
+    const matched = allStocks.filter((stk) => stk.warehouseId === selectedWarehouse);
+    if (matched.length === 0) {
+      const wh = warehouses.find((w) => w.id === selectedWarehouse);
+      if (wh) {
+        matched.push({
+          id: `fallback-${selectedWarehouse}`,
+          warehouseId: selectedWarehouse,
+          warehouse: wh,
+          quantity: viewProduct.warehouseId === selectedWarehouse ? viewProduct.stock : 0,
+        } as any);
+      }
+    }
+    return matched;
+  }, [viewProduct, selectedWarehouse, warehouses]);
 
   // Feedback Modal State
   const [feedbackModal, setFeedbackModal] = useState<{
@@ -87,11 +264,11 @@ export default function ProductsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
+
       const [prods, cats, brds, whs] = await Promise.all([
         fetchProducts({
           categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
           brandId: selectedBrand !== "all" ? selectedBrand : undefined,
-          warehouseId: selectedWarehouse !== "all" ? selectedWarehouse : undefined,
           search: search.trim() || undefined,
         }),
         fetchCategories(),
@@ -122,7 +299,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedCategory, selectedBrand, selectedWarehouse]);
+  }, [selectedCategory, selectedBrand]);
 
   // Handle Search on Enter or debounce
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -130,16 +307,36 @@ export default function ProductsPage() {
     loadData();
   };
 
-  // Filter client-side if needed for instant response
+  // Filter client-side for instant response across Warehouse, Stock Status, and Search
   const filteredProducts = products.filter((item) => {
+    // 1. Search filter
     const term = search.toLowerCase().trim();
-    if (!term) return true;
-    const matchName = item.name.toLowerCase().includes(term);
-    const matchSku = item.sku.toLowerCase().includes(term);
-    const matchBarcode = item.barcode?.toLowerCase().includes(term);
-    const matchCategory = item.category?.name.toLowerCase().includes(term);
-    const matchBrand = item.brand?.name.toLowerCase().includes(term);
-    return matchName || matchSku || matchBarcode || matchCategory || matchBrand;
+    if (term) {
+      const matchName = item.name.toLowerCase().includes(term);
+      const matchSku = item.sku.toLowerCase().includes(term);
+      const matchBarcode = item.barcode?.toLowerCase().includes(term);
+      const matchCategory = item.category?.name.toLowerCase().includes(term);
+      const matchBrand = item.brand?.name.toLowerCase().includes(term);
+      if (!matchName && !matchSku && !matchBarcode && !matchCategory && !matchBrand) {
+        return false;
+      }
+    }
+
+    // 2. Stock Status filter relative to the currently selected warehouse
+    if (selectedStockStatus !== "all") {
+      const whQty = getProductWhStock(item);
+      const minAlert = item.minStockAlert || 5;
+
+      if (selectedStockStatus === "in_stock") {
+        if (whQty <= 0) return false;
+      } else if (selectedStockStatus === "low_stock") {
+        if (whQty <= 0 || whQty > minAlert) return false;
+      } else if (selectedStockStatus === "out_of_stock") {
+        if (whQty > 0) return false;
+      }
+    }
+
+    return true;
   });
 
   // Pagination calculation
@@ -395,22 +592,15 @@ export default function ProductsPage() {
 
             <div className="flex items-center space-x-2 flex-wrap">
               {/* Warehouse Filter */}
-              <div className="w-48">
+              {/* Warehouse Filter */}
+              <div className="w-60">
                 <SearchableSelect
                   size="sm"
-                  showAllOption
+                  showSelectOption={false}
+                  showAllOption={true}
                   allOptionLabel="All Warehouses"
                   placeholder="All Warehouses"
-                  options={warehouses.map((w) => {
-                    const isUserWh =
-                      user?.warehouseName &&
-                      user.warehouseName !== "All Warehouses" &&
-                      w.name.toLowerCase() === user.warehouseName.toLowerCase();
-                    return {
-                      value: w.id,
-                      label: isUserWh ? `${w.name} (คลังของคุณ)` : w.name,
-                    };
-                  })}
+                  options={warehouseOptions}
                   value={selectedWarehouse}
                   onChange={(val) => {
                     setSelectedWarehouse(val);
@@ -450,6 +640,27 @@ export default function ProductsPage() {
                   }}
                 />
               </div>
+
+              {/* Stock Status Filter (On Hand / Low Stock / Out of Stock) */}
+              <div className="w-40">
+                <SearchableSelect
+                  size="sm"
+                  showSelectOption={false}
+                  showAllOption={false}
+                  placeholder="All Stock Status"
+                  options={[
+                    { value: "all", label: "All Stock Status" },
+                    { value: "in_stock", label: "On Hand" },
+                    { value: "low_stock", label: "Low Stock" },
+                    { value: "out_of_stock", label: "Out of Stock" },
+                  ]}
+                  value={selectedStockStatus}
+                  onChange={(val) => {
+                    setSelectedStockStatus(val);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
             </div>
           </form>
 
@@ -475,7 +686,7 @@ export default function ProductsPage() {
                   <th className="py-3 px-4 font-bold text-[#111827]">Brand</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Price</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Unit</th>
-                  <th className="py-3 px-3 font-bold text-[#111827]">Qty / Stock</th>
+                  <th className="py-3 px-3 font-bold text-[#111827]">Qty</th>
                   <th className="py-3 px-3 font-bold text-[#111827]">Status</th>
                   <th className="py-3 px-3 text-right font-bold text-[#111827]">Action</th>
                 </tr>
@@ -544,59 +755,56 @@ export default function ProductsPage() {
                         <td className="py-3.5 px-3 text-[#1E293B] font-semibold">฿{item.price.toLocaleString()}</td>
                         <td className="py-3.5 px-3 text-[#64748B]">{item.unit?.shortName || "Pc"}</td>
                         <td className="py-3.5 px-3">
-                          {selectedWarehouse !== "all" ? (
-                            (() => {
-                              const whStockItem = item.stocks?.find((s) => s.warehouseId === selectedWarehouse);
-                              const whQty = whStockItem?.quantity ?? (item.warehouseId === selectedWarehouse ? item.stock : 0);
-                              const isWhOutOfStock = whQty <= 0;
-                              const isWhLowStock = whQty <= (item.minStockAlert || 5) && whQty > 0;
-                              return (
-                                <div className="flex flex-col">
-                                  <span
-                                    className={`font-bold ${
-                                      isWhOutOfStock
-                                        ? "text-rose-600"
-                                        : isWhLowStock
-                                        ? "text-amber-600"
-                                        : "text-slate-800"
-                                    }`}
-                                  >
-                                    {whQty}
-                                  </span>
-                                  <span className="text-[10px] text-gray-400">ในคลังนี้</span>
-                                </div>
-                              );
-                            })()
-                          ) : (
-                            <span
-                              className={`font-semibold ${
-                                isOutOfStock
-                                  ? "text-rose-600"
-                                  : isLowStock
-                                  ? "text-amber-600"
-                                  : "text-slate-700"
-                              }`}
-                            >
-                              {item.stock}
-                            </span>
-                          )}
+                          {(() => {
+                            const whQty = getProductWhStock(item);
+                            const minAlert = item.minStockAlert || 5;
+                            const isZero = whQty <= 0;
+                            const isLow = whQty <= minAlert && whQty > 0;
+
+                            return (
+                              <span
+                                className={`font-semibold ${
+                                  isZero
+                                    ? "text-rose-600"
+                                    : isLow
+                                    ? "text-amber-600"
+                                    : "text-slate-700"
+                                }`}
+                              >
+                                {whQty}
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Status Badge */}
                         <td className="py-3.5 px-3">
-                          {isOutOfStock ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
-                              Out of Stock
-                            </span>
-                          ) : isLowStock ? (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
-                              Low Stock
-                            </span>
-                          ) : (
-                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">
-                              Active
-                            </span>
-                          )}
+                          {(() => {
+                            const whQty = getProductWhStock(item);
+                            const minAlert = item.minStockAlert || 5;
+                            const isZero = whQty <= 0;
+                            const isLow = whQty <= minAlert && whQty > 0;
+
+                            if (isZero) {
+                              return (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-700">
+                                  Out of Stock
+                                </span>
+                              );
+                            }
+                            if (isLow) {
+                              return (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-amber-100 text-amber-700">
+                                  Low Stock
+                                </span>
+                              );
+                            }
+                            return (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-100 text-emerald-700">
+                                In Stock
+                              </span>
+                            );
+                          })()}
                         </td>
 
                         {/* Actions: View (Always), Edit (if canEditProduct), Delete (if canDeleteProduct) */}
@@ -809,9 +1017,17 @@ export default function ProductsPage() {
                     </p>
                   </div>
                   <div className="p-3 bg-gray-50 rounded-xl border border-gray-100">
-                    <p className="text-[10px] text-gray-400 font-semibold uppercase">Stock Qty</p>
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] text-gray-400 font-semibold uppercase">Stock Qty</p>
+                      {viewModalStockData.isFiltered && (
+                        <span className="text-[9px] font-bold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded border border-blue-200/50">
+                          {viewModalStockData.label}
+                        </span>
+                      )}
+                    </div>
                     <p className="text-base font-bold text-slate-800 mt-0.5">
-                      {viewProduct.stock} <span className="text-xs font-normal text-gray-500">{viewProduct.unit?.shortName || "Pc"}</span>
+                      {viewModalStockData.qty}{" "}
+                      <span className="text-xs font-normal text-gray-500">{viewProduct.unit?.shortName || "Pc"}</span>
                     </p>
                   </div>
                 </div>
@@ -824,7 +1040,7 @@ export default function ProductsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Warehouse:</span>
-                      <span className="font-medium text-gray-900">{viewProduct.warehouse?.name || "Central Warehouse"}</span>
+                      <span className="font-semibold text-gray-900">{selectedWhName}</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Store / Branch:</span>
@@ -836,7 +1052,9 @@ export default function ProductsPage() {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-gray-500">Total Stock Value:</span>
-                      <span className="font-bold text-gray-900">฿{(viewProduct.stock * viewProduct.price).toLocaleString()}</span>
+                      <span className="font-bold text-gray-900">
+                        ฿{(viewModalStockData.qty * viewProduct.price).toLocaleString()}
+                      </span>
                     </div>
                   </div>
 
@@ -868,42 +1086,73 @@ export default function ProductsPage() {
                 </div>
 
                 {/* Multi-Warehouse Stock Breakdown */}
-                {viewProduct.stocks && viewProduct.stocks.length > 0 && (
+                {modalDisplayStocks.length > 0 && (
                   <div className="p-3.5 bg-blue-50/50 rounded-xl border border-blue-100/80 text-xs space-y-2">
                     <div className="flex items-center justify-between font-semibold text-blue-900 pb-1 border-b border-blue-200/50">
                       <div className="flex items-center space-x-1.5">
                         <WarehouseIcon className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Multi-Warehouse Stock Breakdown</span>
+                        <span>
+                          {selectedWarehouse === "all"
+                            ? "Multi-Warehouse Stock Breakdown (ทุกคลังสินค้า)"
+                            : `Stock Breakdown (${selectedWhName})`}
+                        </span>
                       </div>
-                      <span className="text-[11px] font-bold text-blue-700">Total: {viewProduct.stock} {viewProduct.unit?.shortName || "Pcs"}</span>
+                      <span className="text-[11px] font-bold text-blue-700">Total: {viewModalStockData.qty} {viewProduct.unit?.shortName || "Pcs"}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                      {viewProduct.stocks.map((stk) => {
+                      {modalDisplayStocks.map((stk) => {
+                        const assignedIds = allowedWarehouses.map((w) => w.id);
                         const isUserWh =
-                          user?.warehouseName &&
-                          stk.warehouse?.name?.toLowerCase().trim() ===
-                            user.warehouseName.toLowerCase().trim();
+                          isAdminUser ||
+                          assignedIds.includes(stk.warehouseId) ||
+                          (user?.warehouseName &&
+                            stk.warehouse?.name?.toLowerCase().trim() ===
+                              user.warehouseName.toLowerCase().trim());
+                        const isCurrentlySelectedWh = selectedWarehouse === stk.warehouseId;
 
                         return (
                           <div
                             key={stk.id}
                             className={`flex justify-between items-center p-2 rounded-lg border shadow-2xs transition-all ${
-                              isUserWh
+                              isCurrentlySelectedWh
+                                ? "bg-orange-50/80 border-[#FE9F43] ring-2 ring-orange-200"
+                                : isUserWh && !isAdminUser
                                 ? "bg-emerald-50/80 border-emerald-300 ring-1 ring-emerald-200"
                                 : "bg-white border-blue-100"
                             }`}
                           >
                             <div className="flex items-center space-x-1.5">
-                              <span className={`font-medium ${isUserWh ? "text-emerald-900 font-bold" : "text-gray-700"}`}>
+                              <span
+                                className={`font-medium ${
+                                  isCurrentlySelectedWh
+                                    ? "text-orange-950 font-bold"
+                                    : isUserWh
+                                    ? "text-emerald-900 font-bold"
+                                    : "text-gray-700"
+                                }`}
+                              >
                                 {stk.warehouse?.name || "Warehouse"}
                               </span>
-                              {isUserWh && (
+                              {isCurrentlySelectedWh && (
+                                <span className="text-[9px] font-bold bg-[#FE9F43] text-white px-1.5 py-0.2 rounded-full">
+                                  เลือกดูอยู่
+                                </span>
+                              )}
+                              {!isCurrentlySelectedWh && isUserWh && !isAdminUser && (
                                 <span className="text-[9px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded-full">
                                   คลังของคุณ
                                 </span>
                               )}
                             </div>
-                            <span className={`font-bold ${isUserWh ? "text-emerald-700" : "text-blue-700"}`}>
+                            <span
+                              className={`font-bold ${
+                                isCurrentlySelectedWh
+                                  ? "text-orange-600"
+                                  : isUserWh
+                                  ? "text-emerald-700"
+                                  : "text-blue-700"
+                              }`}
+                            >
                               {stk.quantity}{" "}
                               <span className="text-[10px] text-gray-400 font-normal">
                                 {viewProduct.unit?.shortName || "Pcs"}

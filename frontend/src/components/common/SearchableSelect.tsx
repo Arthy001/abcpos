@@ -7,6 +7,7 @@ export interface OptionItem {
   value: string;
   label: string;
   subLabel?: string;
+  icon?: React.ReactNode;
 }
 
 interface SearchableSelectProps {
@@ -128,17 +129,20 @@ export function SearchableSelect({
         }`}
       >
         <span
-          className={`truncate ${
+          className={`truncate flex items-center gap-1.5 ${
             selectedOption || (showAllOption && (value === "all" || !value))
               ? "font-medium text-gray-900"
               : "text-gray-400"
           }`}
         >
-          {showAllOption && (value === "all" || !value)
-            ? allOptionLabel
-            : selectedOption
-            ? selectedOption.label
-            : placeholder}
+          {selectedOption?.icon}
+          <span className="truncate">
+            {showAllOption && (value === "all" || !value)
+              ? allOptionLabel
+              : selectedOption
+              ? selectedOption.label
+              : placeholder}
+          </span>
         </span>
 
         <div className="flex items-center space-x-1 pl-1.5 flex-shrink-0 text-gray-400">
@@ -163,7 +167,7 @@ export function SearchableSelect({
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute z-[9999] left-0 right-0 min-w-[200px] mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
+        <div className="absolute z-[9999] left-0 min-w-full sm:min-w-[270px] mt-1.5 bg-white border border-gray-200 rounded-xl shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-100">
           {/* Search Input Box (if searchable) */}
           {searchable && (
             <div className="p-2 border-b border-gray-100 bg-gray-50/70">
@@ -239,11 +243,14 @@ export function SearchableSelect({
                         : "hover:bg-gray-50 text-gray-700 font-medium"
                     }`}
                   >
-                    <div className="flex flex-col truncate">
-                      <span className="truncate">{opt.label}</span>
-                      {opt.subLabel && (
-                        <span className="text-[10px] text-gray-400">{opt.subLabel}</span>
-                      )}
+                    <div className="flex items-center gap-1.5 truncate">
+                      {opt.icon}
+                      <div className="flex flex-col truncate">
+                        <span className="truncate">{opt.label}</span>
+                        {opt.subLabel && (
+                          <span className="text-[10px] text-gray-400">{opt.subLabel}</span>
+                        )}
+                      </div>
                     </div>
                     {isSelected && <Check className="w-3.5 h-3.5 text-[#FE9F43] flex-shrink-0" />}
                   </div>

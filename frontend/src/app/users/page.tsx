@@ -77,6 +77,8 @@ export default function UsersPage() {
   const [formPhone, setFormPhone] = useState<string>("");
   const [formRole, setFormRole] = useState<string>("Admin");
   const [formWarehouse, setFormWarehouse] = useState<string>("");
+  const [formWarehouseIds, setFormWarehouseIds] = useState<string[]>([]);
+  const [isAllWarehouses, setIsAllWarehouses] = useState<boolean>(true);
   const [formStore, setFormStore] = useState<string>("");
   const [formAvatar, setFormAvatar] = useState<string>("/assets/images/avatar-01.jpg");
   const [formStatus, setFormStatus] = useState<"ACTIVE" | "INACTIVE">("ACTIVE");
@@ -217,6 +219,8 @@ export default function UsersPage() {
     setFormEmail("");
     setFormPhone("");
     setFormRole("Store Keeper");
+    setIsAllWarehouses(false);
+    setFormWarehouseIds(warehouses.length > 0 ? [warehouses[0].id] : []);
     setFormWarehouse(warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse");
     setFormStore(stores.length > 0 ? stores[0].name : "ElectroMart Main");
     setFormAvatar(availableAvatars[Math.floor(Math.random() * availableAvatars.length)]);
@@ -233,6 +237,25 @@ export default function UsersPage() {
     setFormEmail(user.email);
     setFormPhone(user.phone || "");
     setFormRole(user.role);
+
+    // Determine if user manages all warehouses
+    const isAll = !user.warehouseName || user.warehouseName === "All Warehouses";
+    setIsAllWarehouses(isAll);
+    if (isAll) {
+      setFormWarehouseIds([]);
+    } else if (user.assignedWarehouses && user.assignedWarehouses.length > 0) {
+      setFormWarehouseIds(user.assignedWarehouses.map((aw) => aw.warehouseId));
+    } else if (user.warehouseName) {
+      // Find matching IDs if comma-separated or single name
+      const names = user.warehouseName.split(",").map((s) => s.trim().toLowerCase());
+      const matchedIds = warehouses
+        .filter((w) => names.includes(w.name.toLowerCase()))
+        .map((w) => w.id);
+      setFormWarehouseIds(matchedIds.length > 0 ? matchedIds : (warehouses[0] ? [warehouses[0].id] : []));
+    } else {
+      setFormWarehouseIds([]);
+    }
+
     setFormWarehouse(user.warehouseName || "");
     setFormStore(user.storeName || "");
     setFormAvatar(user.avatar || "/assets/images/avatar-01.jpg");
@@ -281,12 +304,24 @@ export default function UsersPage() {
 
     try {
       setIsSubmitting(true);
+      let finalWarehouseName = "All Warehouses";
+      let finalWarehouseIds: string[] = [];
+
+      if (!isAllWarehouses && formWarehouseIds.length > 0) {
+        finalWarehouseIds = formWarehouseIds;
+        const selectedNames = warehouses
+          .filter((w) => formWarehouseIds.includes(w.id))
+          .map((w) => w.name);
+        finalWarehouseName = selectedNames.join(", ");
+      }
+
       const payload: Partial<SystemUser> = {
         name: formName.trim(),
         email: formEmail.trim(),
         phone: formPhone.trim() || undefined,
         role: formRole,
-        warehouseName: formWarehouse || undefined,
+        warehouseName: finalWarehouseName,
+        warehouseIds: finalWarehouseIds,
         storeName: formStore || undefined,
         avatar: formAvatar,
         status: formStatus,
@@ -340,12 +375,24 @@ export default function UsersPage() {
 
     try {
       setIsSubmitting(true);
+      let finalWarehouseName = "All Warehouses";
+      let finalWarehouseIds: string[] = [];
+
+      if (!isAllWarehouses && formWarehouseIds.length > 0) {
+        finalWarehouseIds = formWarehouseIds;
+        const selectedNames = warehouses
+          .filter((w) => formWarehouseIds.includes(w.id))
+          .map((w) => w.name);
+        finalWarehouseName = selectedNames.join(", ");
+      }
+
       const payload: Partial<SystemUser> = {
         name: formName.trim(),
         email: formEmail.trim(),
         phone: formPhone.trim() || undefined,
         role: formRole,
-        warehouseName: formWarehouse || undefined,
+        warehouseName: finalWarehouseName,
+        warehouseIds: finalWarehouseIds,
         storeName: formStore || undefined,
         avatar: formAvatar,
         status: formStatus,
@@ -361,7 +408,8 @@ export default function UsersPage() {
           ...currentAuthUser,
           name: formName.trim(),
           role: formRole,
-          warehouseName: formWarehouse || "All Warehouses",
+          warehouseName: finalWarehouseName,
+          warehouseIds: finalWarehouseIds,
           storeName: formStore || "All Stores",
           avatar: formAvatar || currentAuthUser.avatar,
         });
@@ -644,16 +692,29 @@ export default function UsersPage() {
                           </span>
                         </td>
                         <td className="py-2 px-3">
-                          <div className="flex flex-col space-y-0.5">
-                            {user.warehouseName && user.warehouseName !== "All Warehouses" ? (
+                          <div className="flex flex-col space-y-1">
+                            {(!user.warehouseName || user.warehouseName === "All Warehouses") &&
+                            (!user.assignedWarehouses || user.assignedWarehouses.length === 0) ? (
+                              <span className="text-[11px] font-semibold text-emerald-700 flex items-center bg-emerald-50 px-1.5 py-0.5 rounded w-fit border border-emerald-200/50">
+                                <WarehouseIcon className="w-3 h-3 text-emerald-600 mr-1 shrink-0" />
+                                All Warehouses (ทุกคลัง)
+                              </span>
+                            ) : user.assignedWarehouses && user.assignedWarehouses.length > 0 ? (
+                              <div className="flex flex-wrap gap-1 max-w-[220px]">
+                                {user.assignedWarehouses.map((aw) => (
+                                  <span
+                                    key={aw.id || aw.warehouseId}
+                                    className="inline-flex items-center text-[10px] font-medium text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200/60 shadow-2xs"
+                                  >
+                                    <WarehouseIcon className="w-2.5 h-2.5 text-[#3B82F6] mr-1 shrink-0" />
+                                    {aw.warehouse?.name || "Warehouse"}
+                                  </span>
+                                ))}
+                              </div>
+                            ) : (
                               <span className="text-[11px] font-medium text-gray-800 flex items-center">
                                 <WarehouseIcon className="w-3 h-3 text-[#3B82F6] mr-1 shrink-0" />
                                 {user.warehouseName}
-                              </span>
-                            ) : (
-                              <span className="text-[11px] font-semibold text-emerald-700 flex items-center bg-emerald-50 px-1.5 py-0.2 rounded w-fit border border-emerald-200/50">
-                                <WarehouseIcon className="w-3 h-3 text-emerald-600 mr-1 shrink-0" />
-                                All Warehouses (ทุกคลัง)
                               </span>
                             )}
                             {user.storeName && user.storeName !== "All Stores" ? (
@@ -877,22 +938,102 @@ export default function UsersPage() {
                 </div>
 
                 {/* Warehouse & Store Assignment */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Assigned Warehouse</label>
-                    <SearchableSelect
-                      placeholder="Select Warehouse..."
-                      value={formWarehouse}
-                      onChange={(val) => setFormWarehouse(val)}
-                      options={[
-                        { value: "All Warehouses", label: "All Warehouses (ทุกคลังสินค้า)" },
-                        ...warehouses.map((w) => ({ value: w.name, label: w.name })),
-                      ]}
-                    />
+                <div className="space-y-3 p-3.5 bg-gray-50/60 rounded-xl border border-gray-200/80">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-700 flex items-center">
+                        <WarehouseIcon className="w-3.5 h-3.5 mr-1 text-[#3B82F6]" />
+                        Assigned Warehouses (คลังสินค้าที่รับผิดชอบ)
+                      </label>
+                      <span className="text-[11px] font-medium text-gray-500">
+                        {isAllWarehouses
+                          ? "ดูแลทุกคลังสินค้า"
+                          : `เลือกแล้ว ${formWarehouseIds.length} คลัง`}
+                      </span>
+                    </div>
+
+                    {/* Mode Toggle Buttons */}
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAllWarehouses(true);
+                          setFormWarehouseIds([]);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          isAllWarehouses
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        All Warehouses (ทุกคลัง)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAllWarehouses(false);
+                          if (formWarehouseIds.length === 0 && warehouses.length > 0) {
+                            setFormWarehouseIds([warehouses[0].id]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          !isAllWarehouses
+                            ? "bg-[#FE9F43] text-white border-[#FE9F43] shadow-xs"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        <WarehouseIcon className="w-3.5 h-3.5" />
+                        เลือกเฉพาะคลัง ({formWarehouseIds.length})
+                      </button>
+                    </div>
+
+                    {/* Specific Warehouse Selection Pills / Checkboxes */}
+                    {!isAllWarehouses && (
+                      <div className="p-2.5 bg-white rounded-lg border border-gray-200 space-y-2 mt-1.5">
+                        <p className="text-[10px] text-gray-500 font-medium">
+                          คลิกติ๊กเลือกคลังสินค้าที่ต้องการมอบหมายให้ผู้ใช้นี้:
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                          {warehouses.map((w) => {
+                            const isChecked = formWarehouseIds.includes(w.id);
+                            return (
+                              <label
+                                key={w.id}
+                                className={`flex items-center space-x-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                  isChecked
+                                    ? "bg-blue-50 border-blue-300 text-blue-900 font-semibold shadow-2xs"
+                                    : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setFormWarehouseIds(formWarehouseIds.filter((id) => id !== w.id));
+                                    } else {
+                                      setFormWarehouseIds([...formWarehouseIds, w.id]);
+                                    }
+                                  }}
+                                  className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer"
+                                />
+                                <span className="truncate">{w.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Assigned Store / Branch</label>
+                  {/* Store Selector */}
+                  <div className="space-y-1 pt-1 border-t border-gray-200/60">
+                    <label className="text-xs font-bold text-gray-700 flex items-center">
+                      <StoreIcon className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                      Assigned Store / Branch
+                    </label>
                     <SearchableSelect
                       placeholder="Select Store..."
                       value={formStore}
@@ -1073,22 +1214,102 @@ export default function UsersPage() {
                 </div>
 
                 {/* Warehouse & Store Assignment */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Assigned Warehouse</label>
-                    <SearchableSelect
-                      placeholder="Select Warehouse..."
-                      value={formWarehouse}
-                      onChange={(val) => setFormWarehouse(val)}
-                      options={[
-                        { value: "All Warehouses", label: "All Warehouses (ทุกคลังสินค้า)" },
-                        ...warehouses.map((w) => ({ value: w.name, label: w.name })),
-                      ]}
-                    />
+                <div className="space-y-3 p-3.5 bg-gray-50/60 rounded-xl border border-gray-200/80">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-700 flex items-center">
+                        <WarehouseIcon className="w-3.5 h-3.5 mr-1 text-[#3B82F6]" />
+                        Assigned Warehouses (คลังสินค้าที่รับผิดชอบ)
+                      </label>
+                      <span className="text-[11px] font-medium text-gray-500">
+                        {isAllWarehouses
+                          ? "ดูแลทุกคลังสินค้า"
+                          : `เลือกแล้ว ${formWarehouseIds.length} คลัง`}
+                      </span>
+                    </div>
+
+                    {/* Mode Toggle Buttons */}
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAllWarehouses(true);
+                          setFormWarehouseIds([]);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          isAllWarehouses
+                            ? "bg-emerald-600 text-white border-emerald-600 shadow-xs"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        <Shield className="w-3.5 h-3.5" />
+                        All Warehouses (ทุกคลัง)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setIsAllWarehouses(false);
+                          if (formWarehouseIds.length === 0 && warehouses.length > 0) {
+                            setFormWarehouseIds([warehouses[0].id]);
+                          }
+                        }}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer border ${
+                          !isAllWarehouses
+                            ? "bg-[#FE9F43] text-white border-[#FE9F43] shadow-xs"
+                            : "bg-white text-gray-700 border-gray-200 hover:bg-gray-100"
+                        }`}
+                      >
+                        <WarehouseIcon className="w-3.5 h-3.5" />
+                        เลือกเฉพาะคลัง ({formWarehouseIds.length})
+                      </button>
+                    </div>
+
+                    {/* Specific Warehouse Selection Pills / Checkboxes */}
+                    {!isAllWarehouses && (
+                      <div className="p-2.5 bg-white rounded-lg border border-gray-200 space-y-2 mt-1.5">
+                        <p className="text-[10px] text-gray-500 font-medium">
+                          คลิกติ๊กเลือกคลังสินค้าที่ต้องการมอบหมายให้ผู้ใช้นี้:
+                        </p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 max-h-36 overflow-y-auto pr-1">
+                          {warehouses.map((w) => {
+                            const isChecked = formWarehouseIds.includes(w.id);
+                            return (
+                              <label
+                                key={w.id}
+                                className={`flex items-center space-x-2 p-2 rounded-lg border text-xs cursor-pointer transition-all ${
+                                  isChecked
+                                    ? "bg-blue-50 border-blue-300 text-blue-900 font-semibold shadow-2xs"
+                                    : "bg-gray-50 border-gray-200 text-gray-700 hover:bg-gray-100"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => {
+                                    if (isChecked) {
+                                      setFormWarehouseIds(formWarehouseIds.filter((id) => id !== w.id));
+                                    } else {
+                                      setFormWarehouseIds([...formWarehouseIds, w.id]);
+                                    }
+                                  }}
+                                  className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer"
+                                />
+                                <span className="truncate">{w.name}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Assigned Store / Branch</label>
+                  {/* Store Selector */}
+                  <div className="space-y-1 pt-1 border-t border-gray-200/60">
+                    <label className="text-xs font-bold text-gray-700 flex items-center">
+                      <StoreIcon className="w-3.5 h-3.5 mr-1 text-emerald-600" />
+                      Assigned Store / Branch
+                    </label>
                     <SearchableSelect
                       placeholder="Select Store..."
                       value={formStore}
@@ -1230,11 +1451,28 @@ export default function UsersPage() {
                   <span className="font-bold text-gray-900">{selectedUser.phone || "-"}</span>
                 </div>
 
-                <div className="flex justify-between items-center py-1 border-b border-gray-200/60">
+                <div className="flex flex-col py-1.5 border-b border-gray-200/60 space-y-1">
                   <span className="text-gray-500 font-medium flex items-center">
-                    <WarehouseIcon className="w-3.5 h-3.5 mr-1.5 text-[#3B82F6]" /> Assigned Warehouse:
+                    <WarehouseIcon className="w-3.5 h-3.5 mr-1.5 text-[#3B82F6]" /> Assigned Warehouses:
                   </span>
-                  <span className="font-bold text-gray-900">{selectedUser.warehouseName || "All Warehouses (ทุกคลังสินค้า)"}</span>
+                  {(!selectedUser.warehouseName || selectedUser.warehouseName === "All Warehouses") &&
+                  (!selectedUser.assignedWarehouses || selectedUser.assignedWarehouses.length === 0) ? (
+                    <span className="font-bold text-emerald-700">All Warehouses (ทุกคลังสินค้า)</span>
+                  ) : selectedUser.assignedWarehouses && selectedUser.assignedWarehouses.length > 0 ? (
+                    <div className="flex flex-wrap gap-1.5 pt-0.5">
+                      {selectedUser.assignedWarehouses.map((aw) => (
+                        <span
+                          key={aw.id || aw.warehouseId}
+                          className="px-2 py-0.5 bg-blue-50 text-blue-700 font-semibold rounded-md text-xs border border-blue-200 flex items-center"
+                        >
+                          <WarehouseIcon className="w-3 h-3 mr-1 text-blue-500" />
+                          {aw.warehouse?.name || "Warehouse"}
+                        </span>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="font-bold text-gray-900">{selectedUser.warehouseName}</span>
+                  )}
                 </div>
 
                 <div className="flex justify-between items-center py-1 border-b border-gray-200/60">

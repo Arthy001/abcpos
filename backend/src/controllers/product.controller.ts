@@ -19,12 +19,26 @@ export const getProducts = async (req: Request, res: Response) => {
       andConditions.push({ unitId: String(unitId) });
     }
     if (warehouseId && warehouseId !== "all") {
-      andConditions.push({
-        OR: [
-          { warehouseId: String(warehouseId) },
-          { stocks: { some: { warehouseId: String(warehouseId) } } },
-        ],
-      });
+      const whIds = String(warehouseId)
+        .split(",")
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      if (whIds.length > 1) {
+        andConditions.push({
+          OR: [
+            { warehouseId: { in: whIds } },
+            { stocks: { some: { warehouseId: { in: whIds } } } },
+          ],
+        });
+      } else if (whIds.length === 1) {
+        andConditions.push({
+          OR: [
+            { warehouseId: whIds[0] },
+            { stocks: { some: { warehouseId: whIds[0] } } },
+          ],
+        });
+      }
     }
     if (storeId && storeId !== "all") {
       andConditions.push({ storeId: String(storeId) });
