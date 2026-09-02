@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Product, Category, Brand } from "@/types";
+import { Product, Category, Brand, Warehouse } from "@/types";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
   fetchProducts,
   fetchCategories,
   fetchBrands,
+  fetchWarehouses,
   deleteProductApi,
   bulkDeleteProductsApi,
 } from "@/lib/api";
@@ -52,8 +53,10 @@ export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
+  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedBrand, setSelectedBrand] = useState<string>("all");
+  const [selectedWarehouse, setSelectedWarehouse] = useState<string>("all");
   const [search, setSearch] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -84,18 +87,21 @@ export default function ProductsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [prods, cats, brds] = await Promise.all([
+      const [prods, cats, brds, whs] = await Promise.all([
         fetchProducts({
           categoryId: selectedCategory !== "all" ? selectedCategory : undefined,
           brandId: selectedBrand !== "all" ? selectedBrand : undefined,
+          warehouseId: selectedWarehouse !== "all" ? selectedWarehouse : undefined,
           search: search.trim() || undefined,
         }),
         fetchCategories(),
         fetchBrands(),
+        fetchWarehouses(),
       ]);
       setProducts(prods);
       setCategories(cats);
       setBrands(brds);
+      setWarehouses(whs || []);
     } catch (err: any) {
       console.error(err);
       setFeedbackModal({
@@ -116,7 +122,7 @@ export default function ProductsPage() {
 
   useEffect(() => {
     loadData();
-  }, [selectedCategory, selectedBrand]);
+  }, [selectedCategory, selectedBrand, selectedWarehouse]);
 
   // Handle Search on Enter or debounce
   const handleSearchSubmit = (e: React.FormEvent) => {
@@ -388,6 +394,31 @@ export default function ProductsPage() {
             </div>
 
             <div className="flex items-center space-x-2 flex-wrap">
+              {/* Warehouse Filter */}
+              <div className="w-48">
+                <SearchableSelect
+                  size="sm"
+                  showAllOption
+                  allOptionLabel="All Warehouses"
+                  placeholder="All Warehouses"
+                  options={warehouses.map((w) => {
+                    const isUserWh =
+                      user?.warehouseName &&
+                      user.warehouseName !== "All Warehouses" &&
+                      w.name.toLowerCase() === user.warehouseName.toLowerCase();
+                    return {
+                      value: w.id,
+                      label: isUserWh ? `${w.name} (คลังของคุณ)` : w.name,
+                    };
+                  })}
+                  value={selectedWarehouse}
+                  onChange={(val) => {
+                    setSelectedWarehouse(val);
+                    setCurrentPage(1);
+                  }}
+                />
+              </div>
+
               {/* Category Filter */}
               <div className="w-40">
                 <SearchableSelect
@@ -513,17 +544,42 @@ export default function ProductsPage() {
                         <td className="py-3.5 px-3 text-[#1E293B] font-semibold">฿{item.price.toLocaleString()}</td>
                         <td className="py-3.5 px-3 text-[#64748B]">{item.unit?.shortName || "Pc"}</td>
                         <td className="py-3.5 px-3">
-                          <span
-                            className={`font-semibold ${
-                              isOutOfStock
-                                ? "text-rose-600"
-                                : isLowStock
-                                ? "text-amber-600"
-                                : "text-slate-700"
-                            }`}
-                          >
-                            {item.stock}
-                          </span>
+                          {selectedWarehouse !== "all" ? (
+                            (() => {
+                              const whStockItem = item.stocks?.find((s) => s.warehouseId === selectedWarehouse);
+                              const whQty = whStockItem?.quantity ?? (item.warehouseId === selectedWarehouse ? item.stock : 0);
+                              const isWhOutOfStock = whQty <= 0;
+                              const isWhLowStock = whQty <= (item.minStockAlert || 5) && whQty > 0;
+                              return (
+                                <div className="flex flex-col">
+                                  <span
+                                    className={`font-bold ${
+                                      isWhOutOfStock
+                                        ? "text-rose-600"
+                                        : isWhLowStock
+                                        ? "text-amber-600"
+                                        : "text-slate-800"
+                                    }`}
+                                  >
+                                    {whQty}
+                                  </span>
+                                  <span className="text-[10px] text-gray-400">ในคลังนี้</span>
+                                </div>
+                              );
+                            })()
+                          ) : (
+                            <span
+                              className={`font-semibold ${
+                                isOutOfStock
+                                  ? "text-rose-600"
+                                  : isLowStock
+                                  ? "text-amber-600"
+                                  : "text-slate-700"
+                              }`}
+                            >
+                              {item.stock}
+                            </span>
+                          )}
                         </td>
 
                         {/* Status Badge */}

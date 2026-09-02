@@ -130,7 +130,7 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
         {/* Store Selector Pill */}
         <div className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-50/70 border border-emerald-200 text-emerald-800 rounded-lg text-xs font-semibold cursor-pointer hover:bg-emerald-100/60 transition-colors">
           <Store className="w-3.5 h-3.5 text-emerald-600" />
-          <span>Freshmart</span>
+          <span>{user?.storeName || "ElectroMart Main"}</span>
           <ChevronDown className="w-3 h-3 text-emerald-600 ml-0.5" />
         </div>
 
@@ -302,9 +302,14 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
                       {user.role}
                     </span>
                   </div>
-                  {user.warehouseName && (
-                    <p className="text-[10px] text-gray-400 truncate mt-0.5">
-                      📍 {user.warehouseName}
+                  <p className="text-[10px] text-gray-600 truncate mt-0.5 font-medium flex items-center">
+                    <span className="text-gray-400 mr-1">📍</span>
+                    {user.warehouseName || "All Warehouses"}
+                  </p>
+                  {user.storeName && (
+                    <p className="text-[10px] text-gray-500 truncate mt-0.5 flex items-center">
+                      <span className="text-gray-400 mr-1">🏪</span>
+                      {user.storeName}
                     </p>
                   )}
                 </div>

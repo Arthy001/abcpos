@@ -7,32 +7,42 @@ export const getProducts = async (req: Request, res: Response) => {
   try {
     const { categoryId, brandId, unitId, warehouseId, storeId, search, status, lowStock } = req.query;
 
-    const where: any = {};
+    const andConditions: any[] = [];
+
     if (categoryId && categoryId !== "all") {
-      where.categoryId = String(categoryId);
+      andConditions.push({ categoryId: String(categoryId) });
     }
     if (brandId && brandId !== "all") {
-      where.brandId = String(brandId);
+      andConditions.push({ brandId: String(brandId) });
     }
     if (unitId && unitId !== "all") {
-      where.unitId = String(unitId);
+      andConditions.push({ unitId: String(unitId) });
     }
     if (warehouseId && warehouseId !== "all") {
-      where.warehouseId = String(warehouseId);
+      andConditions.push({
+        OR: [
+          { warehouseId: String(warehouseId) },
+          { stocks: { some: { warehouseId: String(warehouseId) } } },
+        ],
+      });
     }
     if (storeId && storeId !== "all") {
-      where.storeId = String(storeId);
+      andConditions.push({ storeId: String(storeId) });
     }
     if (status && status !== "all") {
-      where.status = String(status);
+      andConditions.push({ status: String(status) });
     }
     if (search) {
-      where.OR = [
-        { name: { contains: String(search) } },
-        { sku: { contains: String(search) } },
-        { barcode: { contains: String(search) } },
-      ];
+      andConditions.push({
+        OR: [
+          { name: { contains: String(search) } },
+          { sku: { contains: String(search) } },
+          { barcode: { contains: String(search) } },
+        ],
+      });
     }
+
+    const where: any = andConditions.length > 0 ? { AND: andConditions } : {};
 
     const products = await prisma.product.findMany({
       where,
