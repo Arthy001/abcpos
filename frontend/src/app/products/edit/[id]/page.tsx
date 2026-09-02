@@ -14,6 +14,7 @@ import {
 } from "@/lib/api";
 import { Category, Brand, Unit, Warehouse, Store, Product } from "@/types";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -36,6 +37,7 @@ import {
 export default function EditProductPage() {
   const params = useParams();
   const router = useRouter();
+  const { canEditProduct, fetchRolePermissions } = useAuthStore();
   const productId = String(params?.id || "");
 
   // Reference lists from DB
@@ -74,6 +76,13 @@ export default function EditProductPage() {
   const [expiryDate, setExpiryDate] = useState<string>("");
 
   useEffect(() => {
+    fetchRolePermissions().then(() => {
+      if (!canEditProduct()) {
+        alert("Permission Denied: คุณไม่มีสิทธิ์ในการแก้ไขข้อมูลสินค้าหลัก");
+        router.replace("/products");
+      }
+    });
+
     if (!productId) return;
 
     setInitialLoading(true);

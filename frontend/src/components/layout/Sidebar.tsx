@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -81,10 +82,32 @@ interface MenuGroup {
   items: MenuItem[];
 }
 
+const GROUP_MODULE_MAP: Record<string, string> = {
+  "Main": "Dashboard",
+  "Inventory": "Products & Inventory",
+  "Stock": "Stock Management",
+  "Sales": "Sales & POS",
+  "Promo": "Promo & Discounts",
+  "Purchases": "Purchases",
+  "Finance & Accounts": "Finance & Accounts",
+  "Peoples": "Peoples (Customers/Suppliers)",
+  "HRM": "HRM & Attendance",
+  "Reports": "Reports & Analytics",
+  "User Management": "User Management",
+  "Settings": "System Settings",
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
   const pathname = usePathname();
+  const { hasModulePermission, isAdmin, canCreateProduct, fetchRolePermissions } = useAuthStore();
+  const [mounted, setMounted] = useState<boolean>(false);
   const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({});
   const sidebarRef = useRef<HTMLElement>(null);
+
+  useEffect(() => {
+    setMounted(true);
+    fetchRolePermissions();
+  }, []);
 
   const toggleSubMenu = (menuName: string) => {
     setOpenSubMenus((prev) => {
@@ -500,16 +523,34 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
       }`}
     >
       <div className={`py-4 space-y-4 ${isOpen ? "px-3" : "px-1.5"}`}>
-        {menuGroups.map((group, gIdx) => (
-          <div key={gIdx} className="space-y-1">
-            {isOpen && (
-              <p className="px-3 text-[11px] font-bold text-gray-800 tracking-tight mb-1.5">
-                {group.title}
-              </p>
-            )}
+        {menuGroups.map((group, gIdx) => {
+          const moduleName = GROUP_MODULE_MAP[group.title];
+          if (mounted && !isAdmin() && moduleName) {
+            if (!hasModulePermission(moduleName, "view")) {
+              return null;
+            }
+          }
 
-            <div className="space-y-0.5">
-              {group.items.map((item) => {
+          const visibleItems = group.items.filter((item) => {
+            if (!mounted) return true;
+            if (item.name === "Super Admin" && !isAdmin()) return false;
+            if (item.name === "Create Product" && !canCreateProduct()) return false;
+            if (item.name === "Roles & Permissions" && !isAdmin()) return false;
+            return true;
+          });
+
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={gIdx} className="space-y-1">
+              {isOpen && (
+                <p className="px-3 text-[11px] font-bold text-gray-800 tracking-tight mb-1.5">
+                  {group.title}
+                </p>
+              )}
+
+              <div className="space-y-0.5">
+                {visibleItems.map((item) => {
                 const Icon = item.icon;
                 const isItemActive =
                   pathname === item.href ||
@@ -604,8 +645,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen }) => {
               })}
             </div>
           </div>
-        ))}
-      </div>
-    </aside>
+        );
+      })}
+    </div>
+  </aside>
   );
 };

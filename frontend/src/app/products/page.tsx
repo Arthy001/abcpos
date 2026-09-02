@@ -5,6 +5,7 @@ import Link from "next/link";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Product, Category, Brand } from "@/types";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   fetchProducts,
   fetchCategories,
@@ -39,6 +40,15 @@ import {
 } from "lucide-react";
 
 export default function ProductsPage() {
+  const {
+    user,
+    isAdmin,
+    canCreateProduct,
+    canEditProduct,
+    canDeleteProduct,
+    fetchRolePermissions,
+  } = useAuthStore();
+  const [isMounted, setIsMounted] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [brands, setBrands] = useState<Brand[]>([]);
@@ -100,6 +110,11 @@ export default function ProductsPage() {
   };
 
   useEffect(() => {
+    setIsMounted(true);
+    fetchRolePermissions();
+  }, []);
+
+  useEffect(() => {
     loadData();
   }, [selectedCategory, selectedBrand]);
 
@@ -148,6 +163,16 @@ export default function ProductsPage() {
   // Delete Single Product
   const handleDeleteConfirm = async () => {
     if (!deleteProductTarget) return;
+    if (!canDeleteProduct()) {
+      setDeleteProductTarget(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การใช้งาน)",
+        message: "คุณไม่มีสิทธิ์ในการลบสินค้าหลักออกจากระบบ (สงวนสิทธิ์เฉพาะผู้ดูแลระบบ)",
+      });
+      return;
+    }
     const targetName = deleteProductTarget.name;
     try {
       setActionLoading(true);
@@ -178,6 +203,16 @@ export default function ProductsPage() {
   // Bulk Delete
   const handleBulkDeleteConfirm = async () => {
     if (selectedIds.length === 0) return;
+    if (!canDeleteProduct()) {
+      setIsBulkDeleting(false);
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การใช้งาน)",
+        message: "คุณไม่มีสิทธิ์ในการลบสินค้าหลักออกจากระบบ (สงวนสิทธิ์เฉพาะผู้ดูแลระบบ)",
+      });
+      return;
+    }
     const count = selectedIds.length;
     try {
       setActionLoading(true);
@@ -276,10 +311,10 @@ export default function ProductsPage() {
 
           <div className="flex items-center flex-wrap gap-2">
             {/* Bulk Delete Button when items selected */}
-            {selectedIds.length > 0 && (
+            {isMounted && selectedIds.length > 0 && canDeleteProduct() && (
               <button
                 onClick={() => setIsBulkDeleting(true)}
-                className="flex items-center space-x-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-semibold shadow-2xs active:scale-95 transition-all"
+                className="flex items-center space-x-1 px-3 py-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-lg text-xs font-semibold shadow-2xs active:scale-95 transition-all cursor-pointer"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Delete Selected ({selectedIds.length})</span>
@@ -313,14 +348,16 @@ export default function ProductsPage() {
               <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#FE9F43]" : ""}`} />
             </button>
 
-            {/* + Add Product Button (Orange) */}
-            <Link
-              href="/products/add"
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add Product</span>
-            </Link>
+            {/* + Add Product Button (Orange) - only show if permitted and mounted on client */}
+            {isMounted && canCreateProduct() && (
+              <Link
+                href="/products/add"
+                className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Add Product</span>
+              </Link>
+            )}
           </div>
         </div>
 
@@ -506,33 +543,42 @@ export default function ProductsPage() {
                           )}
                         </td>
 
-                        {/* Actions: View, Edit, Delete */}
+                        {/* Actions: View (Always), Edit (if canEditProduct), Delete (if canDeleteProduct) */}
                         <td className="py-3.5 px-3 text-right">
                           <div className="flex items-center justify-end space-x-1.5">
+                            {/* 1. View Button (Always visible) */}
                             <button
                               onClick={() => {
                                 setActiveModalImage(getPrimaryImage(item.image));
                                 setViewProduct(item);
                               }}
                               title="View Details"
-                              className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#94A3B8] hover:text-[#334155] flex items-center justify-center transition-colors bg-white"
+                              className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-[#F1F5F9] text-[#94A3B8] hover:text-[#334155] flex items-center justify-center transition-colors bg-white cursor-pointer"
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-                            <Link
-                              href={`/products/edit/${item.id}`}
-                              title="Edit Product"
-                              className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-orange-50 text-[#94A3B8] hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white"
-                            >
-                              <Edit className="w-3.5 h-3.5" />
-                            </Link>
-                            <button
-                              onClick={() => setDeleteProductTarget(item)}
-                              title="Delete Product"
-                              className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-red-50 text-[#94A3B8] hover:text-[#EF4444] flex items-center justify-center transition-colors bg-white"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+
+                            {/* 2. Edit Button (Only if permitted) */}
+                            {isMounted && canEditProduct() && (
+                              <Link
+                                href={`/products/edit/${item.id}`}
+                                title="Edit Product"
+                                className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-orange-50 text-[#94A3B8] hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white cursor-pointer"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </Link>
+                            )}
+
+                            {/* 3. Delete Button (Only if permitted) */}
+                            {isMounted && canDeleteProduct() && (
+                              <button
+                                onClick={() => setDeleteProductTarget(item)}
+                                title="Delete Product"
+                                className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-red-50 text-[#94A3B8] hover:text-[#EF4444] flex items-center justify-center transition-colors bg-white cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -776,12 +822,40 @@ export default function ProductsPage() {
                       <span className="text-[11px] font-bold text-blue-700">Total: {viewProduct.stock} {viewProduct.unit?.shortName || "Pcs"}</span>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
-                      {viewProduct.stocks.map((stk) => (
-                        <div key={stk.id} className="flex justify-between items-center bg-white p-2 rounded-lg border border-blue-100 shadow-2xs">
-                          <span className="text-gray-700 font-medium">{stk.warehouse?.name || "Warehouse"}</span>
-                          <span className="font-bold text-blue-700">{stk.quantity} <span className="text-[10px] text-gray-400 font-normal">{viewProduct.unit?.shortName || "Pcs"}</span></span>
-                        </div>
-                      ))}
+                      {viewProduct.stocks.map((stk) => {
+                        const isUserWh =
+                          user?.warehouseName &&
+                          stk.warehouse?.name?.toLowerCase().trim() ===
+                            user.warehouseName.toLowerCase().trim();
+
+                        return (
+                          <div
+                            key={stk.id}
+                            className={`flex justify-between items-center p-2 rounded-lg border shadow-2xs transition-all ${
+                              isUserWh
+                                ? "bg-emerald-50/80 border-emerald-300 ring-1 ring-emerald-200"
+                                : "bg-white border-blue-100"
+                            }`}
+                          >
+                            <div className="flex items-center space-x-1.5">
+                              <span className={`font-medium ${isUserWh ? "text-emerald-900 font-bold" : "text-gray-700"}`}>
+                                {stk.warehouse?.name || "Warehouse"}
+                              </span>
+                              {isUserWh && (
+                                <span className="text-[9px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded-full">
+                                  คลังของคุณ
+                                </span>
+                              )}
+                            </div>
+                            <span className={`font-bold ${isUserWh ? "text-emerald-700" : "text-blue-700"}`}>
+                              {stk.quantity}{" "}
+                              <span className="text-[10px] text-gray-400 font-normal">
+                                {viewProduct.unit?.shortName || "Pcs"}
+                              </span>
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -789,15 +863,17 @@ export default function ProductsPage() {
 
               {/* Modal Footer */}
               <div className="flex items-center justify-end space-x-2 px-6 py-4 bg-gray-50/50 border-t border-gray-100">
-                <Link
-                  href={`/products/edit/${viewProduct.id}`}
-                  className="px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
-                >
-                  Edit Product
-                </Link>
+                {canEditProduct() && (
+                  <Link
+                    href={`/products/edit/${viewProduct.id}`}
+                    className="px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-semibold rounded-xl transition-all shadow-xs"
+                  >
+                    Edit Product
+                  </Link>
+                )}
                 <button
                   onClick={() => setViewProduct(null)}
-                  className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors"
+                  className="px-4 py-2 bg-white border border-gray-200 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl transition-colors cursor-pointer"
                 >
                   Close
                 </button>

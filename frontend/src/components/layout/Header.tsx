@@ -18,6 +18,16 @@ import {
   User,
   FileText,
   LogOut,
+  Box,
+  PackagePlus,
+  ShoppingBag,
+  ShoppingCart,
+  FileSpreadsheet,
+  RotateCcw,
+  Users,
+  Shield,
+  UserCheck,
+  Truck,
 } from "lucide-react";
 
 import { useThemeStore } from "@/store/useThemeStore";
@@ -31,17 +41,27 @@ interface HeaderProps {
 export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) => {
   const router = useRouter();
   const { topBarColor, isGradientTopBar } = useThemeStore();
-  const { user, logout } = useAuthStore();
+  const { user, logout, isAdmin, canCreateProduct } = useAuthStore();
   const isDarkTopBar = topBarColor !== "#ffffff";
 
+  const [mounted, setMounted] = useState<boolean>(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState<boolean>(false);
+  const [quickAddOpen, setQuickAddOpen] = useState<boolean>(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
+  const quickAddRef = useRef<HTMLDivElement>(null);
 
-  // Close dropdown on outside click
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Close dropdowns on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userDropdownRef.current && !userDropdownRef.current.contains(event.target as Node)) {
         setUserDropdownOpen(false);
+      }
+      if (quickAddRef.current && !quickAddRef.current.contains(event.target as Node)) {
+        setQuickAddOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -114,14 +134,73 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
           <ChevronDown className="w-3 h-3 text-emerald-600 ml-0.5" />
         </div>
 
-        {/* + Add New Button (Orange) */}
-        <Link
-          href="/products/add"
-          className="hidden md:flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all"
-        >
-          <PlusCircle className="w-3.5 h-3.5" />
-          <span>Add New</span>
-        </Link>
+        {/* + Add New Button (Orange) & Quick Add Dropdown */}
+        <div className="relative" ref={quickAddRef}>
+          <button
+            type="button"
+            onClick={() => setQuickAddOpen(!quickAddOpen)}
+            className="hidden md:flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer"
+          >
+            <PlusCircle className="w-3.5 h-3.5" />
+            <span>Add New</span>
+          </button>
+
+          {/* Quick Add Mega Menu Dropdown */}
+          {quickAddOpen && (
+            <div className="absolute right-0 sm:-right-20 top-full mt-2.5 w-[330px] sm:w-[580px] bg-white rounded-2xl shadow-2xl border border-gray-100 p-3.5 sm:p-4 z-50 animate-in fade-in zoom-in-95 duration-100">
+              <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 sm:gap-3">
+                {[
+                  { label: "Category", href: "/categories", icon: Box, allowed: true },
+                  { label: "Product", href: "/products/add", icon: PackagePlus, allowed: mounted ? canCreateProduct() : true },
+                  { label: "Purchase", href: "/purchases", icon: ShoppingBag, allowed: true },
+                  { label: "Sale", href: "/pos", icon: ShoppingCart, allowed: true },
+                  { label: "Expense", href: "/finance/expenses", icon: FileText, allowed: true },
+                  { label: "Quotation", href: "/quotations", icon: FileSpreadsheet, allowed: true },
+                  { label: "Return", href: "/purchases/returns", icon: RotateCcw, allowed: true },
+                  { label: "User", href: "/users", icon: User, allowed: mounted ? isAdmin() : true },
+                  { label: "Customer", href: "/customers", icon: Users, allowed: true },
+                  { label: "Biller", href: "/billers", icon: Shield, allowed: mounted ? (isAdmin() || user?.role?.toLowerCase() === "manager") : true },
+                  { label: "Supplier", href: "/suppliers", icon: UserCheck, allowed: true },
+                  { label: "Transfer", href: "/stock/transfer", icon: Truck, allowed: true },
+                ].map((item) => {
+                  const isAllowed = item.allowed !== false;
+                  if (!isAllowed) {
+                    return (
+                      <div
+                        key={item.label}
+                        title="You do not have permission to access this action"
+                        className="flex flex-col items-center justify-center p-2 rounded-xl opacity-35 cursor-not-allowed select-none text-center"
+                      >
+                        <div className="w-12 h-12 rounded-xl bg-[#F4F5F7] flex items-center justify-center text-gray-400 mb-1.5">
+                          <item.icon className="w-5 h-5 stroke-[1.5]" />
+                        </div>
+                        <span className="text-[11px] font-medium text-gray-400 truncate max-w-full">
+                          {item.label}
+                        </span>
+                      </div>
+                    );
+                  }
+
+                  return (
+                    <Link
+                      key={item.label}
+                      href={item.href}
+                      onClick={() => setQuickAddOpen(false)}
+                      className="flex flex-col items-center justify-center p-2 rounded-xl hover:bg-orange-50/50 transition-all group cursor-pointer text-center"
+                    >
+                      <div className="w-12 h-12 rounded-xl bg-[#F4F5F7] group-hover:bg-[#FFF3E8] group-hover:scale-105 border border-transparent group-hover:border-[#FE9F43]/30 flex items-center justify-center text-gray-700 group-hover:text-[#FE9F43] transition-all shadow-2xs mb-1.5">
+                        <item.icon className="w-5 h-5 stroke-[1.75]" />
+                      </div>
+                      <span className="text-[11px] font-medium text-gray-700 group-hover:text-gray-900 group-hover:font-semibold truncate max-w-full transition-colors">
+                        {item.label}
+                      </span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* POS Button (Dark Navy) */}
         <Link

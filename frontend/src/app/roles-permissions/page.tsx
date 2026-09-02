@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { RoleItem } from "@/types";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   fetchRoles,
   createRoleApi,
@@ -223,6 +224,8 @@ export default function RolesPermissionsPage() {
       await updateRoleApi(selectedRole.id, {
         permissions: JSON.stringify(permissionsMatrix),
       });
+      // Immediately refresh global auth permissions cache
+      await useAuthStore.getState().fetchRolePermissions();
       setShowPermissionModal(false);
       loadData();
     } catch (e: any) {

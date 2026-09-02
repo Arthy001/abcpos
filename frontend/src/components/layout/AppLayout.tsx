@@ -1,20 +1,90 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import Link from "next/link";
 import { Header } from "./Header";
 import { Sidebar } from "./Sidebar";
 import { ThemeCustomizer } from "./ThemeCustomizer";
 import { useThemeStore } from "@/store/useThemeStore";
-import { Settings } from "lucide-react";
+import { useAuthStore } from "@/store/useAuthStore";
+import { Settings, ShieldAlert, ArrowLeft } from "lucide-react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
   fullWidth?: boolean;
 }
 
+function getModuleFromPath(path: string): string | null {
+  if (!path) return null;
+  if (path === "/" || path === "/admin") return "Dashboard";
+  if (
+    path.startsWith("/products") ||
+    path.startsWith("/inventory") ||
+    path.startsWith("/categories") ||
+    path.startsWith("/sub-categories") ||
+    path.startsWith("/brands") ||
+    path.startsWith("/units") ||
+    path.startsWith("/variant-attributes") ||
+    path.startsWith("/warranties") ||
+    path.startsWith("/barcode") ||
+    path.startsWith("/qrcode")
+  ) {
+    return "Products & Inventory";
+  }
+  if (path.startsWith("/stock")) return "Stock Management";
+  if (
+    path.startsWith("/sales") ||
+    path.startsWith("/pos") ||
+    path.startsWith("/invoices") ||
+    path.startsWith("/quotations")
+  ) {
+    return "Sales & POS";
+  }
+  if (path.startsWith("/promo")) return "Promo & Discounts";
+  if (path.startsWith("/purchases")) return "Purchases";
+  if (path.startsWith("/finance")) return "Finance & Accounts";
+  if (
+    path.startsWith("/customers") ||
+    path.startsWith("/suppliers") ||
+    path.startsWith("/stores") ||
+    path.startsWith("/warehouses") ||
+    path.startsWith("/billers")
+  ) {
+    return "Peoples (Customers/Suppliers)";
+  }
+  if (path.startsWith("/hrm")) return "HRM & Attendance";
+  if (path.startsWith("/reports")) return "Reports & Analytics";
+  if (
+    path.startsWith("/users") ||
+    path.startsWith("/roles-permissions") ||
+    path.startsWith("/delete-account-requests") ||
+    path.startsWith("/activity-logs")
+  ) {
+    return "User Management";
+  }
+  if (path.startsWith("/settings")) return "System Settings";
+  return null;
+}
+
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+  const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const { toggleCustomizer, layoutMode, layoutWidth } = useThemeStore();
+  const { user, isAdmin, hasModulePermission, fetchRolePermissions } = useAuthStore();
+
+  useEffect(() => {
+    setMounted(true);
+    fetchRolePermissions();
+  }, []);
+
+  const requiredModule = getModuleFromPath(pathname || "");
+  const isDenied =
+    mounted &&
+    !isAdmin() &&
+    requiredModule !== null &&
+    !hasModulePermission(requiredModule, "view");
 
   // If layout mode is "mini", force collapsed sidebar
   const isMini = layoutMode === "mini" || !sidebarOpen;
@@ -45,7 +115,44 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           }`}
         >
           <div className={`${layoutWidth === "boxed" ? "max-w-6xl mx-auto w-full" : "w-full"}`}>
-            {children}
+            {isDenied ? (
+              <div className="min-h-[500px] flex items-center justify-center p-6">
+                <div className="max-w-md w-full bg-white rounded-3xl p-8 text-center shadow-xl border border-gray-100 animate-in fade-in zoom-in-95 duration-200">
+                  <div className="w-16 h-16 rounded-2xl bg-rose-50 border border-rose-100 text-rose-500 flex items-center justify-center mx-auto mb-4 shadow-2xs">
+                    <ShieldAlert className="w-8 h-8 stroke-[1.75]" />
+                  </div>
+                  <span className="inline-block px-2.5 py-1 bg-rose-50 text-rose-600 rounded-lg text-[11px] font-bold tracking-wide uppercase mb-2">
+                    403 Access Denied
+                  </span>
+                  <h2 className="text-xl font-bold text-gray-900 mb-2">
+                    สิทธิ์การเข้าถึงถูกจำกัด
+                  </h2>
+                  <p className="text-xs text-gray-500 leading-relaxed mb-4">
+                    คุณไม่มีสิทธิ์ในการเข้าถึงโมดูล{" "}
+                    <span className="font-semibold text-gray-800">
+                      &ldquo;{requiredModule}&rdquo;
+                    </span>{" "}
+                    ตามบทบาท{" "}
+                    <span className="font-semibold text-[#FE9F43]">
+                      ({user?.role || "Current Role"})
+                    </span>{" "}
+                    ที่กำหนดไว้ในระบบ
+                  </p>
+                  <p className="text-[11px] text-gray-400 mb-6">
+                    หากต้องการใช้งานส่วนนี้ กรุณาติดต่อผู้ดูแลระบบ (Admin) เพื่อขอเปิดสิทธิ์ในหน้า Roles &amp; Permissions
+                  </p>
+                  <Link
+                    href="/"
+                    className="inline-flex items-center justify-center space-x-2 px-5 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    <span>กลับสู่หน้าหลัก (Back to Home)</span>
+                  </Link>
+                </div>
+              </div>
+            ) : (
+              children
+            )}
           </div>
 
           {/* Bottom Copyright Footer */}

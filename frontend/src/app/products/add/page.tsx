@@ -13,6 +13,7 @@ import {
 } from "@/lib/api";
 import { Category, Brand, Unit, Warehouse, Store } from "@/types";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
 import {
   ArrowLeft,
@@ -33,6 +34,7 @@ import {
 
 export default function AddProductPage() {
   const router = useRouter();
+  const { canCreateProduct, fetchRolePermissions } = useAuthStore();
 
   // Reference lists from DB
   const [categories, setCategories] = useState<Category[]>([]);
@@ -72,6 +74,13 @@ export default function AddProductPage() {
   const [expiryDate, setExpiryDate] = useState<string>("");
 
   useEffect(() => {
+    fetchRolePermissions().then(() => {
+      if (!canCreateProduct()) {
+        alert("Permission Denied: คุณไม่มีสิทธิ์ในการเพิ่มสินค้าใหม่");
+        router.replace("/products");
+      }
+    });
+
     // Generate initial random SKU
     generateSku();
 
