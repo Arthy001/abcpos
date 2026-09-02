@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import "./globals.css";
+import { NavigationLoader } from "@/components/common/NavigationLoader";
 
 export const metadata: Metadata = {
   title: "A POS - Inventory & Retail Dashboard",
@@ -13,7 +15,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <Suspense fallback={null}>
+          <NavigationLoader />
+        </Suspense>
+        {children}
+      </body>
     </html>
   );
 }
+
