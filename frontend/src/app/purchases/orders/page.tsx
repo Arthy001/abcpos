@@ -11,6 +11,7 @@ import {
   createPurchaseApi,
 } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   PlusCircle,
   Download,
@@ -34,6 +35,7 @@ import {
 } from "lucide-react";
 
 export default function PurchaseOrderPage() {
+  const { user, isAdmin, canManageWarehouse } = useAuthStore();
   const [orders, setOrders] = useState<PurchaseOrderItem[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -154,7 +156,7 @@ export default function PurchaseOrderPage() {
   // Open Add Modal
   const handleOpenAddModal = () => {
     setSelectedSupplier(suppliers.length > 0 ? suppliers[0].name : "");
-    setSelectedWarehouse(warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse");
+    setSelectedWarehouse(user?.warehouseName || (warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse"));
     if (products.length > 0) {
       setSelectedProduct(products[0].name);
       setOrderUnitCost(products[0].costPrice || 50);
@@ -176,6 +178,16 @@ export default function PurchaseOrderPage() {
         type: "error",
         title: "Missing Information",
         message: "Please select both a Supplier and a Product.",
+      });
+      return;
+    }
+
+    if (!canManageWarehouse(selectedWarehouse) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `คุณสังกัดคลัง "${user?.warehouseName}" ไม่ได้รับอนุญาตให้สั่งซื้อ/รับสินค้าเข้าคลัง "${selectedWarehouse}"`,
       });
       return;
     }
@@ -672,12 +684,34 @@ export default function PurchaseOrderPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Destination Warehouse</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-700">Destination Warehouse</label>
+                      {!isAdmin() && user?.warehouseName && (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          คลังที่สังกัด
+                        </span>
+                      )}
+                    </div>
                     <SearchableSelect
                       placeholder="Select Warehouse..."
                       value={selectedWarehouse}
-                      onChange={(val) => setSelectedWarehouse(val)}
-                      options={warehouses.map((w) => ({ value: w.name, label: w.name }))}
+                      onChange={(val) => {
+                        if (!canManageWarehouse(val) && !isAdmin()) {
+                          setFeedbackModal({
+                            isOpen: true,
+                            type: "error",
+                            title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+                            message: `คุณสังกัดคลัง "${user?.warehouseName}" สามารถสั่งซื้อ/รับสินค้าเข้าได้เฉพาะคลังของตนเองเท่านั้น`,
+                          });
+                          return;
+                        }
+                        setSelectedWarehouse(val);
+                      }}
+                      options={
+                        !isAdmin() && user?.warehouseName
+                          ? [{ value: user.warehouseName, label: `${user.warehouseName} (คลังที่คุณรับผิดชอบ)` }]
+                          : warehouses.map((w) => ({ value: w.name, label: w.name }))
+                      }
                     />
                   </div>
                 </div>

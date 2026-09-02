@@ -13,6 +13,7 @@ import {
   fetchWarehouses,
 } from "@/lib/api";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
+import { useAuthStore } from "@/store/useAuthStore";
 import {
   PlusCircle,
   Download,
@@ -36,6 +37,7 @@ import {
 } from "lucide-react";
 
 export default function PurchaseReturnsPage() {
+  const { user, isAdmin, canManageWarehouse } = useAuthStore();
   const [returns, setReturns] = useState<PurchaseReturn[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
@@ -177,7 +179,7 @@ export default function PurchaseReturnsPage() {
   const handleOpenAddModal = () => {
     setEditingReturn(null);
     setFormSupplier(suppliers.length > 0 ? suppliers[0].name : "");
-    setFormWarehouse(warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse");
+    setFormWarehouse(user?.warehouseName || (warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse"));
     if (products.length > 0) {
       setFormProduct(products[0].name);
       setFormTotal(products[0].costPrice ? products[0].costPrice * 2 : 200);
@@ -199,9 +201,19 @@ export default function PurchaseReturnsPage() {
 
   // Open Edit Modal
   const handleOpenEditModal = (r: PurchaseReturn) => {
+    if (r.warehouseName && !canManageWarehouse(r.warehouseName) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `คุณสังกัดคลัง "${user?.warehouseName}" ไม่ได้รับอนุญาตให้แก้ไขใบคืนสินค้าของคลัง "${r.warehouseName}"`,
+      });
+      return;
+    }
+
     setEditingReturn(r);
     setFormSupplier(r.supplierName);
-    setFormWarehouse(r.warehouseName || "Lavish Warehouse");
+    setFormWarehouse(r.warehouseName || (user?.warehouseName || "Lavish Warehouse"));
     setFormProduct(r.productName || "");
     setFormQty(r.quantity || 1);
     setFormReference(r.reference);
@@ -224,6 +236,16 @@ export default function PurchaseReturnsPage() {
         type: "error",
         title: "Missing Information",
         message: "Please select a Supplier.",
+      });
+      return;
+    }
+
+    if (!canManageWarehouse(formWarehouse) && !isAdmin()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+        message: `คุณสังกัดคลัง "${user?.warehouseName}" ไม่ได้รับอนุญาตให้ทำรายการของคลัง "${formWarehouse}"`,
       });
       return;
     }
@@ -630,7 +652,18 @@ export default function PurchaseReturnsPage() {
 
                             {/* 3. Delete Button */}
                             <button
-                              onClick={() => setDeletingReturn(item)}
+                              onClick={() => {
+                                if (item.warehouseName && !canManageWarehouse(item.warehouseName) && !isAdmin()) {
+                                  setFeedbackModal({
+                                    isOpen: true,
+                                    type: "error",
+                                    title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+                                    message: `คุณสังกัดคลัง "${user?.warehouseName}" ไม่ได้รับอนุญาตให้ลบใบคืนสินค้าของคลัง "${item.warehouseName}"`,
+                                  });
+                                  return;
+                                }
+                                setDeletingReturn(item);
+                              }}
                               title="Delete Return Record"
                               className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-red-50 text-[#94A3B8] hover:text-[#EF4444] flex items-center justify-center transition-colors bg-white cursor-pointer"
                             >
@@ -740,12 +773,34 @@ export default function PurchaseReturnsPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Warehouse</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-gray-700">Warehouse</label>
+                      {!isAdmin() && user?.warehouseName && (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200">
+                          คลังที่สังกัด
+                        </span>
+                      )}
+                    </div>
                     <SearchableSelect
                       placeholder="Select Warehouse..."
                       value={formWarehouse}
-                      onChange={(val) => setFormWarehouse(val)}
-                      options={warehouses.map((w) => ({ value: w.name, label: w.name }))}
+                      onChange={(val) => {
+                        if (!canManageWarehouse(val) && !isAdmin()) {
+                          setFeedbackModal({
+                            isOpen: true,
+                            type: "error",
+                            title: "Permission Denied (สิทธิ์การจัดการคลัง)",
+                            message: `คุณสังกัดคลัง "${user?.warehouseName}" สามารถทำรายการได้เฉพาะคลังของตนเองเท่านั้น`,
+                          });
+                          return;
+                        }
+                        setFormWarehouse(val);
+                      }}
+                      options={
+                        !isAdmin() && user?.warehouseName
+                          ? [{ value: user.warehouseName, label: `${user.warehouseName} (คลังที่คุณรับผิดชอบ)` }]
+                          : warehouses.map((w) => ({ value: w.name, label: w.name }))
+                      }
                     />
                   </div>
                 </div>
