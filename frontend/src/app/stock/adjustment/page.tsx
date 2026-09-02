@@ -448,8 +448,8 @@ export default function StockAdjustmentPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[950px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">

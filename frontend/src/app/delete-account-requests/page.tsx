@@ -187,8 +187,8 @@ export default function DeleteAccountRequestsPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left border-collapse min-w-[850px]">
               <thead>
                 <tr className="border-b border-gray-100 text-[12px] font-semibold text-gray-700 bg-gray-50/50">
                   <th className="py-3.5 px-4 w-10">

@@ -613,8 +613,8 @@ export default function UsersPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[950px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-2 px-3 w-8">
@@ -628,7 +628,7 @@ export default function UsersPage() {
                       className="rounded border-[#D1D5DB] text-[#FE9F43] focus:ring-[#FE9F43] w-3.5 h-3.5"
                     />
                   </th>
-                  <th className="py-2.5 px-3 font-semibold">User Name</th>
+                  <th className="py-2.5 px-3 font-semibold min-w-[160px]">User Name</th>
                   <th className="py-2.5 px-3 font-semibold">Phone</th>
                   <th className="py-2.5 px-3 font-semibold">Email</th>
                   <th className="py-2.5 px-3 font-semibold">Role</th>

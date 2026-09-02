@@ -260,8 +260,8 @@ export default function DashboardPage() {
             </Link>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-gray-600">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-sm text-gray-600 min-w-[750px]">
               <thead className="bg-gray-50 text-gray-500 text-xs font-semibold uppercase tracking-wider border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 rounded-l-lg">Order ID</th>

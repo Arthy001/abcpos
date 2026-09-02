@@ -93,8 +93,8 @@ export default function TrialBalancePage() {
 
         {/* Table Card */}
         <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[850px]">
               <thead className="border-b border-[#F1F3F5] bg-white">
                 <tr>
                   <th className="py-3 px-4 font-bold text-[#111827] w-1/2">Account Name</th>

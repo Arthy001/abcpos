@@ -383,8 +383,8 @@ export default function SubCategoriesPage() {
           </div>
 
           {/* Clean Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[850px]">
               <thead className="border-b border-gray-100 text-gray-900 bg-gray-50/70">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
@@ -395,12 +395,12 @@ export default function SubCategoriesPage() {
                       className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-gray-300"
                     />
                   </th>
-                  <th className="py-3 px-4 font-bold text-gray-900">Sub Category</th>
+                  <th className="py-3 px-4 font-bold text-gray-900 min-w-[180px]">Sub Category</th>
                   <th className="py-3 px-4 font-bold text-gray-900">Parent Category</th>
                   <th className="py-3 px-4 font-bold text-gray-900">Code</th>
                   <th className="py-3 px-4 font-bold text-gray-900">Created On</th>
                   <th className="py-3 px-4 font-bold text-gray-900">Status</th>
-                  <th className="py-3 px-4 text-right font-bold text-gray-900">Action</th>
+                  <th className="py-3 px-4 text-right font-bold text-gray-900 w-28">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">

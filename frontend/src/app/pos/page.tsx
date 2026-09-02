@@ -54,6 +54,7 @@ export default function POS1Page() {
   const [roundoff, setRoundoff] = useState<boolean>(true);
   const [showApplyBonus, setShowApplyBonus] = useState<boolean>(true);
   const [selectedStore, setSelectedStore] = useState<string>("Freshmart");
+  const [isMobileCartOpen, setIsMobileCartOpen] = useState<boolean>(false);
 
   // Initial Product Catalog matching screenshot
   const [products, setProducts] = useState<PosProduct[]>([
@@ -221,18 +222,18 @@ export default function POS1Page() {
         </div>
 
         {/* Right Actions Toolbar */}
-        <div className="flex items-center space-x-2.5">
+        <div className="flex items-center space-x-1.5 sm:space-x-2.5">
           {/* Dashboard Button (Purple) */}
           <Link
             href="/"
-            className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#7367F0] hover:bg-[#685DD8] text-white rounded-lg text-xs font-semibold shadow-xs transition-all"
+            className="flex items-center space-x-1.5 px-2.5 sm:px-3.5 py-1.5 bg-[#7367F0] hover:bg-[#685DD8] text-white rounded-lg text-xs font-semibold shadow-xs transition-all"
           >
             <LayoutDashboard className="w-3.5 h-3.5" />
-            <span>Dashboard</span>
+            <span className="hidden sm:inline">Dashboard</span>
           </Link>
 
           {/* Store Selector (Freshmart Green badge) */}
-          <div className="relative">
+          <div className="relative hidden md:block">
             <button className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#00CFE8] text-white hover:bg-[#00BCD4] rounded-lg text-xs font-bold transition-all shadow-xs">
               <span>{selectedStore}</span>
               <ChevronDown className="w-3 h-3" />
@@ -256,7 +257,7 @@ export default function POS1Page() {
                 document.exitFullscreen();
               }
             }}
-            className="w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 flex items-center justify-center transition-colors"
+            className="hidden sm:flex w-8 h-8 rounded-lg bg-gray-100 hover:bg-gray-200 text-gray-700 items-center justify-center transition-colors"
           >
             <Maximize2 className="w-4 h-4" />
           </button>
@@ -306,9 +307,9 @@ export default function POS1Page() {
       </header>
 
       {/* 2. MAIN POS BODY */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left Category Rail */}
-        <div className="w-16 bg-white border-r border-[#E9ECEF] flex flex-col items-center py-4 space-y-3 flex-shrink-0">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Left Category Rail (Desktop) */}
+        <div className="hidden md:flex w-16 bg-white border-r border-[#E9ECEF] flex-col items-center py-4 space-y-3 flex-shrink-0">
           {categoriesRail.map((cat) => {
             const Icon = cat.icon;
             const isActive = activeCategory === cat.name;
@@ -331,7 +332,7 @@ export default function POS1Page() {
         </div>
 
         {/* Center Product Catalog Area */}
-        <div className="flex-1 flex flex-col p-4 md:p-5 overflow-y-auto space-y-4">
+        <div className="flex-1 flex flex-col p-3 sm:p-4 md:p-5 overflow-y-auto space-y-4 pb-24 xl:pb-4">
           {/* Welcome Bar & Search Filters */}
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
@@ -339,8 +340,8 @@ export default function POS1Page() {
               <p className="text-xs text-gray-400">December 24, 2024</p>
             </div>
 
-            <div className="flex items-center space-x-2">
-              <div className="relative w-56">
+            <div className="flex items-center space-x-2 flex-wrap sm:flex-nowrap gap-y-2">
+              <div className="relative flex-1 sm:w-56 min-w-[180px]">
                 <input
                   type="text"
                   placeholder="Search Product"
@@ -352,19 +353,42 @@ export default function POS1Page() {
               </div>
 
               {/* View All Brands (Navy) */}
-              <button className="px-3 py-1.5 bg-[#0E1422] hover:bg-black text-white rounded-lg text-xs font-semibold shadow-xs transition-colors">
-                View All Brands
+              <button className="px-3 py-1.5 bg-[#0E1422] hover:bg-black text-white rounded-lg text-xs font-semibold shadow-xs transition-colors whitespace-nowrap">
+                Brands
               </button>
 
               {/* Featured (Orange) */}
-              <button className="px-3 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors">
+              <button className="px-3 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs transition-colors whitespace-nowrap">
                 Featured
               </button>
             </div>
           </div>
 
-          {/* Product Cards 4-Column Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 flex-1">
+          {/* Mobile Category Horizontal Pills (Visible on small screens) */}
+          <div className="flex md:hidden items-center space-x-2 overflow-x-auto pb-1 scrollbar-none">
+            {categoriesRail.map((cat) => {
+              const Icon = cat.icon;
+              const isActive = activeCategory === cat.name;
+
+              return (
+                <button
+                  key={cat.name}
+                  onClick={() => setActiveCategory(cat.name)}
+                  className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all flex-shrink-0 ${
+                    isActive
+                      ? "bg-[#FE9F43] text-white shadow-xs"
+                      : "bg-white text-gray-600 border border-gray-200"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  <span>{cat.name}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Product Cards Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 flex-1">
             {filteredProducts.map((p) => (
               <div
                 key={p.id}
@@ -428,7 +452,7 @@ export default function POS1Page() {
           </div>
 
           {/* Bottom Action Operation Buttons (Hold, Void, Payment, View Orders, Reset, Transaction) */}
-          <div className="grid grid-cols-6 gap-2 pt-2">
+          <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-2">
             <button
               onClick={() => alert("Order put on Hold")}
               className="py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all text-center"
@@ -451,7 +475,7 @@ export default function POS1Page() {
               onClick={() => (window.location.href = "/sales/pos-orders")}
               className="py-2.5 bg-[#1E293B] hover:bg-black text-white rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all text-center"
             >
-              View Orders
+              Orders
             </button>
             <button
               onClick={() => setCartItems([])}
@@ -463,26 +487,49 @@ export default function POS1Page() {
               onClick={() => alert("Transactions List")}
               className="py-2.5 bg-[#EA5455] hover:bg-[#D9383A] text-white rounded-lg text-xs font-bold shadow-xs active:scale-95 transition-all text-center"
             >
-              Transaction
+              History
             </button>
           </div>
         </div>
 
+        {/* Mobile Backdrop for Cart Drawer */}
+        {isMobileCartOpen && (
+          <div
+            onClick={() => setIsMobileCartOpen(false)}
+            className="xl:hidden fixed inset-0 bg-black/50 z-35 backdrop-blur-[2px] transition-opacity"
+          />
+        )}
+
         {/* 3. RIGHT SIDE ORDER & CHECKOUT PANEL */}
-        <div className="w-96 bg-white border-l border-[#E9ECEF] flex flex-col justify-between shadow-sm overflow-y-auto p-4 space-y-4 flex-shrink-0">
+        <div
+          className={`fixed inset-y-0 right-0 z-40 w-full sm:w-[400px] xl:static xl:w-96 bg-white border-l border-[#E9ECEF] flex flex-col justify-between shadow-sm overflow-y-auto p-4 space-y-4 flex-shrink-0 transition-transform duration-300 ${
+            isMobileCartOpen ? "translate-x-0 shadow-2xl" : "translate-x-full xl:translate-x-0"
+          }`}
+        >
           {/* Order Header */}
           <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-            <h3 className="font-bold text-gray-900 text-sm">Order List</h3>
             <div className="flex items-center space-x-2">
+              <h3 className="font-bold text-gray-900 text-sm">Order List</h3>
               <span className="px-2 py-0.5 rounded-md bg-[#111827] text-white text-[10px] font-mono font-bold">
                 #ORD123
               </span>
+            </div>
+            <div className="flex items-center space-x-2">
               <button
                 onClick={() => setCartItems([])}
-                title="Delete Cart"
-                className="w-6 h-6 rounded bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center"
+                title="Clear Cart"
+                className="w-7 h-7 rounded bg-red-50 text-red-500 hover:bg-red-100 flex items-center justify-center transition-colors"
               >
                 <Trash2 className="w-3.5 h-3.5" />
+              </button>
+
+              {/* Close Drawer Button on Mobile */}
+              <button
+                onClick={() => setIsMobileCartOpen(false)}
+                title="Close Cart"
+                className="xl:hidden w-7 h-7 rounded bg-gray-100 text-gray-600 hover:bg-gray-200 flex items-center justify-center transition-colors"
+              >
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
@@ -690,8 +737,50 @@ export default function POS1Page() {
                 ${Math.round(totalPayable).toLocaleString()}
               </span>
             </div>
+
+            {/* Pay Now Button */}
+            <button
+              onClick={() => alert(`Processing Payment of $${Math.round(totalPayable).toLocaleString()}!`)}
+              className="w-full py-3 bg-[#28C76F] hover:bg-[#22A75D] text-white rounded-xl font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center space-x-2 mt-2"
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Pay Now (${Math.round(totalPayable).toLocaleString()})</span>
+            </button>
           </div>
         </div>
+      </div>
+
+      {/* Mobile Floating Cart Sticky Bar (Visible on < xl) */}
+      <div className="xl:hidden fixed bottom-0 left-0 right-0 p-3 bg-white/95 backdrop-blur-md border-t border-gray-200 shadow-2xl z-30 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <button
+              onClick={() => setIsMobileCartOpen(true)}
+              className="w-10 h-10 rounded-xl bg-[#FE9F43] hover:bg-[#E88B32] text-white flex items-center justify-center shadow-xs active:scale-95 transition-all"
+            >
+              <ShoppingCart className="w-5 h-5" />
+            </button>
+            {cartItems.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-white">
+                {cartItems.reduce((sum, item) => sum + item.qty, 0)}
+              </span>
+            )}
+          </div>
+          <div>
+            <p className="text-[11px] text-gray-500 font-medium">{cartItems.length} items in order</p>
+            <p className="text-sm font-extrabold text-gray-900">
+              Total: <span className="text-[#FE9F43]">${Math.round(totalPayable).toLocaleString()}</span>
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setIsMobileCartOpen(true)}
+          className="px-4 py-2 bg-[#0E1422] hover:bg-black text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all flex items-center space-x-1.5"
+        >
+          <span>View Cart</span>
+          <ChevronDown className="w-3.5 h-3.5 -rotate-90" />
+        </button>
       </div>
     </div>
   );

@@ -442,8 +442,8 @@ export default function RolesPermissionsPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left border-collapse min-w-[700px]">
               <thead>
                 <tr className="border-b border-gray-100 text-[12px] font-semibold text-gray-700 bg-gray-50/50">
                   <th className="py-3.5 px-4 w-10">
@@ -456,10 +456,10 @@ export default function RolesPermissionsPage() {
                       className="rounded border-gray-300 text-[#fe9f43] focus:ring-[#fe9f43] cursor-pointer"
                     />
                   </th>
-                  <th className="py-3.5 px-4">Role</th>
+                  <th className="py-3.5 px-4 min-w-[160px]">Role</th>
                   <th className="py-3.5 px-4">Created Date</th>
                   <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right"></th>
+                  <th className="py-3.5 px-4 text-right w-24">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50 text-xs text-gray-600">
@@ -643,8 +643,8 @@ export default function RolesPermissionsPage() {
               </div>
 
               {/* Permission Table */}
-              <div className="border border-gray-100 rounded-lg overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
+              <div className="border border-gray-100 rounded-lg overflow-x-auto">
+                <table className="w-full text-left text-xs border-collapse min-w-[480px]">
                   <thead>
                     <tr className="bg-gray-50 border-b border-gray-100 text-gray-700 font-semibold">
                       <th className="py-2.5 px-4">Modules</th>

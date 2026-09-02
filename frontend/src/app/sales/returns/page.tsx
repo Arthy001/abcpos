@@ -482,7 +482,7 @@ export default function SalesReturnPage() {
 
           {/* Table */}
           <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[850px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">

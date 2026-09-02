@@ -159,7 +159,7 @@ export default function PrintQRCodePage() {
 
           {/* Product Selection Table */}
           <div className="rounded-lg border border-[#F1F3F5] overflow-hidden">
-            <table className="w-full text-left text-xs">
+            <table className="w-full text-left text-xs min-w-[850px]">
               <thead className="bg-[#F8F9FA] text-[#334155] font-bold border-b border-[#F1F3F5]">
                 <tr>
                   <th className="py-3 px-4">Product</th>

@@ -369,9 +369,9 @@ export default function ManageStockPage() {
               <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:items-center gap-2 w-full lg:w-auto">
               {/* Warehouse Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="All Warehouses"
                   value={warehouseFilter}
@@ -387,7 +387,7 @@ export default function ManageStockPage() {
               </div>
 
               {/* Store Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="All Stores"
                   value={storeFilter}
@@ -403,7 +403,7 @@ export default function ManageStockPage() {
               </div>
 
               {/* Product Filter */}
-              <div className="w-48">
+              <div className="w-full lg:w-48">
                 <SearchableSelect
                   placeholder="All Products"
                   value={productFilter}
@@ -421,8 +421,8 @@ export default function ManageStockPage() {
           </div>
 
           {/* Table Container */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[950px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
@@ -435,12 +435,12 @@ export default function ManageStockPage() {
                   </th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Warehouse</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Store</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Product</th>
+                  <th className="py-3 px-4 font-bold text-[#111827] min-w-[180px]">Product</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">SKU / Barcode</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Price</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">In Stock</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Status</th>
-                  <th className="py-3 px-4 text-right font-bold text-[#111827]">Action</th>
+                  <th className="py-3 px-4 text-right font-bold text-[#111827] w-28">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F8F9FA]">

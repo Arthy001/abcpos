@@ -572,9 +572,9 @@ export const SalesOrderTemplate: React.FC<SalesOrderTemplateProps> = ({
               <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:items-center gap-2 w-full lg:w-auto">
               {/* Customer Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="Customer: All"
                   value={customerFilter}
@@ -590,7 +590,7 @@ export const SalesOrderTemplate: React.FC<SalesOrderTemplateProps> = ({
               </div>
 
               {/* Status Filter */}
-              <div className="w-36">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   placeholder="Status: All"
                   value={statusFilter}
@@ -609,7 +609,7 @@ export const SalesOrderTemplate: React.FC<SalesOrderTemplateProps> = ({
               </div>
 
               {/* Payment Status Filter */}
-              <div className="w-36">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   placeholder="Payment: All"
                   value={paymentStatusFilter}
@@ -630,8 +630,8 @@ export const SalesOrderTemplate: React.FC<SalesOrderTemplateProps> = ({
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[950px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
@@ -642,7 +642,7 @@ export const SalesOrderTemplate: React.FC<SalesOrderTemplateProps> = ({
                       className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
                     />
                   </th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Customer Name</th>
+                  <th className="py-3 px-4 font-bold text-[#111827] min-w-[160px]">Customer Name</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Reference</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Date</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Status</th>

@@ -246,7 +246,7 @@ function PayslipContent() {
             <div className="bg-[#F8F9FA] px-4 py-2.5 border-b border-[#E9ECEF]">
               <h3 className="font-bold text-xs text-[#1E293B]">Earnings</h3>
             </div>
-            <table className="w-full text-xs">
+            <table className="w-full text-xs min-w-[850px]">
               <thead className="border-b border-[#F1F3F5] text-[#64748B] bg-white">
                 <tr>
                   <th className="py-2.5 px-4 font-semibold text-left">Pay Type</th>
@@ -287,7 +287,7 @@ function PayslipContent() {
             <div className="bg-[#F8F9FA] px-4 py-2.5 border-b border-[#E9ECEF]">
               <h3 className="font-bold text-xs text-[#1E293B]">Deductions</h3>
             </div>
-            <table className="w-full text-xs">
+            <table className="w-full text-xs min-w-[850px]">
               <thead className="border-b border-[#F1F3F5] text-[#64748B] bg-white">
                 <tr>
                   <th className="py-2.5 px-4 font-semibold text-left">Pay Type</th>

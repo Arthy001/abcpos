@@ -104,7 +104,7 @@ export default function SignaturesSettingsPage() {
 
             {/* Table */}
             <div className="overflow-x-auto p-5">
-              <table className="w-full text-left text-xs">
+              <table className="w-full text-left text-xs min-w-[850px]">
                 <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#F8F9FA]/60">
                   <tr>
                     <th className="py-3.5 px-5 font-bold text-[#111827]">Signature Name</th>

@@ -406,8 +406,8 @@ export default function PurchaseOrderPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[950px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
@@ -418,7 +418,7 @@ export default function PurchaseOrderPage() {
                       className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
                     />
                   </th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Product Name</th>
+                  <th className="py-3 px-4 font-bold text-[#111827] min-w-[180px]">Product Name</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">SKU</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Supplier</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Purchased Amount</th>

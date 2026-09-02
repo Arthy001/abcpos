@@ -572,9 +572,9 @@ export default function PurchasesPage() {
               <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex lg:items-center gap-2 w-full lg:w-auto">
               {/* Warehouse Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="Warehouse: All"
                   value={warehouseFilter}
@@ -590,7 +590,7 @@ export default function PurchasesPage() {
               </div>
 
               {/* Supplier Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="Supplier: All"
                   value={supplierFilter}
@@ -606,7 +606,7 @@ export default function PurchasesPage() {
               </div>
 
               {/* Status Filter */}
-              <div className="w-36">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   placeholder="Status: All"
                   value={statusFilter}
@@ -625,7 +625,7 @@ export default function PurchasesPage() {
               </div>
 
               {/* Payment Status Filter */}
-              <div className="w-36">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   placeholder="Payment: All"
                   value={paymentStatusFilter}
@@ -646,8 +646,8 @@ export default function PurchasesPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[980px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
@@ -1022,7 +1022,7 @@ export default function PurchasesPage() {
                   </div>
 
                   <div className="border border-gray-200 rounded-xl bg-white overflow-visible relative min-h-[180px] pb-16">
-                    <table className="w-full text-xs text-left">
+                    <table className="w-full text-xs text-left min-w-[850px]">
                       <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
                         <tr>
                           <th className="py-2.5 px-3">Product Name</th>
@@ -1262,7 +1262,7 @@ export default function PurchasesPage() {
 
                 {/* Items List */}
                 <div className="border border-gray-200 rounded-xl overflow-hidden">
-                  <table className="w-full text-xs text-left">
+                  <table className="w-full text-xs text-left min-w-[850px]">
                     <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
                       <tr>
                         <th className="py-2.5 px-3">Item Description</th>

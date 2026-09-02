@@ -387,8 +387,8 @@ export default function DepartmentsPage() {
         ) : (
           /* List / Table View */
           <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+            <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+              <table className="w-full text-left text-xs min-w-[800px]">
                 <thead className="border-b border-[#F1F3F5] text-[#111827] bg-white">
                   <tr>
                     <th className="py-3 px-3 w-10 text-center">
@@ -402,11 +402,11 @@ export default function DepartmentsPage() {
                         className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
                       />
                     </th>
-                    <th className="py-3 px-4 font-bold text-[#111827]">Department</th>
+                    <th className="py-3 px-4 font-bold text-[#111827] min-w-[160px]">Department</th>
                     <th className="py-3 px-4 font-bold text-[#111827]">Department Head</th>
                     <th className="py-3 px-4 font-bold text-[#111827]">Total Members</th>
                     <th className="py-3 px-4 font-bold text-[#111827]">Status</th>
-                    <th className="py-3 px-4 text-right font-bold text-[#111827]"></th>
+                    <th className="py-3 px-4 text-right font-bold text-[#111827] w-28">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#F8F9FA]">

@@ -421,9 +421,9 @@ export default function StockTransferPage() {
               <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="grid grid-cols-1 sm:grid-cols-3 lg:flex lg:items-center gap-2 w-full lg:w-auto">
               {/* From Warehouse Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="From Warehouse: All"
                   value={fromWarehouseFilter}
@@ -439,7 +439,7 @@ export default function StockTransferPage() {
               </div>
 
               {/* To Warehouse Filter */}
-              <div className="w-44">
+              <div className="w-full lg:w-44">
                 <SearchableSelect
                   placeholder="To Warehouse: All"
                   value={toWarehouseFilter}
@@ -455,7 +455,7 @@ export default function StockTransferPage() {
               </div>
 
               {/* Status Filter */}
-              <div className="w-36">
+              <div className="w-full lg:w-36">
                 <SearchableSelect
                   placeholder="Status: All"
                   value={statusFilter}
@@ -475,8 +475,8 @@ export default function StockTransferPage() {
           </div>
 
           {/* Table */}
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left text-xs">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
+            <table className="w-full text-left text-xs min-w-[950px]">
               <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
                   <th className="py-3 px-3 w-10 text-center">
