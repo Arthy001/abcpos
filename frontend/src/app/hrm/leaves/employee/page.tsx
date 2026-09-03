@@ -63,13 +63,7 @@ export default function EmployeeLeavesPage() {
     try {
       setLoading(true);
       const data = await fetchLeaves({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setLeaves(data);
-      } else if (!search && statusFilter === "all") {
-        setLeaves(sampleEmployeeLeaves);
-      } else {
-        setLeaves([]);
-      }
+      setLeaves(data || []);
     } catch (err) {
       console.error(err);
       setLeaves(sampleEmployeeLeaves);
@@ -161,7 +155,7 @@ export default function EmployeeLeavesPage() {
     }
   };
 
-  const displayList = leaves.length > 0 ? leaves : sampleEmployeeLeaves;
+  const displayList = leaves;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

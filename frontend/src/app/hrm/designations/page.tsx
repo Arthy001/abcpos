@@ -44,19 +44,6 @@ export default function DesignationsPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleDesignations: Designation[] = [
-    { id: "1", name: "Sales Manager", department: "Sales", totalMembers: 7, createdAt: "2024-12-24", status: "ACTIVE" },
-    { id: "2", name: "Inventory Manager", department: "Inventory", totalMembers: 10, createdAt: "2024-12-10", status: "ACTIVE" },
-    { id: "3", name: "Accountant", department: "Finance", totalMembers: 5, createdAt: "2024-11-27", status: "ACTIVE" },
-    { id: "4", name: "System Administrator", department: "Admin", totalMembers: 10, createdAt: "2024-11-18", status: "ACTIVE" },
-    { id: "5", name: "HR Manager", department: "Human Resources", totalMembers: 6, createdAt: "2024-11-06", status: "ACTIVE" },
-    { id: "6", name: "Marketing Manager", department: "Marketing", totalMembers: 12, createdAt: "2024-10-25", status: "ACTIVE" },
-    { id: "7", name: "QA Analyst", department: "Quality Assurance", totalMembers: 8, createdAt: "2024-10-14", status: "ACTIVE" },
-    { id: "8", name: "Research Analyst", department: "R&D", totalMembers: 7, createdAt: "2024-10-03", status: "ACTIVE" },
-    { id: "9", name: "Support Engineer", department: "IT Support", totalMembers: 10, createdAt: "2024-09-20", status: "ACTIVE" },
-    { id: "10", name: "Content Writer", department: "Content Creation", totalMembers: 8, createdAt: "2024-09-10", status: "INACTIVE" },
-  ];
-
   const departmentOptions = [
     "Sales",
     "Inventory",
@@ -78,16 +65,10 @@ export default function DesignationsPage() {
         department: deptFilter,
         search,
       });
-      if (data && data.length > 0) {
-        setDesignations(data);
-      } else if (!search && statusFilter === "all" && deptFilter === "all") {
-        setDesignations(sampleDesignations);
-      } else {
-        setDesignations([]);
-      }
+      setDesignations(data || []);
     } catch (err) {
       console.error(err);
-      setDesignations(sampleDesignations);
+      setDesignations([]);
     } finally {
       setLoading(false);
     }
@@ -159,7 +140,7 @@ export default function DesignationsPage() {
     }
   };
 
-  const displayList = designations.length > 0 ? designations : sampleDesignations;
+  const displayList = designations;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

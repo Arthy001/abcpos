@@ -70,17 +70,6 @@ export default function EmployeesPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleEmployees: Employee[] = [
-    { id: "1", empId: "POS001", name: "Anthony Lewis", avatar: "/assets/images/customer11.jpg", role: "System Admin", department: "HR", joinedDate: "30 May 2023", email: "anthony@example.com", phone: "+12498345785", status: "ACTIVE" },
-    { id: "2", empId: "POS002", name: "Brian Villalobos", avatar: "/assets/images/customer12.jpg", role: "Software Developer", department: "UI/UX", joinedDate: "30 May 2023", email: "brian@example.com", phone: "+13178964582", status: "ACTIVE" },
-    { id: "3", empId: "POS003", name: "Harvey Smith", avatar: "/assets/images/customer13.jpg", role: "System Admin", department: "Admin", joinedDate: "30 May 2023", email: "harvey@example.com", phone: "+12796183487", status: "ACTIVE" },
-    { id: "4", empId: "POS004", name: "Stephan Peralt", avatar: "/assets/images/customer14.jpg", role: "System Admin", department: "Admin", joinedDate: "30 May 2023", email: "stephan@example.com", phone: "+17538647943", status: "ACTIVE" },
-    { id: "5", empId: "POS005", name: "Doglas Martini", avatar: "/assets/images/customer15.jpg", role: "System Admin", department: "IT", joinedDate: "30 May 2023", email: "doglas@example.com", phone: "+13798132475", status: "ACTIVE" },
-    { id: "6", empId: "POS006", name: "Linda Ray", avatar: "/assets/images/customer16.jpg", role: "System Admin", department: "Support", joinedDate: "30 May 2023", email: "linda@example.com", phone: "+17596341894", status: "ACTIVE" },
-    { id: "7", empId: "POS007", name: "Elliot Murray", avatar: "/assets/images/customer17.jpg", role: "System Admin", department: "UI/UX", joinedDate: "30 May 2023", email: "elliot@example.com", phone: "+12973548678", status: "ACTIVE" },
-    { id: "8", empId: "POS008", name: "Rebecca Smtih", avatar: "/assets/images/customer18.jpg", role: "System Admin", department: "HR", joinedDate: "30 May 2023", email: "rebecca@example.com", phone: "+13147858357", status: "ACTIVE" },
-  ];
-
   const designationOptions = [
     "System Admin",
     "Software Developer",
@@ -98,17 +87,13 @@ export default function EmployeesPage() {
         role: desigFilter,
         search,
       });
-      if (res.employees && res.employees.length > 0) {
-        setEmployees(res.employees);
+      setEmployees(res.employees || []);
+      if (res.stats) {
         setStats(res.stats);
-      } else if (!search && statusFilter === "all" && desigFilter === "all") {
-        setEmployees(sampleEmployees);
-      } else {
-        setEmployees([]);
       }
     } catch (err) {
       console.error(err);
-      setEmployees(sampleEmployees);
+      setEmployees([]);
     } finally {
       setLoading(false);
     }
@@ -206,7 +191,7 @@ export default function EmployeesPage() {
     }
   };
 
-  const displayList = employees.length > 0 ? employees : sampleEmployees;
+  const displayList = employees;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

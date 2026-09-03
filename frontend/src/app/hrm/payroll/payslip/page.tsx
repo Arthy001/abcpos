@@ -24,51 +24,29 @@ function PayslipContent() {
   const [selectedPayroll, setSelectedPayroll] = useState<Payroll | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Default sample Carl Evans matching screenshot
-  const defaultSample: Payroll = {
-    id: "1",
-    empCode: "EMP001",
-    employeeName: "Carl Evans",
-    employeeRole: "Designer",
-    employeeAvatar: "/assets/images/customer11.jpg",
-    email: "carlevans@example.com",
-    salary: 32000,
-    basicSalary: 32000,
-    hra: 0,
-    conveyance: 0,
-    medical: 0,
-    bonus: 0,
-    pf: 0,
-    professionalTax: 0,
-    tds: 0,
-    loans: 0,
-    payPeriod: "Jan 2026",
-    location: "USA",
-    status: "PAID",
-  };
-
   useEffect(() => {
     const load = async () => {
       try {
         setLoading(true);
         const list = await fetchPayrolls();
-        setAllPayrolls(list);
+        setAllPayrolls(list || []);
 
         if (targetId) {
-          const found = list.find((p) => p.id === targetId);
+          const found = (list || []).find((p) => p.id === targetId);
           if (found) {
             setSelectedPayroll(found);
           } else {
             const single = await fetchPayrollById(targetId);
-            setSelectedPayroll(single || defaultSample);
+            setSelectedPayroll(single || (list && list.length > 0 ? list[0] : null));
           }
-        } else if (list.length > 0) {
+        } else if (list && list.length > 0) {
           setSelectedPayroll(list[0]);
         } else {
-          setSelectedPayroll(defaultSample);
+          setSelectedPayroll(null);
         }
       } catch (e) {
-        setSelectedPayroll(defaultSample);
+        console.error("Failed to load payroll:", e);
+        setSelectedPayroll(null);
       } finally {
         setLoading(false);
       }
@@ -76,20 +54,22 @@ function PayslipContent() {
     load();
   }, [targetId]);
 
-  const p = selectedPayroll || defaultSample;
+  const p = selectedPayroll;
 
-  const totalEarnings =
-    (p.basicSalary || p.salary || 32000) +
-    (p.hra || 0) +
-    (p.conveyance || 0) +
-    (p.medical || 0) +
-    (p.bonus || 0);
+  const totalEarnings = p
+    ? (p.basicSalary || p.salary || 0) +
+      (p.hra || 0) +
+      (p.conveyance || 0) +
+      (p.medical || 0) +
+      (p.bonus || 0)
+    : 0;
 
-  const totalDeductions =
-    (p.pf || 0) +
-    (p.professionalTax || 0) +
-    (p.tds || 0) +
-    (p.loans || 0);
+  const totalDeductions = p
+    ? (p.pf || 0) +
+      (p.professionalTax || 0) +
+      (p.tds || 0) +
+      (p.loans || 0)
+    : 0;
 
   const netSalary = totalEarnings - totalDeductions;
 
@@ -98,6 +78,7 @@ function PayslipContent() {
   };
 
   const handleSendEmail = () => {
+    if (!p) return;
     alert(`Payslip has been sent to ${p.email || "employee@example.com"}!`);
   };
 
@@ -154,7 +135,7 @@ function PayslipContent() {
       </div>
 
       {/* Select Employee Quick Switcher (If multiple) */}
-      {allPayrolls.length > 0 && (
+      {allPayrolls.length > 0 && p && (
         <div className="flex items-center space-x-2 bg-white px-4 py-2.5 rounded-xl border border-[#E9ECEF] text-xs">
           <span className="font-semibold text-gray-700">Select Employee:</span>
           <select
@@ -174,13 +155,24 @@ function PayslipContent() {
         </div>
       )}
 
-      {/* Payslip Document Card */}
+      {!p ? (
+        <div className="bg-white rounded-xl border border-[#E9ECEF] p-12 text-center text-gray-500">
+          <p className="text-sm font-semibold">No Payroll records found in database.</p>
+          <button
+            onClick={() => router.push("/hrm/payroll/salary")}
+            className="mt-3 px-4 py-2 bg-[#FE9F43] text-white text-xs font-bold rounded-lg cursor-pointer"
+          >
+            Go to Salary Management
+          </button>
+        </div>
+      ) : (
+      /* Payslip Document Card */
       <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs p-6 md:p-8 space-y-6 max-w-4xl mx-auto print:shadow-none print:border-none">
         {/* Card Header & Action Buttons */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
           <div>
             <h2 className="text-base font-bold text-[#1E293B]">
-              Payslip for the Month of {p.payPeriod || "Jan 2026"}
+              Payslip for the Month of {p?.payPeriod || "Jan 2026"}
             </h2>
           </div>
 
@@ -350,6 +342,7 @@ function PayslipContent() {
           </p>
         </div>
       </div>
+      )}
     </div>
   );
 }

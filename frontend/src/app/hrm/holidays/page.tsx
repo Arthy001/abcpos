@@ -41,33 +41,14 @@ export default function HolidaysPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleHolidays: Holiday[] = [
-    { id: "1", name: "New Year", date: "01 Jan 2026", description: "First day of the new year", status: "ACTIVE" },
-    { id: "2", name: "Martin Luther King Jr. Day", date: "15 Jan 2026", description: "Celebrating the civil rights leader", status: "ACTIVE" },
-    { id: "3", name: "Presidents' Day", date: "19 Feb 2026", description: "Honoring past US Presidents", status: "ACTIVE" },
-    { id: "4", name: "Good Friday", date: "29 Mar 2026", description: "Holiday before Easter", status: "ACTIVE" },
-    { id: "5", name: "Easter Monday", date: "01 Apr 2026", description: "Holiday after Easter", status: "ACTIVE" },
-    { id: "6", name: "Memorial Day", date: "27 May 2026", description: "Honors military personnel", status: "ACTIVE" },
-    { id: "7", name: "Independence Day", date: "04 Jul 2026", description: "Celebrates Independence", status: "ACTIVE" },
-    { id: "8", name: "Labour Day", date: "02 Sep 2026", description: "Honors working people", status: "ACTIVE" },
-    { id: "9", name: "Veterans Day", date: "11 Nov 2026", description: "Honors working people", status: "ACTIVE" },
-    { id: "10", name: "Christmas Day", date: "25 Dec 2026", description: "Celebration of Christmas", status: "ACTIVE" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchHolidays({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setHolidays(data);
-      } else if (!search && statusFilter === "all") {
-        setHolidays(sampleHolidays);
-      } else {
-        setHolidays([]);
-      }
+      setHolidays(data || []);
     } catch (err) {
       console.error(err);
-      setHolidays(sampleHolidays);
+      setHolidays([]);
     } finally {
       setLoading(false);
     }
@@ -139,7 +120,7 @@ export default function HolidaysPage() {
     }
   };
 
-  const displayList = holidays.length > 0 ? holidays : sampleHolidays;
+  const displayList = holidays;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

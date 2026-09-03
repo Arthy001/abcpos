@@ -37,27 +37,14 @@ export default function LeaveTypePage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleTypes: LeaveType[] = [
-    { id: "1", name: "Sick Leave", quota: 5, createdAt: "2023-08-02", status: "ACTIVE" },
-    { id: "2", name: "Maternity", quota: 5, createdAt: "2023-08-03", status: "ACTIVE" },
-    { id: "3", name: "Paternity", quota: 5, createdAt: "2023-08-04", status: "ACTIVE" },
-    { id: "4", name: "Casual Leave", quota: 5, createdAt: "2023-08-07", status: "ACTIVE" },
-    { id: "5", name: "Emergency", quota: 5, createdAt: "2023-08-08", status: "ACTIVE" },
-    { id: "6", name: "Vacation", quota: 5, createdAt: "2023-08-10", status: "ACTIVE" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchLeaveTypes();
-      if (data && data.length > 0) {
-        setTypes(data);
-      } else {
-        setTypes(sampleTypes);
-      }
+      setTypes(data || []);
     } catch (err) {
       console.error(err);
-      setTypes(sampleTypes);
+      setTypes([]);
     } finally {
       setLoading(false);
     }
@@ -125,7 +112,7 @@ export default function LeaveTypePage() {
     }
   };
 
-  const displayList = types.length > 0 ? types : sampleTypes;
+  const displayList = types;
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

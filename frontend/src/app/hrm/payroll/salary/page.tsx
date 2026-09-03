@@ -49,33 +49,14 @@ export default function EmployeeSalaryPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const samplePayrolls: Payroll[] = [
-    { id: "1", empCode: "EMP001", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", email: "carlevans@example.com", salary: 30000, basicSalary: 32000, status: "PAID" },
-    { id: "2", empCode: "EMP002", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", email: "rameriz@example.com", salary: 20000, basicSalary: 20000, status: "PAID" },
-    { id: "3", empCode: "EMP003", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", email: "robert@example.com", salary: 35000, basicSalary: 35000, status: "PAID" },
-    { id: "4", empCode: "EMP004", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", email: "robert@example.com", salary: 35000, basicSalary: 35000, status: "PAID" },
-    { id: "5", empCode: "EMP005", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", email: "markjoslyn@example.com", salary: 32000, basicSalary: 32000, status: "PAID" },
-    { id: "6", empCode: "EMP006", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", email: "marshabetts@example.com", salary: 28000, basicSalary: 28000, status: "PAID" },
-    { id: "7", empCode: "EMP007", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", email: "daieljude@example.com", salary: 25000, basicSalary: 25000, status: "PAID" },
-    { id: "8", empCode: "EMP008", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", email: "emmabates@example.com", salary: 21000, basicSalary: 21000, status: "PAID" },
-    { id: "9", empCode: "EMP009", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", email: "richard@example.com", salary: 34000, basicSalary: 34000, status: "PAID" },
-    { id: "10", empCode: "EMP010", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", email: "robinson@example.com", salary: 28000, basicSalary: 28000, status: "UNPAID" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchPayrolls({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setPayrolls(data);
-      } else if (!search && statusFilter === "all") {
-        setPayrolls(samplePayrolls);
-      } else {
-        setPayrolls([]);
-      }
+      setPayrolls(data || []);
     } catch (err) {
       console.error(err);
-      setPayrolls(samplePayrolls);
+      setPayrolls([]);
     } finally {
       setLoading(false);
     }
@@ -156,7 +137,7 @@ export default function EmployeeSalaryPage() {
     }
   };
 
-  const displayList = payrolls.length > 0 ? payrolls : samplePayrolls;
+  const displayList = payrolls;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

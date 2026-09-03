@@ -49,35 +49,14 @@ export default function DepartmentsPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleDepartments: Department[] = [
-    { id: "1", name: "Inventory", headName: "Mitchum Daniel", headAvatar: "/assets/images/customer11.jpg", totalMembers: 8, createdAt: "2024-12-24", status: "ACTIVE" },
-    { id: "2", name: "Human Resources", headName: "Susan Lopez", headAvatar: "/assets/images/customer12.jpg", totalMembers: 10, createdAt: "2024-12-10", status: "ACTIVE" },
-    { id: "3", name: "Admin", headName: "Robert Grossman", headAvatar: "/assets/images/customer13.jpg", totalMembers: 5, createdAt: "2024-11-27", status: "ACTIVE" },
-    { id: "4", name: "Sales", headName: "Janet Hembre", headAvatar: "/assets/images/customer14.jpg", totalMembers: 10, createdAt: "2024-11-18", status: "ACTIVE" },
-    { id: "5", name: "Marketing", headName: "Russell Belle", headAvatar: "/assets/images/customer15.jpg", totalMembers: 6, createdAt: "2024-11-06", status: "ACTIVE" },
-    { id: "6", name: "Quality Assurance", headName: "Edward Muniz", headAvatar: "/assets/images/customer16.jpg", totalMembers: 6, createdAt: "2024-10-25", status: "ACTIVE" },
-    { id: "7", name: "Finance", headName: "Susan Moore", headAvatar: "/assets/images/customer17.jpg", totalMembers: 8, createdAt: "2024-10-14", status: "ACTIVE" },
-    { id: "8", name: "Maintenance", headName: "Lance Jackson", headAvatar: "/assets/images/customer18.jpg", totalMembers: 7, createdAt: "2024-10-03", status: "ACTIVE" },
-    { id: "9", name: "R&D", headName: "Travis Marcotte", headAvatar: "/assets/images/avatar-01.jpg", totalMembers: 10, createdAt: "2024-09-20", status: "ACTIVE" },
-    { id: "10", name: "Content Creation", headName: "Malinda Ruiz", headAvatar: "/assets/images/avatar-02.jpg", totalMembers: 8, createdAt: "2024-09-10", status: "ACTIVE" },
-    { id: "11", name: "Social Media", headName: "David Slater", headAvatar: "/assets/images/avatar-03.jpg", totalMembers: 6, createdAt: "2024-08-30", status: "ACTIVE" },
-    { id: "12", name: "IT Support", headName: "Michele Kim", headAvatar: "/assets/images/avatar-10.jpg", totalMembers: 4, createdAt: "2024-08-20", status: "ACTIVE" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchDepartments({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setDepartments(data);
-      } else if (!search && statusFilter === "all") {
-        setDepartments(sampleDepartments);
-      } else {
-        setDepartments([]);
-      }
+      setDepartments(data || []);
     } catch (err) {
       console.error(err);
-      setDepartments(sampleDepartments);
+      setDepartments([]);
     } finally {
       setLoading(false);
     }
@@ -153,7 +132,7 @@ export default function DepartmentsPage() {
     }
   };
 
-  const displayList = departments.length > 0 ? departments : sampleDepartments;
+  const displayList = departments;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

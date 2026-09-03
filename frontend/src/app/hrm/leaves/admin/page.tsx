@@ -49,33 +49,14 @@ export default function AdminLeavesPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleLeaves: Leave[] = [
-    { id: "1", empCode: "EMP001", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", leaveType: "Sick Leave", fromDate: "24 Dec 2024", toDate: "24 Dec 2024", duration: "01 Day", appliedOn: "23 Dec 2024", shift: "Regular", status: "APPROVED" },
-    { id: "2", empCode: "EMP002", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", leaveType: "Casual Leave", fromDate: "10 Dec 2024", toDate: "10 Dec 2024", duration: "01 Day", appliedOn: "09 Dec 2024", shift: "Regular", status: "APPROVED" },
-    { id: "3", empCode: "EMP003", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", leaveType: "Casual Leave", fromDate: "27 Nov 2024", toDate: "28 Nov 2024", duration: "02 Day", appliedOn: "26 Nov 2024", shift: "Regular", status: "APPROVED" },
-    { id: "4", empCode: "EMP004", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", leaveType: "Sick Leave", fromDate: "18 Nov 2024", toDate: "18 Nov 2024", duration: "02 hrs", appliedOn: "18 Nov 2024", shift: "Regular", status: "APPROVED" },
-    { id: "5", empCode: "EMP005", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", leaveType: "Casual Leave", fromDate: "06 Nov 2024", toDate: "08 Nov 2024", duration: "03 Days", appliedOn: "05 Nov 2024", shift: "Regular", status: "APPROVED" },
-    { id: "6", empCode: "EMP006", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", leaveType: "Sick Leave", fromDate: "25 Oct 2024", toDate: "25 Oct 2024", duration: "01 Days", appliedOn: "24 Oct 2024", shift: "Regular", status: "REJECTED" },
-    { id: "7", empCode: "EMP007", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", leaveType: "Casual Leave", fromDate: "14 Oct 2024", toDate: "15 Oct 2024", duration: "02 Days", appliedOn: "13 Oct 2024", shift: "Regular", status: "APPROVED" },
-    { id: "8", empCode: "EMP008", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", leaveType: "Casual Leave", fromDate: "03 Oct 2024", toDate: "03 Oct 2024", duration: "01 Days", appliedOn: "02 Oct 2024", shift: "Regular", status: "APPROVED" },
-    { id: "9", empCode: "EMP009", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", leaveType: "Sick Leave", fromDate: "20 Sep 2024", toDate: "21 Sep 2024", duration: "02 Days", appliedOn: "19 Sep 2024", shift: "Regular", status: "APPROVED" },
-    { id: "10", empCode: "EMP010", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", leaveType: "Casual Leave", fromDate: "10 Sep 2024", toDate: "10 Sep 2024", duration: "02 hrs", appliedOn: "09 Sep 2024", shift: "Regular", status: "REJECTED" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchLeaves({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setLeaves(data);
-      } else if (!search && statusFilter === "all") {
-        setLeaves(sampleLeaves);
-      } else {
-        setLeaves([]);
-      }
+      setLeaves(data || []);
     } catch (err) {
       console.error(err);
-      setLeaves(sampleLeaves);
+      setLeaves([]);
     } finally {
       setLoading(false);
     }
@@ -162,7 +143,7 @@ export default function AdminLeavesPage() {
     }
   };
 
-  const displayList = leaves.length > 0 ? leaves : sampleLeaves;
+  const displayList = leaves;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

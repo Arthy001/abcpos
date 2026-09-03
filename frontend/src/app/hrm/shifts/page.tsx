@@ -44,28 +44,14 @@ export default function ShiftsPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleShifts: Shift[] = [
-    { id: "1", name: "Fixed", timing: "09:00 AM - 6:00 PM", weekOff: "Sunday, Monday", createdAt: "2024-08-04", status: "ACTIVE" },
-    { id: "2", name: "Rotating", timing: "06:00 AM - 3:00 PM", weekOff: "Saturday, Sunday", createdAt: "2024-07-21", status: "ACTIVE" },
-    { id: "3", name: "Split", timing: "03:00 AM - 9:00 PM", weekOff: "Tuesday, Saturday", createdAt: "2024-01-31", status: "ACTIVE" },
-    { id: "4", name: "On-Call", timing: "09:00 AM - 6:00 PM", weekOff: "Monday", createdAt: "2024-05-15", status: "ACTIVE" },
-    { id: "5", name: "Weekend", timing: "06:00 AM - 3:00 PM", weekOff: "Friday", createdAt: "2024-08-04", status: "ACTIVE" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchShifts({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setShifts(data);
-      } else if (!search && statusFilter === "all") {
-        setShifts(sampleShifts);
-      } else {
-        setShifts([]);
-      }
+      setShifts(data || []);
     } catch (err) {
       console.error(err);
-      setShifts(sampleShifts);
+      setShifts([]);
     } finally {
       setLoading(false);
     }
@@ -137,7 +123,7 @@ export default function ShiftsPage() {
     }
   };
 
-  const displayList = shifts.length > 0 ? shifts : sampleShifts;
+  const displayList = shifts;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

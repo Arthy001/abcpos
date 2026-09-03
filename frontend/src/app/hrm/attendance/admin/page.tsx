@@ -58,7 +58,7 @@ export default function AttendanceAdminPage() {
     loadData();
   }, [statusFilter, search]);
 
-  const displayList = records.length > 0 ? records : sampleAdminRecords;
+  const displayList = records;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

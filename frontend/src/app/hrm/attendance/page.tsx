@@ -110,7 +110,7 @@ export default function AttendanceEmployeePage() {
     }
   };
 
-  const displayList = records.length > 0 ? records : sampleRecords;
+  const displayList = records;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();
