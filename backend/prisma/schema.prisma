@@ -1006,5 +1006,154 @@ model StockMovement {
   @@index([type])
 }
 
+// ==========================================
+// 💰 FINANCE & ACCOUNTS MODELS
+// ==========================================
 
+model ExpenseCategory {
+  id          String    @id @default(uuid())
+  name        String    @unique
+  code        String?
+  description String?
+  status      String    @default("ACTIVE") // ACTIVE, INACTIVE
+  expenses    Expense[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
 
+model Expense {
+  id          String           @id @default(uuid())
+  reference   String           @unique
+  expenseName String
+  categoryId  String?
+  category    ExpenseCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryName String
+  description String?
+  date        String
+  amount      Float
+  status      String           @default("Approved") // Approved, Pending
+  storeName   String?
+  notes       String?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([date])
+  @@index([categoryName])
+}
+
+model IncomeCategory {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  code        String?
+  description String?
+  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
+  incomes     Income[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Income {
+  id          String          @id @default(uuid())
+  reference   String          @unique
+  incomeName  String?
+  storeName   String
+  categoryId  String?
+  category    IncomeCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  categoryName String
+  description String?
+  date        String
+  amount      Float
+  status      String          @default("Received") // Received, Pending
+  notes       String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  @@index([date])
+  @@index([storeName])
+}
+
+model BankAccount {
+  id            String          @id @default(uuid())
+  accountName   String
+  accountNumber String          @unique
+  bankName      String
+  branch        String?
+  balance       Float           @default(0)
+  status        String          @default("ACTIVE") // ACTIVE, INACTIVE
+  transfersFrom MoneyTransfer[] @relation("TransferFrom")
+  transfersTo   MoneyTransfer[] @relation("TransferTo")
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model MoneyTransfer {
+  id            String      @id @default(uuid())
+  reference     String      @unique
+  fromAccountId String
+  fromAccount   BankAccount @relation("TransferFrom", fields: [fromAccountId], references: [id], onDelete: Cascade)
+  toAccountId   String
+  toAccount     BankAccount @relation("TransferTo", fields: [toAccountId], references: [id], onDelete: Cascade)
+  amount        Float
+  date          String
+  notes         String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+// ==========================================
+// 🎁 PROMOTIONS & DISCOUNT MODELS
+// ==========================================
+
+model Coupon {
+  id          String   @id @default(uuid())
+  name        String
+  code        String   @unique
+  type        String   @default("Percentage") // Percentage, Fixed Amount
+  discount    Float    // e.g. 10 (%) or 100 (THB)
+  limit       Int      @default(100)
+  validStart  String?
+  validEnd    String?
+  description String?
+  status      String   @default("Active") // Active, Inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model DiscountPlan {
+  id          String     @id @default(uuid())
+  name        String     @unique
+  planType    String     @default("Percentage")
+  status      String     @default("Active") // Active, Inactive
+  discounts   Discount[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model Discount {
+  id             String        @id @default(uuid())
+  name           String
+  value          Float
+  discountPlanId String?
+  discountPlan   DiscountPlan? @relation(fields: [discountPlanId], references: [id], onDelete: SetNull)
+  planName       String?
+  validity       String        @default("All Days")
+  days           String        @default("Monday - Sunday")
+  products       String        @default("All Products")
+  status         String        @default("Active") // Active, Inactive
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model GiftCard {
+  id             String   @id @default(uuid())
+  code           String   @unique
+  customerName   String
+  customerAvatar String?
+  issuedDate     String
+  expiryDate     String
+  amount         Float
+  balance        Float
+  status         String   @default("Active") // Active, Redeemed, Expired
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}

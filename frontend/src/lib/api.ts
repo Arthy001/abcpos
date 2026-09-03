@@ -64,6 +64,16 @@ import {
   Quotation,
   ProductStock,
   StockMovement,
+  Expense,
+  ExpenseCategory,
+  Income,
+  IncomeCategory,
+  BankAccount,
+  MoneyTransfer,
+  Coupon,
+  Discount,
+  DiscountPlan,
+  GiftCard,
 } from "@/types";
 
 export function getApiBaseUrl(): string {
@@ -2266,6 +2276,312 @@ export async function fetchStockMovements(params?: {
   return await res.json();
 }
 
+// ==================== 💰 FINANCE: EXPENSES ====================
+export async function fetchExpenses(): Promise<Expense[]> {
+  const res = await fetch(`${API_BASE_URL}/finance/expenses`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch expenses");
+  return await res.json();
+}
 
+export async function createExpenseApi(data: Partial<Expense>): Promise<Expense> {
+  const res = await fetch(`${API_BASE_URL}/finance/expenses`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create expense");
+  }
+  return await res.json();
+}
 
+export async function updateExpenseApi(id: string, data: Partial<Expense>): Promise<Expense> {
+  const res = await fetch(`${API_BASE_URL}/finance/expenses/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update expense");
+  }
+  return await res.json();
+}
 
+export async function deleteExpenseApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/finance/expenses/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete expense");
+}
+
+export async function fetchExpenseCategories(): Promise<ExpenseCategory[]> {
+  const res = await fetch(`${API_BASE_URL}/finance/expense-categories`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch expense categories");
+  return await res.json();
+}
+
+export async function createExpenseCategoryApi(data: Partial<ExpenseCategory>): Promise<ExpenseCategory> {
+  const res = await fetch(`${API_BASE_URL}/finance/expense-categories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create expense category");
+  }
+  return await res.json();
+}
+
+// ==================== 💵 FINANCE: INCOME ====================
+export async function fetchIncomes(): Promise<Income[]> {
+  const res = await fetch(`${API_BASE_URL}/finance/income`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch incomes");
+  return await res.json();
+}
+
+export async function createIncomeApi(data: Partial<Income>): Promise<Income> {
+  const res = await fetch(`${API_BASE_URL}/finance/income`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create income");
+  }
+  return await res.json();
+}
+
+export async function updateIncomeApi(id: string, data: Partial<Income>): Promise<Income> {
+  const res = await fetch(`${API_BASE_URL}/finance/income/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update income");
+  }
+  return await res.json();
+}
+
+export async function deleteIncomeApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/finance/income/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete income");
+}
+
+export async function fetchIncomeCategories(): Promise<IncomeCategory[]> {
+  const res = await fetch(`${API_BASE_URL}/finance/income-categories`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch income categories");
+  return await res.json();
+}
+
+export async function createIncomeCategoryApi(data: Partial<IncomeCategory>): Promise<IncomeCategory> {
+  const res = await fetch(`${API_BASE_URL}/finance/income-categories`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create income category");
+  }
+  return await res.json();
+}
+
+// ==================== 🏦 FINANCE: BANK ACCOUNTS & TRANSFERS ====================
+export async function fetchBankAccounts(): Promise<BankAccount[]> {
+  const res = await fetch(`${API_BASE_URL}/finance/bank-accounts`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch bank accounts");
+  return await res.json();
+}
+
+export async function createBankAccountApi(data: Partial<BankAccount>): Promise<BankAccount> {
+  const res = await fetch(`${API_BASE_URL}/finance/bank-accounts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create bank account");
+  }
+  return await res.json();
+}
+
+export async function updateBankAccountApi(id: string, data: Partial<BankAccount>): Promise<BankAccount> {
+  const res = await fetch(`${API_BASE_URL}/finance/bank-accounts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update bank account");
+  }
+  return await res.json();
+}
+
+export async function deleteBankAccountApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/finance/bank-accounts/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete bank account");
+}
+
+export async function fetchMoneyTransfers(): Promise<MoneyTransfer[]> {
+  const res = await fetch(`${API_BASE_URL}/finance/money-transfers`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch money transfers");
+  return await res.json();
+}
+
+export async function createMoneyTransferApi(data: {
+  fromAccountId: string;
+  toAccountId: string;
+  amount: number;
+  date?: string;
+  notes?: string;
+}): Promise<MoneyTransfer> {
+  const res = await fetch(`${API_BASE_URL}/finance/money-transfers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create money transfer");
+  }
+  return await res.json();
+}
+
+// ==================== 🎟️ PROMO: COUPONS ====================
+export async function fetchCoupons(): Promise<Coupon[]> {
+  const res = await fetch(`${API_BASE_URL}/promo/coupons`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch coupons");
+  return await res.json();
+}
+
+export async function createCouponApi(data: Partial<Coupon>): Promise<Coupon> {
+  const res = await fetch(`${API_BASE_URL}/promo/coupons`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create coupon");
+  }
+  return await res.json();
+}
+
+export async function updateCouponApi(id: string, data: Partial<Coupon>): Promise<Coupon> {
+  const res = await fetch(`${API_BASE_URL}/promo/coupons/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update coupon");
+  }
+  return await res.json();
+}
+
+export async function deleteCouponApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/promo/coupons/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete coupon");
+}
+
+// ==================== 🏷️ PROMO: DISCOUNTS & PLANS ====================
+export async function fetchDiscounts(): Promise<Discount[]> {
+  const res = await fetch(`${API_BASE_URL}/promo/discounts`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch discounts");
+  return await res.json();
+}
+
+export async function createDiscountApi(data: Partial<Discount>): Promise<Discount> {
+  const res = await fetch(`${API_BASE_URL}/promo/discounts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create discount");
+  }
+  return await res.json();
+}
+
+export async function updateDiscountApi(id: string, data: Partial<Discount>): Promise<Discount> {
+  const res = await fetch(`${API_BASE_URL}/promo/discounts/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update discount");
+  }
+  return await res.json();
+}
+
+export async function deleteDiscountApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/promo/discounts/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete discount");
+}
+
+export async function fetchDiscountPlans(): Promise<DiscountPlan[]> {
+  const res = await fetch(`${API_BASE_URL}/promo/discount-plans`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch discount plans");
+  return await res.json();
+}
+
+export async function createDiscountPlanApi(data: Partial<DiscountPlan>): Promise<DiscountPlan> {
+  const res = await fetch(`${API_BASE_URL}/promo/discount-plans`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create discount plan");
+  }
+  return await res.json();
+}
+
+// ==================== 💳 PROMO: GIFT CARDS ====================
+export async function fetchGiftCards(): Promise<GiftCard[]> {
+  const res = await fetch(`${API_BASE_URL}/promo/gift-cards`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch gift cards");
+  return await res.json();
+}
+
+export async function createGiftCardApi(data: Partial<GiftCard>): Promise<GiftCard> {
+  const res = await fetch(`${API_BASE_URL}/promo/gift-cards`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to create gift card");
+  }
+  return await res.json();
+}
+
+export async function updateGiftCardApi(id: string, data: Partial<GiftCard>): Promise<GiftCard> {
+  const res = await fetch(`${API_BASE_URL}/promo/gift-cards/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to update gift card");
+  }
+  return await res.json();
+}
+
+export async function deleteGiftCardApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/promo/gift-cards/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete gift card");
+}

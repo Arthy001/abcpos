@@ -61,12 +61,6 @@
   - **Backend**: Barcode & QR Code generators
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (หน้าเลือก Warehouse/Store, ค้นหาสินค้า, กำหนดจำนวนแถวสติ๊กเกอร์ `[-] qty [+]`, เลือกขนาดกระดาษ, สวิตช์เปิดปิด Store Name/Price/Ref Number, ปุ่ม Generate, Reset และ Print)
 
-- [ ] **8. Expired & Low Stock Products**
-  - **Route**: `/inventory/expired`, `/inventory/low-stock`
-  - **Backend**: `GET /api/products?lowStock=true`
-  - **สิ่งที่ต้องการ**: ตารางแจ้งเตือนสินค้าใกล้หมดอายุ และสินค้าต่ำกว่าจุดสั่งซื้อ
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
-
 ---
 
 ## 📦 กลุ่มที่ 2: การจัดการคลังและสต็อก (Stock Management)
@@ -115,11 +109,10 @@
   - **Backend**: `GET/POST/PUT/DELETE /api/purchases`, `GET/POST/PUT/DELETE /api/purchase-returns`, `GET /api/purchase-orders`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (Full Real API CRUD เชื่อมต่อฐานข้อมูล SQLite/Prisma, Auto Stock Ingestion เมื่อได้รับสินค้า `RECEIVED` จะเพิ่มสต็อก `Product.stock` และปรับ `costPrice`, ระบบหักสต็อกอัตโนมัติเมื่อทำรายการคืนสินค้า `Purchase Return`, ตาราง Purchase Orders จำแนกรายสินค้าพร้อม In-stock Live Count, SearchableSelect สำหรับ Supplier/Product/Warehouse/Status, ฟอร์ม Multi-item พร้อมคำนวณ VAT/Discount/Shipping/Paid/Due, Modal ดูใบสั่งซื้อและใบคืนสินค้า View Invoice Slip พร้อม Print Slip, Delete 2-Step Confirmation, Standard Feedback Modals ตาม GEMINI.md, PDF & CSV Export, Pagination)
 
-- [ ] **17. Promo (Coupons & Discounts)**
-  - **Route**: `/promo/coupons`, `/promo/discounts`
-  - **Backend**: `GET/POST /api/coupons`
-  - **สิ่งที่ต้องการ**: หน้าสร้างโค้ดส่วนลด, คูปองโปรโมชั่น และวันหมดอายุ
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+- [x] **17. Promo (Coupons, Discounts, Gift Cards & Discount Plans)**
+  - **Route**: `/promo/coupons`, `/promo/discounts`, `/promo/gift-cards`, `/promo/discount-plans`
+  - **Backend**: `GET/POST/PUT/DELETE /api/coupons`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางคูปองส่วนลด, รหัสโปรโมชั่น, บัตรของขวัญ Gift Cards, วันที่หมดอายุ, แผนส่วนลด, Modal สร้าง/แก้ไข, ค้นหา, Filter, PDF & CSV Export, Responsive 100%)
 
 ---
 
@@ -145,11 +138,10 @@
   - **Backend**: `GET/POST/PUT/DELETE /api/billers`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (ตารางผู้ออกบิล: รหัส BIxxx, รูป Avatar, ชื่อ, Company Name, Email, Phone, Country, สถานะ Active/Inactive, Action ดู/แก้ไข/ลบ, Export PDF/Excel, Search, Filter, Modal เพิ่ม/แก้ไข/ดูรายละเอียด)
 
-- [ ] **21. Expenses & Income (รายรับ-รายจ่าย)**
-  - **Route**: `/finance/expenses`, `/finance/income`
-  - **Backend**: `GET/POST /api/finance/transactions`
-  - **สิ่งที่ต้องการ**: บันทึกค่าใช้จ่ายร้าน (ค่าน้ำ, ค่าไฟ, ค่าเช่า) และหมวดหมู่ค่าใช้จ่าย
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+- [x] **21. Expenses & Income (รายรับ-รายจ่าย & บัญชีการเงิน)**
+  - **Route**: `/finance/expenses`, `/finance/income`, `/finance/expense-categories`, `/finance/income-categories`, `/finance/bank-accounts`, `/finance/money-transfer`, `/finance/trial-balance`, `/finance/balance-sheet`, `/finance/cash-flow`, `/finance/account-statement`
+  - **Backend**: `GET/POST/PUT/DELETE /api/finance/transactions`
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (บันทึกรายจ่ายร้าน, ค่าใช้จ่าย, รายรับ, หมวดหมู่รายรับ-รายจ่าย, จัดการบัญชีธนาคาร, โอนเงินระหว่างบัญชี, งบทดลอง, งบดุล, งบกระแสเงินสด, Statement, Search, Filter, Modal เพิ่ม/แก้ไข, Responsive 100%)
 
 ---
 
@@ -307,8 +299,7 @@
   - **Backend**: `GET/PUT /api/settings`
   - **สถานะ**: ✅ เสร็จสมบูรณ์ (1. **Payment Gateway**: โครงสร้างหน้าสำหรับเชื่อมต่อ Stripe / PayPal / 2C2P / Omise | 2. **Bank Accounts**: โครงสร้างหน้าสำหรับจัดการบัญชีธนาคารบริษัท | 3. **Tax Rates**: ตารางจัดการอัตราภาษี VAT 10%, CGST 8%, SGST 10%, ปุ่ม Add New Tax Rate, ปุ่มแก้ไข/ลบ | 4. **Currencies**: ตารางจัดการสกุลเงินเฉพาะ **Thai Baht (THB ฿)** และ **US Dollar (USD $)**, Exchange Rate, Created On, ปุ่ม Add New Currency, ปุ่มแก้ไข/ลบ)
 
-- [ ] **42. Other Settings / System Settings Additional**
-  - **Route**: `/settings/others`
+- [x] **42. Complete Settings Coverage (25 Sub Modules)**
+  - **Route**: `/settings/*` (25 โมดูล: Profile, Security, Notifications, Connected Apps, System, Company, Localization, Prefixes, Preference, Appearance, Social Auth, Language, Invoice Settings, Invoice Templates, Printer, POS Settings, Signatures, Custom Fields, Email, SMS, OTP, Payment Gateway, Bank Accounts, Tax Rates, Currencies)
   - **Backend**: `GET/PUT /api/settings`
-  - **สิ่งที่ต้องการ**: การตั้งค่าอื่นๆ เพิ่มเติม
-  - **สถานะ**: ⏳ *รอภาพแคปเจอร์*
+  - **สถานะ**: ✅ เสร็จสมบูรณ์ (โครงสร้างเมนู SettingsSidebar รองรับ Responsive Accordion ทุกจอ, เชื่อมต่อฟอร์มการตั้งค่าครบทั้ง 25 โมดูลย่อย)

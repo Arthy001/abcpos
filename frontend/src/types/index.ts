@@ -987,11 +987,144 @@ export interface StockMovement {
   quantity: number;
   balanceAfter: number;
   unitCost?: number | null;
-  department?: string | null;
-  notes?: string | null;
   createdBy?: string | null;
   createdAt?: string;
 }
 
+// ==========================================
+// 💰 FINANCE & ACCOUNTS INTERFACES
+// ==========================================
 
+export interface ExpenseCategory {
+  id: string;
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
 
+export interface Expense {
+  id: string;
+  reference: string;
+  expenseName: string;
+  categoryId?: string | null;
+  categoryName: string;
+  description?: string | null;
+  date: string;
+  amount: number;
+  status: string;
+  storeName?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface IncomeCategory {
+  id: string;
+  name: string;
+  code?: string | null;
+  description?: string | null;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Income {
+  id: string;
+  reference: string;
+  incomeName?: string | null;
+  storeName: string;
+  categoryId?: string | null;
+  categoryName: string;
+  description?: string | null;
+  date: string;
+  amount: number;
+  status: string;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BankAccount {
+  id: string;
+  accountName: string;
+  accountNumber: string;
+  bankName: string;
+  branch?: string | null;
+  balance: number;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MoneyTransfer {
+  id: string;
+  reference: string;
+  fromAccountId: string;
+  fromAccount?: BankAccount;
+  toAccountId: string;
+  toAccount?: BankAccount;
+  amount: number;
+  date: string;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// ==========================================
+// 🎁 PROMOTIONS & DISCOUNT INTERFACES
+// ==========================================
+
+export interface Coupon {
+  id: string;
+  name: string;
+  code: string;
+  type: string;
+  discount: number;
+  limit: number;
+  validStart?: string | null;
+  validEnd?: string | null;
+  description?: string | null;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface DiscountPlan {
+  id: string;
+  name: string;
+  planType: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface Discount {
+  id: string;
+  name: string;
+  value: number;
+  discountPlanId?: string | null;
+  planName?: string | null;
+  validity: string;
+  days: string;
+  products: string;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface GiftCard {
+  id: string;
+  code: string;
+  customerName: string;
+  customerAvatar?: string | null;
+  issuedDate: string;
+  expiryDate: string;
+  amount: number;
+  balance: number;
+  status: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

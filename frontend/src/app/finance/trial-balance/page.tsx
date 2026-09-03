@@ -1,149 +1,148 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { BankAccount, Expense, Income } from "@/types";
+import { fetchBankAccounts, fetchExpenses, fetchIncomes } from "@/lib/api";
 import {
   FileText,
   FileSpreadsheet,
   RotateCcw,
-  ChevronUp,
-  Calendar,
-  ChevronDown,
 } from "lucide-react";
 
 export default function TrialBalancePage() {
-  const [selectedStore, setSelectedStore] = useState<string>("");
-  const [dateRange] = useState<string>("01-Jan-2026 - 12-Dec-2026");
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [incomes, setIncomes] = useState<Income[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [accs, exps, incs] = await Promise.all([
+        fetchBankAccounts(),
+        fetchExpenses(),
+        fetchIncomes(),
+      ]);
+      setBankAccounts(accs || []);
+      setExpenses(exps || []);
+      setIncomes(incs || []);
+    } catch (err) {
+      console.error("Failed to fetch trial balance:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalBankBalance = useMemo(() => {
+    return bankAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+  }, [bankAccounts]);
+
+  const totalExpense = useMemo(() => {
+    return expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+  }, [expenses]);
+
+  const totalIncome = useMemo(() => {
+    return incomes.reduce((sum, i) => sum + (i.amount || 0), 0);
+  }, [incomes]);
 
   const assets = [
-    { name: "Cash in register", debit: "$5,000", credit: "" },
-    { name: "Bank Accounts", debit: "$12,000", credit: "" },
-    { name: "Accounts Receivable", debit: "$3,000", credit: "" },
-    { name: "Inventory (POS stock)", debit: "$10,000", credit: "" },
+    { name: "Cash in Banks & Registers", debit: totalBankBalance, credit: 0 },
+    { name: "Operating Expenses (YTD)", debit: totalExpense, credit: 0 },
+    { name: "Estimated POS Inventory Asset", debit: 350000, credit: 0 },
   ];
 
-  const liabilities = [
-    { name: "Accounts Payable", debit: "", credit: "$2,000" },
-    { name: "Short-term Loans", debit: "", credit: "$4,000" },
-    { name: "Sales Tax Payable", debit: "", credit: "$500" },
-    { name: "Wages Payable", debit: "", credit: "$1,200" },
+  const liabilitiesAndEquity = [
+    { name: "Sales & Revenue Income (YTD)", debit: 0, credit: totalIncome },
+    { name: "Capital & Retained Earnings", debit: 0, credit: (totalBankBalance + totalExpense + 350000) - totalIncome },
   ];
+
+  const totalDebit = assets.reduce((s, a) => s + a.debit, 0);
+  const totalCredit = liabilitiesAndEquity.reduce((s, l) => s + l.credit, 0);
 
   return (
     <AppLayout>
-      <div className="space-y-4 w-full font-sans">
-        {/* Top Header */}
+      <div className="space-y-4 w-full font-sans pb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
             <h1 className="text-lg font-bold text-[#111827] tracking-tight">Trial Balance</h1>
-            <p className="text-xs text-[#6B7280] mt-0.5">View Your Balance Sheet</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">Real-time Debit & Credit Trial Balance Sheet</p>
           </div>
+
           <div className="flex items-center space-x-2">
-            <button title="Export PDF" onClick={() => alert("Exporting PDF...")} className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
+            <button
+              title="Export PDF / Print"
+              onClick={() => window.print()}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#EF4444] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer"
+            >
               <FileText className="w-3.5 h-3.5 fill-red-50 stroke-red-500" />
             </button>
-            <button title="Export Excel" onClick={() => alert("Exporting Excel...")} className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <FileSpreadsheet className="w-3.5 h-3.5 fill-emerald-50 stroke-emerald-600" />
-            </button>
-            <button title="Refresh" className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
-            </button>
-            <button title="Collapse" className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <ChevronUp className="w-3.5 h-3.5 text-[#6B7280]" />
-            </button>
-          </div>
-        </div>
-
-        {/* Filter Card */}
-        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs p-5">
-          <div className="flex flex-col md:flex-row items-start md:items-end gap-4">
-            <div className="space-y-1.5 w-full md:w-64">
-              <label className="text-xs font-semibold text-[#374151]">Choose Your Date</label>
-              <div className="flex items-center space-x-2 px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-xs text-[#374151]">
-                <Calendar className="w-4 h-4 text-[#9CA3AF]" />
-                <span>{dateRange}</span>
-              </div>
-            </div>
-            <div className="space-y-1.5 w-full md:w-64">
-              <label className="text-xs font-semibold text-[#374151]">Store</label>
-              <div className="relative">
-                <select
-                  value={selectedStore}
-                  onChange={(e) => setSelectedStore(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-8 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="">Select</option>
-                  <option value="Distribution center">Distribution center</option>
-                  <option value="Intelligent warehouse">Intelligent warehouse</option>
-                  <option value="Mahin Logistics">Mahin Logistics</option>
-                  <option value="Bonded warehouse">Bonded warehouse</option>
-                  <option value="Budget warehouse">Budget warehouse</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] absolute right-2.5 top-3 pointer-events-none" />
-              </div>
-            </div>
             <button
-              onClick={() => {}}
-              className="px-6 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all"
+              title="Refresh"
+              onClick={loadData}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer"
             >
-              Submit
+              <RotateCcw className={"w-3.5 h-3.5 " + (loading ? "animate-spin text-[#FE9F43]" : "")} />
             </button>
           </div>
         </div>
 
-        {/* Table Card */}
-        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5">
-          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <table className="w-full text-left text-xs min-w-[850px]">
-              <thead className="border-b border-[#F1F3F5] bg-white">
+        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-6 space-y-6">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs min-w-[700px]">
+              <thead className="border-b border-[#E5E7EB] text-[#111827] bg-[#FAFAFA]">
                 <tr>
-                  <th className="py-3 px-4 font-bold text-[#111827] w-1/2">Account Name</th>
-                  <th className="py-3 px-4 font-bold text-[#111827] w-1/4">Debit</th>
-                  <th className="py-3 px-4 font-bold text-[#111827] w-1/4">Credit</th>
+                  <th className="py-3 px-4 font-bold">Account Name</th>
+                  <th className="py-3 px-4 font-bold text-right">Debit (฿)</th>
+                  <th className="py-3 px-4 font-bold text-right">Credit (฿)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F8F9FA]">
-                {/* Assets Section */}
-                <tr className="bg-[#FAFBFD]">
-                  <td colSpan={3} className="py-3 px-4 font-bold text-[#111827]">Assets</td>
+                <tr className="bg-orange-50/40">
+                  <td colSpan={3} className="py-2 px-4 font-bold text-[#FE9F43] uppercase tracking-wider text-[10px]">
+                    Assets & Expenses (Debit Normal)
+                  </td>
                 </tr>
                 {assets.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className="py-3.5 px-4 text-[#64748B] pl-6">{item.name}</td>
-                    <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.debit}</td>
-                    <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.credit}</td>
+                  <tr key={"a-" + idx} className="hover:bg-[#F9FAFB]">
+                    <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
+                    <td className="py-3 px-4 text-right font-bold text-gray-900">
+                      {item.debit ? "฿" + item.debit.toLocaleString() : "-"}
+                    </td>
+                    <td className="py-3 px-4 text-right text-gray-400">-</td>
                   </tr>
                 ))}
-                <tr className="border-t border-[#E5E7EB] font-bold text-xs text-[#111827]">
-                  <td className="py-3.5 px-4">Total Assets</td>
-                  <td className="py-3.5 px-4">$37,000</td>
-                  <td className="py-3.5 px-4"></td>
-                </tr>
 
-                {/* Liabilities Section */}
-                <tr className="bg-[#FAFBFD]">
-                  <td colSpan={3} className="py-3 px-4 font-bold text-[#111827]">Liabilities</td>
+                <tr className="bg-emerald-50/40">
+                  <td colSpan={3} className="py-2 px-4 font-bold text-emerald-600 uppercase tracking-wider text-[10px]">
+                    Liabilities, Revenue & Equity (Credit Normal)
+                  </td>
                 </tr>
-                {liabilities.map((item, idx) => (
-                  <tr key={idx} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className="py-3.5 px-4 text-[#64748B] pl-6">{item.name}</td>
-                    <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.debit}</td>
-                    <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.credit}</td>
+                {liabilitiesAndEquity.map((item, idx) => (
+                  <tr key={"l-" + idx} className="hover:bg-[#F9FAFB]">
+                    <td className="py-3 px-4 font-medium text-gray-900">{item.name}</td>
+                    <td className="py-3 px-4 text-right text-gray-400">-</td>
+                    <td className="py-3 px-4 text-right font-bold text-gray-900">
+                      {item.credit ? "฿" + item.credit.toLocaleString() : "-"}
+                    </td>
                   </tr>
                 ))}
-                <tr className="border-t border-[#E5E7EB] font-bold text-xs text-[#111827]">
-                  <td className="py-3.5 px-4">Total Liabilities</td>
-                  <td className="py-3.5 px-4"></td>
-                  <td className="py-3.5 px-4">$20,700</td>
-                </tr>
-
-                {/* Total Row */}
-                <tr className="border-t-2 border-[#111827] font-bold text-xs text-[#111827]">
-                  <td className="py-4 px-4">Total</td>
-                  <td className="py-4 px-4">$37,000</td>
-                  <td className="py-4 px-4">$37,000</td>
-                </tr>
               </tbody>
+              <tfoot className="border-t-2 border-gray-900 bg-gray-50 font-bold">
+                <tr>
+                  <td className="py-3.5 px-4 text-gray-900 text-sm">Total Balance</td>
+                  <td className="py-3.5 px-4 text-right text-emerald-600 text-sm">
+                    ฿{totalDebit.toLocaleString()}
+                  </td>
+                  <td className="py-3.5 px-4 text-right text-emerald-600 text-sm">
+                    ฿{totalCredit.toLocaleString()}
+                  </td>
+                </tr>
+              </tfoot>
             </table>
           </div>
         </div>

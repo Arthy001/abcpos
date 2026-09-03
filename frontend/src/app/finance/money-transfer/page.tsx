@@ -1,226 +1,419 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { MoneyTransfer, BankAccount } from "@/types";
+import {
+  fetchMoneyTransfers,
+  createMoneyTransferApi,
+  fetchBankAccounts,
+} from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   PlusCircle,
   Search,
   FileText,
   FileSpreadsheet,
   RotateCcw,
-  ChevronUp,
-  Edit,
-  Trash2,
-  ChevronDown,
+  ArrowRightLeft,
   X,
+  Sparkles,
+  AlertTriangle,
 } from "lucide-react";
 
-interface MoneyTransferItem {
-  id: string;
-  date: string;
-  referenceNumber: string;
-  fromAccount: string;
-  toAccount: string;
-  amount: string;
-}
-
 export default function MoneyTransferPage() {
+  const [transfers, setTransfers] = useState<MoneyTransfer[]>([]);
+  const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
-  const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showAddModal, setShowAddModal] = useState<boolean>(false);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  const sampleTransfers: MoneyTransferItem[] = [
-    { id: "1", date: "24 Dec 2024", referenceNumber: "#MT842", fromAccount: "3298784309485", toAccount: "4590489498498", amount: "$200" },
-    { id: "2", date: "10 Dec 2024", referenceNumber: "#MT821", fromAccount: "5475878970090", toAccount: "4494048448894", amount: "$50" },
-    { id: "3", date: "27 Nov 2024", referenceNumber: "#MT847", fromAccount: "3255465758698", toAccount: "6599401106468", amount: "$800" },
-    { id: "4", date: "18 Nov 2024", referenceNumber: "#MT874", fromAccount: "4353689870544", toAccount: "1948948498149", amount: "$100" },
-    { id: "5", date: "06 Nov 2024", referenceNumber: "#MT887", fromAccount: "4374356677889", toAccount: "1686941868478", amount: "$700" },
-    { id: "6", date: "25 Oct 2024", referenceNumber: "#MT856", fromAccount: "2343547586900", toAccount: "1658179744894", amount: "$1000" },
-    { id: "7", date: "14 Oct 2024", referenceNumber: "#MT822", fromAccount: "3453647664889", toAccount: "1418454896454", amount: "$1200" },
-    { id: "8", date: "03 Oct 2024", referenceNumber: "#MT844", fromAccount: "3354456565687", toAccount: "4418848484848", amount: "$750" },
-    { id: "9", date: "20 Sep 2024", referenceNumber: "#MT832", fromAccount: "3456565767787", toAccount: "6148484454564", amount: "$450" },
-    { id: "10", date: "10 Sep 2024", referenceNumber: "#MT855", fromAccount: "3434565776768", toAccount: "7781848484894", amount: "$300" },
-  ];
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const filteredDisplay = sampleTransfers.filter((item) => {
-    return (
-      item.referenceNumber.toLowerCase().includes(search.toLowerCase()) ||
-      item.fromAccount.toLowerCase().includes(search.toLowerCase()) ||
-      item.toAccount.toLowerCase().includes(search.toLowerCase())
-    );
+  const [fromAccountId, setFromAccountId] = useState<string>("");
+  const [toAccountId, setToAccountId] = useState<string>("");
+  const [amount, setAmount] = useState<string>("");
+  const [date, setDate] = useState<string>("");
+  const [notes, setNotes] = useState<string>("");
+
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
   });
 
-  const toggleSelectAll = () => {
-    if (selectedIds.length === filteredDisplay.length) {
-      setSelectedIds([]);
-    } else {
-      setSelectedIds(filteredDisplay.map((s) => s.id));
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [trfData, accData] = await Promise.all([
+        fetchMoneyTransfers(),
+        fetchBankAccounts(),
+      ]);
+      setTransfers(trfData || []);
+      setBankAccounts(accData || []);
+      if (accData && accData.length >= 2) {
+        setFromAccountId(accData[0].id);
+        setToAccountId(accData[1].id);
+      }
+    } catch (err) {
+      console.error("Failed to fetch money transfers:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const toggleSelect = (id: string) => {
-    setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+  const handleOpenAddModal = () => {
+    setAmount("");
+    setDate(new Date().toISOString().split("T")[0]);
+    setNotes("");
+    setShowModal(true);
   };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!fromAccountId || !toAccountId || fromAccountId === toAccountId) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Invalid Accounts",
+        message: "Source and Destination accounts must be different.",
+      });
+      return;
+    }
+
+    if (!amount || Number(amount) <= 0) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Invalid Amount",
+        message: "Please enter a valid transfer amount.",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      await createMoneyTransferApi({
+        fromAccountId,
+        toAccountId,
+        amount: Number(amount),
+        date,
+        notes,
+      });
+
+      setShowModal(false);
+      setFeedbackModal({
+        isOpen: true,
+        type: "add_success",
+        title: "Transfer Completed!",
+        message: "Successfully transferred ฿" + Number(amount).toLocaleString(),
+      });
+      loadData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Transfer Failed",
+        message: err.message || "Failed to execute transfer.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredDisplay = useMemo(() => {
+    return transfers.filter((item) => {
+      const fromName = item.fromAccount?.accountName || "";
+      const toName = item.toAccount?.accountName || "";
+      return (
+        item.reference.toLowerCase().includes(search.toLowerCase()) ||
+        fromName.toLowerCase().includes(search.toLowerCase()) ||
+        toName.toLowerCase().includes(search.toLowerCase())
+      );
+    });
+  }, [transfers, search]);
+
+  const totalPages = Math.ceil(filteredDisplay.length / pageSize) || 1;
+  const paginatedTransfers = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredDisplay.slice(start, start + pageSize);
+  }, [filteredDisplay, currentPage, pageSize]);
 
   return (
     <AppLayout>
-      <div className="space-y-4 w-full font-sans">
-        {/* Top Header */}
+      <div className="space-y-4 w-full font-sans pb-10">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
             <h1 className="text-lg font-bold text-[#111827] tracking-tight">Money Transfer</h1>
-            <p className="text-xs text-[#6B7280] mt-0.5">Manage Money Transfer List</p>
+            <p className="text-xs text-[#6B7280] mt-0.5">Transfer Funds Between Bank Accounts & Registers</p>
           </div>
+
           <div className="flex items-center space-x-2">
-            <button title="Export PDF" onClick={() => alert("Exporting PDF...")} className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <FileText className="w-3.5 h-3.5 fill-red-50 stroke-red-500" />
+            <button
+              title="Refresh"
+              onClick={loadData}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer"
+            >
+              <RotateCcw className={"w-3.5 h-3.5 " + (loading ? "animate-spin text-[#FE9F43]" : "")} />
             </button>
-            <button title="Export Excel" onClick={() => alert("Exporting Excel...")} className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <FileSpreadsheet className="w-3.5 h-3.5 fill-emerald-50 stroke-emerald-600" />
-            </button>
-            <button title="Refresh" className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <RotateCcw className="w-3.5 h-3.5 text-[#6B7280]" />
-            </button>
-            <button title="Collapse" className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 flex items-center justify-center border border-[#E5E7EB] shadow-2xs">
-              <ChevronUp className="w-3.5 h-3.5 text-[#6B7280]" />
-            </button>
-            <button onClick={() => setShowAddModal(true)} className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all">
+
+            <button
+              onClick={handleOpenAddModal}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all cursor-pointer"
+            >
               <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add Money Transfer</span>
+              <span>Transfer Money</span>
             </button>
           </div>
         </div>
 
-        {/* Table Card */}
         <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
-          {/* Search */}
-          <div className="relative w-full sm:w-60">
-            <input
-              type="text"
-              placeholder="Search"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
-            />
-            <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="relative w-full sm:w-64">
+              <input
+                type="text"
+                placeholder="Search transfer reference, account..."
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
+              />
+              <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
+            </div>
           </div>
 
-          {/* Table */}
-          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
+          <div className="overflow-x-auto min-h-[300px] -mx-4 sm:mx-0 px-4 sm:px-0">
             <table className="w-full text-left text-xs min-w-[850px]">
-              <thead className="border-b border-[#F1F3F5] bg-white">
+              <thead className="border-b border-[#F1F3F5] text-[#111827] bg-[#FAFAFA]">
                 <tr>
-                  <th className="py-3 px-3 w-10 text-center">
-                    <input
-                      type="checkbox"
-                      checked={selectedIds.length > 0 && selectedIds.length === filteredDisplay.length}
-                      onChange={toggleSelectAll}
-                      className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer"
-                    />
-                  </th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Date</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Reference Number</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Reference</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">From Account</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">To Account</th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Date</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Amount</th>
-                  <th className="py-3 px-4 text-right font-bold text-[#111827]"></th>
+                  <th className="py-3 px-4 font-bold text-[#111827]">Notes</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F8F9FA]">
-                {filteredDisplay.map((item) => {
-                  const isSelected = selectedIds.includes(item.id);
-                  return (
-                    <tr key={item.id} className={`hover:bg-[#F9FAFB] transition-colors ${isSelected ? "bg-[#FFF8F2]" : ""}`}>
-                      <td className="py-3.5 px-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={isSelected}
-                          onChange={() => toggleSelect(item.id)}
-                          className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer"
-                        />
+                {loading ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-[#9CA3AF]">
+                      <div className="inline-flex items-center space-x-2">
+                        <RotateCcw className="w-4 h-4 animate-spin text-[#FE9F43]" />
+                        <span>Loading transfers...</span>
+                      </div>
+                    </td>
+                  </tr>
+                ) : paginatedTransfers.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="py-12 text-center text-[#9CA3AF]">
+                      No money transfers recorded yet
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedTransfers.map((item) => (
+                    <tr key={item.id} className="hover:bg-[#F9FAFB] transition-colors">
+                      <td className="py-3.5 px-4 text-[#1E293B] font-bold font-mono">
+                        {item.reference}
                       </td>
-                      <td className="py-3.5 px-4 text-[#64748B]">{item.date}</td>
-                      <td className="py-3.5 px-4 font-mono text-[#64748B]">{item.referenceNumber}</td>
-                      <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.fromAccount}</td>
-                      <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.toAccount}</td>
-                      <td className="py-3.5 px-4 font-semibold text-[#1E293B]">{item.amount}</td>
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          <button title="Edit" className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-orange-50 text-[#94A3B8] hover:text-[#FE9F43] flex items-center justify-center bg-white">
-                            <Edit className="w-3.5 h-3.5" />
-                          </button>
-                          <button title="Delete" className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-red-50 text-[#94A3B8] hover:text-[#EF4444] flex items-center justify-center bg-white">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </div>
+                      <td className="py-3.5 px-4 font-semibold text-rose-600">
+                        {item.fromAccount?.accountName || "Source Account"}
+                      </td>
+                      <td className="py-3.5 px-4 font-semibold text-emerald-600">
+                        {item.toAccount?.accountName || "Target Account"}
+                      </td>
+                      <td className="py-3.5 px-4 text-[#4B5563]">{item.date}</td>
+                      <td className="py-3.5 px-4 font-bold text-[#111827]">
+                        ฿{item.amount.toLocaleString()}
+                      </td>
+                      <td className="py-3.5 px-4 text-[#6B7280]">
+                        {item.notes || "-"}
                       </td>
                     </tr>
-                  );
-                })}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Pagination */}
-          <div className="flex flex-col sm:flex-row items-center justify-between px-1 pt-3 text-xs text-[#64748B] gap-3 border-t border-[#F1F3F5]">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-[#F1F3F5] text-xs text-[#6B7280]">
             <div className="flex items-center space-x-2">
-              <span>Row Per Page</span>
-              <div className="relative">
-                <select className="appearance-none bg-white border border-[#E2E8F0] rounded pl-2.5 pr-6 py-1 text-xs text-[#334155] focus:outline-none cursor-pointer">
-                  <option>10</option><option>25</option><option>50</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#94A3B8] absolute right-1.5 top-2 pointer-events-none" />
-              </div>
-              <span>Entries</span>
+              <span>Show</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-white border border-[#E5E7EB] rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+              </select>
+              <span>entries (Total {filteredDisplay.length})</span>
             </div>
-            <div className="flex items-center space-x-1.5">
-              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100 text-[#94A3B8]">&lt;</button>
-              <button className="w-6 h-6 rounded-full bg-[#FE9F43] text-white font-bold flex items-center justify-center text-xs">1</button>
-              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100 text-[#64748B]">&gt;</button>
+
+            <div className="flex items-center space-x-1">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                className="px-2.5 py-1 border border-[#E5E7EB] rounded hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+              >
+                Prev
+              </button>
+              <span className="px-3 py-1 bg-[#FE9F43] text-white rounded font-bold">
+                {currentPage}
+              </span>
+              <button
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                className="px-2.5 py-1 border border-[#E5E7EB] rounded hover:bg-gray-50 disabled:opacity-40 cursor-pointer"
+              >
+                Next
+              </button>
             </div>
           </div>
         </div>
 
-        {/* Add Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl animate-in fade-in zoom-in duration-150">
+        {showModal && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150 border border-gray-100">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900">Add Money Transfer</h3>
-                <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100">
+                <h3 className="text-base font-bold text-gray-900">Transfer Money</h3>
+                <button
+                  onClick={() => setShowModal(false)}
+                  className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 cursor-pointer"
+                >
                   <X className="w-4 h-4" />
                 </button>
               </div>
-              <form onSubmit={(e) => { e.preventDefault(); alert("Transfer created!"); setShowAddModal(false); }} className="space-y-4 text-xs">
+
+              <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700">From Account (Source) *</label>
+                  <SearchableSelect
+                    placeholder="Select Source Account"
+                    value={fromAccountId}
+                    onChange={(val) => setFromAccountId(val)}
+                    options={bankAccounts.map((a) => ({
+                      value: a.id,
+                      label: a.accountName + " (Bal: ฿" + a.balance.toLocaleString() + ")",
+                    }))}
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-bold text-gray-700">To Account (Destination) *</label>
+                  <SearchableSelect
+                    placeholder="Select Destination Account"
+                    value={toAccountId}
+                    onChange={(val) => setToAccountId(val)}
+                    options={bankAccounts.map((a) => ({
+                      value: a.id,
+                      label: a.accountName + " (Bal: ฿" + a.balance.toLocaleString() + ")",
+                    }))}
+                  />
+                </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Reference Number *</label>
-                    <input type="text" required placeholder="e.g. #MT856" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                    <label className="font-bold text-gray-700">Amount (฿) *</label>
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      step="any"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      placeholder="0.00"
+                      className="w-full px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
                   </div>
                   <div className="space-y-1">
                     <label className="font-bold text-gray-700">Date *</label>
-                    <input type="date" required className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                    <input
+                      type="date"
+                      required
+                      value={date}
+                      onChange={(e) => setDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
                   </div>
                 </div>
+
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700">From Account *</label>
-                  <input type="text" required placeholder="e.g. 3298784309485" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
+                  <label className="font-bold text-gray-700">Notes</label>
+                  <input
+                    type="text"
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="e.g. Monthly transfer for operations"
+                    className="w-full px-3 py-2 bg-white border border-[#E5E7EB] rounded-lg text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                  />
                 </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-gray-700">To Account *</label>
-                  <input type="text" required placeholder="e.g. 4590489498498" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
-                </div>
-                <div className="space-y-1">
-                  <label className="font-bold text-gray-700">Amount ($) *</label>
-                  <input type="number" required placeholder="200" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]" />
-                </div>
-                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
-                  <button type="button" onClick={() => setShowAddModal(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl">Cancel</button>
-                  <button type="submit" className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white font-bold rounded-xl shadow-sm active:scale-95 transition-all">Create Transfer</button>
+
+                <div className="flex justify-end space-x-2 pt-3 border-t border-gray-100">
+                  <button
+                    type="button"
+                    onClick={() => setShowModal(false)}
+                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-lg cursor-pointer"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmitting}
+                    className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white font-bold rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    {isSubmitting ? "Transferring..." : "Execute Transfer"}
+                  </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative text-center animate-in fade-in zoom-in duration-150 border border-gray-100">
+              {feedbackModal.type === "add_success" && (
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+              )}
+              {feedbackModal.type === "error" && (
+                <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 mt-1">{feedbackModal.message}</p>
+              </div>
+
+              <div className="flex items-center justify-center space-x-2 pt-2">
+                <button
+                  onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+                  className="px-6 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-lg shadow-sm cursor-pointer"
+                >
+                  OK
+                </button>
+              </div>
             </div>
           </div>
         )}

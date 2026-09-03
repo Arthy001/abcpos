@@ -1,7 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Product, Warehouse, Store } from "@/types";
+import { fetchProducts, fetchWarehouses, fetchStores } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   RotateCcw,
   ChevronUp,
@@ -19,6 +22,7 @@ interface SelectedProduct {
   name: string;
   sku: string;
   code: string;
+  price: number;
   qty: number;
   image: string;
 }
@@ -31,25 +35,85 @@ export default function PrintBarcodePage() {
   const [showProductName, setShowProductName] = useState<boolean>(true);
   const [showPrice, setShowPrice] = useState<boolean>(true);
   const [productSearch, setProductSearch] = useState<string>("");
+  const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
 
-  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([
-    {
-      id: "1",
-      name: "Nike Jordan",
-      sku: "PT002",
-      code: "HG3FK",
-      qty: 4,
-      image: "/assets/images/product-04.jpg",
-    },
-    {
-      id: "2",
-      name: "Apple Series 5 Watch",
-      sku: "PT003",
-      code: "TEJIU7",
-      qty: 4,
-      image: "/assets/images/product-05.jpg",
-    },
-  ]);
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [warehousesList, setWarehousesList] = useState<Warehouse[]>([]);
+  const [storesList, setStoresList] = useState<Store[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [prods, whs, sts] = await Promise.all([
+        fetchProducts(),
+        fetchWarehouses(),
+        fetchStores(),
+      ]);
+      setProductsList(prods || []);
+      setWarehousesList(whs || []);
+      setStoresList(sts || []);
+
+      if (whs && whs.length > 0) setWarehouse(whs[0].name);
+      if (sts && sts.length > 0) setStore(sts[0].name);
+
+      // Pre-select first 2 real products if available
+      if (prods && prods.length > 0) {
+        setSelectedProducts(
+          prods.slice(0, 2).map((p) => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+            code: p.barcode || p.sku,
+            price: p.price,
+            qty: 4,
+            image: p.image || "/assets/images/product-01.jpg",
+          }))
+        );
+      }
+    } catch (err) {
+      console.error("Failed to load barcode print master data:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredSearchProducts = useMemo(() => {
+    if (!productSearch.trim()) return [];
+    return productsList.filter(
+      (p) =>
+        p.name.toLowerCase().includes(productSearch.toLowerCase()) ||
+        p.sku.toLowerCase().includes(productSearch.toLowerCase()) ||
+        (p.barcode && p.barcode.toLowerCase().includes(productSearch.toLowerCase()))
+    );
+  }, [productSearch, productsList]);
+
+  const addProductFromSearch = (p: Product) => {
+    if (selectedProducts.some((item) => item.id === p.id)) {
+      updateQty(p.id, 1);
+    } else {
+      setSelectedProducts((prev) => [
+        ...prev,
+        {
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          code: p.barcode || p.sku,
+          price: p.price,
+          qty: 1,
+          image: p.image || "/assets/images/product-01.jpg",
+        },
+      ]);
+    }
+    setProductSearch("");
+    setIsSearchOpen(false);
+  };
 
   const updateQty = (id: string, delta: number) => {
     setSelectedProducts((prev) =>
@@ -111,58 +175,75 @@ export default function PrintBarcodePage() {
               <label className="text-xs font-bold text-gray-700">
                 Warehouse <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <select
-                  value={warehouse}
-                  onChange={(e) => setWarehouse(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="">Select</option>
-                  <option value="Lavish Warehouse">Lavish Warehouse</option>
-                  <option value="Quaint Warehouse">Quaint Warehouse</option>
-                  <option value="Traditional Warehouse">Traditional Warehouse</option>
-                  <option value="Cool Warehouse">Cool Warehouse</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-[#9CA3AF] absolute right-3 top-3 pointer-events-none" />
-              </div>
+              <SearchableSelect
+                placeholder="Select Warehouse"
+                value={warehouse}
+                onChange={(val) => setWarehouse(val)}
+                options={warehousesList.map((w) => ({ value: w.name, label: w.name }))}
+              />
             </div>
 
             <div className="space-y-1.5">
               <label className="text-xs font-bold text-gray-700">
                 Store <span className="text-red-500">*</span>
               </label>
-              <div className="relative">
-                <select
-                  value={store}
-                  onChange={(e) => setStore(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg px-3.5 py-2.5 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="">Select</option>
-                  <option value="Electro Mart">Electro Mart</option>
-                  <option value="Quantum Gadgets">Quantum Gadgets</option>
-                  <option value="Prime Bazaar">Prime Bazaar</option>
-                  <option value="Gadget World">Gadget World</option>
-                </select>
-                <ChevronDown className="w-4 h-4 text-[#9CA3AF] absolute right-3 top-3 pointer-events-none" />
-              </div>
+              <SearchableSelect
+                placeholder="Select Store"
+                value={store}
+                onChange={(val) => setStore(val)}
+                options={storesList.map((s) => ({ value: s.name, label: s.name }))}
+              />
             </div>
           </div>
 
           {/* Row 2: Product Search */}
-          <div className="space-y-1.5">
+          <div className="space-y-1.5 relative">
             <label className="text-xs font-bold text-gray-700">
               Product <span className="text-red-500">*</span>
             </label>
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search Product by Code"
+                placeholder="Search Product by Name, SKU or Barcode..."
                 value={productSearch}
-                onChange={(e) => setProductSearch(e.target.value)}
+                onFocus={() => setIsSearchOpen(true)}
+                onChange={(e) => {
+                  setProductSearch(e.target.value);
+                  setIsSearchOpen(true);
+                }}
                 className="w-full pl-9 pr-3.5 py-2.5 bg-white border border-[#E5E7EB] rounded-lg text-xs text-[#374151] placeholder-[#9CA3AF] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
               />
               <Search className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-3" />
             </div>
+
+            {/* Live Search Results Dropdown */}
+            {isSearchOpen && filteredSearchProducts.length > 0 && (
+              <div className="absolute left-0 right-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-56 overflow-y-auto divide-y divide-gray-50">
+                {filteredSearchProducts.map((p) => (
+                  <div
+                    key={p.id}
+                    onClick={() => addProductFromSearch(p)}
+                    className="p-2.5 hover:bg-orange-50/50 flex items-center justify-between cursor-pointer transition-colors"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <img
+                        src={p.image || "/assets/images/product-01.jpg"}
+                        alt={p.name}
+                        className="w-8 h-8 rounded object-cover border border-gray-100"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/assets/images/product-01.jpg";
+                        }}
+                      />
+                      <div>
+                        <p className="text-xs font-semibold text-gray-900">{p.name}</p>
+                        <p className="text-[11px] text-gray-400">SKU: {p.sku} | Barcode: {p.barcode || "-"}</p>
+                      </div>
+                    </div>
+                    <span className="text-xs font-bold text-[#FE9F43]">฿{p.price.toLocaleString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Product Selection Table */}
@@ -319,12 +400,64 @@ export default function PrintBarcodePage() {
             </div>
           </div>
 
+          {/* Live Barcode Sheet Preview (Visible on Screen and Printed via @media print) */}
+          {selectedProducts.length > 0 && (
+            <div className="pt-4 border-t border-gray-100 space-y-3">
+              <h3 className="text-xs font-bold text-gray-700">Barcode Labels Preview ({paperSize})</h3>
+              <div className="p-4 bg-gray-50 border border-dashed border-gray-200 rounded-xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                {selectedProducts.flatMap((p) =>
+                  Array.from({ length: p.qty }).map((_, idx) => (
+                    <div
+                      key={`${p.id}-${idx}`}
+                      className="bg-white p-3 rounded-lg border border-gray-200 shadow-2xs flex flex-col items-center justify-center text-center space-y-1 text-black"
+                    >
+                      {showStoreName && store && (
+                        <p className="text-[10px] font-bold uppercase tracking-wider text-gray-700 truncate max-w-full">
+                          {store}
+                        </p>
+                      )}
+                      {showProductName && (
+                        <p className="text-[11px] font-semibold text-gray-900 truncate max-w-full">
+                          {p.name}
+                        </p>
+                      )}
+                      {/* Barcode Graphic */}
+                      <div className="py-1 flex flex-col items-center">
+                        <div className="flex items-center space-x-[2px] h-9">
+                          <div className="w-1 h-full bg-black"></div>
+                          <div className="w-[1px] h-full bg-black"></div>
+                          <div className="w-[3px] h-full bg-black"></div>
+                          <div className="w-[1px] h-full bg-black"></div>
+                          <div className="w-2 h-full bg-black"></div>
+                          <div className="w-[1px] h-full bg-black"></div>
+                          <div className="w-[2px] h-full bg-black"></div>
+                          <div className="w-[3px] h-full bg-black"></div>
+                          <div className="w-[1px] h-full bg-black"></div>
+                          <div className="w-2 h-full bg-black"></div>
+                          <div className="w-[1px] h-full bg-black"></div>
+                        </div>
+                        <span className="text-[10px] font-mono tracking-widest text-gray-600 mt-0.5">
+                          {p.code}
+                        </span>
+                      </div>
+                      {showPrice && (
+                        <p className="text-xs font-bold text-black">
+                          ฿{p.price.toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Bottom Right Actions: Generate Barcode (Orange), Reset Barcode (Navy), Print Barcode (Red) */}
           <div className="flex flex-wrap items-center justify-end gap-3 pt-6 border-t border-gray-100">
             <button
               type="button"
               onClick={() => alert("Barcodes generated successfully!")}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all"
+              className="flex items-center space-x-2 px-5 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <BarcodeIcon className="w-3.5 h-3.5" />
               <span>Generate Barcode</span>
@@ -333,7 +466,7 @@ export default function PrintBarcodePage() {
             <button
               type="button"
               onClick={resetBarcode}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-[#0E1422] hover:bg-[#1E293B] text-white text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all"
+              className="flex items-center space-x-2 px-5 py-2.5 bg-[#0E1422] hover:bg-[#1E293B] text-white text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Reset Barcode</span>
@@ -342,7 +475,7 @@ export default function PrintBarcodePage() {
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center space-x-2 px-5 py-2.5 bg-[#E02424] hover:bg-[#C81E1E] text-white text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all"
+              className="flex items-center space-x-2 px-5 py-2.5 bg-[#E02424] hover:bg-[#C81E1E] text-white text-xs font-bold rounded-lg shadow-sm active:scale-95 transition-all cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
               <span>Print Barcode</span>

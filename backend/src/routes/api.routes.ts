@@ -1,5 +1,41 @@
 import { Router } from "express";
 import {
+  getExpenses,
+  createExpense,
+  updateExpense,
+  deleteExpense,
+  getExpenseCategories,
+  createExpenseCategory,
+  getIncomes,
+  createIncome,
+  updateIncome,
+  deleteIncome,
+  getIncomeCategories,
+  createIncomeCategory,
+  getBankAccounts,
+  createBankAccount,
+  updateBankAccount,
+  deleteBankAccount,
+  getMoneyTransfers,
+  createMoneyTransfer,
+} from "../controllers/finance.controller.js";
+import {
+  getCoupons,
+  createCoupon,
+  updateCoupon,
+  deleteCoupon,
+  getDiscounts,
+  createDiscount,
+  updateDiscount,
+  deleteDiscount,
+  getDiscountPlans,
+  createDiscountPlan,
+  getGiftCards,
+  createGiftCard,
+  updateGiftCard,
+  deleteGiftCard,
+} from "../controllers/promo.controller.js";
+import {
   getAuditLogs,
   restoreFromAuditLog,
   deleteAuditLog,
@@ -489,5 +525,53 @@ router.put("/settings/connected-apps/:id", toggleConnectedApp);
 router.get("/audit-logs", getAuditLogs);
 router.post("/audit-logs/:id/restore", restoreFromAuditLog);
 router.delete("/audit-logs/:id", deleteAuditLog);
+
+// ==========================================
+// 💰 FINANCE ENDPOINTS
+// ==========================================
+router.get("/finance/expenses", getExpenses);
+router.post("/finance/expenses", createExpense);
+router.put("/finance/expenses/:id", updateExpense);
+router.delete("/finance/expenses/:id", deleteExpense);
+
+router.get("/finance/expense-categories", getExpenseCategories);
+router.post("/finance/expense-categories", createExpenseCategory);
+
+router.get("/finance/income", getIncomes);
+router.post("/finance/income", createIncome);
+router.put("/finance/income/:id", updateIncome);
+router.delete("/finance/income/:id", deleteIncome);
+
+router.get("/finance/income-categories", getIncomeCategories);
+router.post("/finance/income-categories", createIncomeCategory);
+
+router.get("/finance/bank-accounts", getBankAccounts);
+router.post("/finance/bank-accounts", createBankAccount);
+router.put("/finance/bank-accounts/:id", updateBankAccount);
+router.delete("/finance/bank-accounts/:id", deleteBankAccount);
+
+router.get("/finance/money-transfers", getMoneyTransfers);
+router.post("/finance/money-transfers", createMoneyTransfer);
+
+// ==========================================
+// 🎁 PROMO & DISCOUNT ENDPOINTS
+// ==========================================
+router.get("/promo/coupons", getCoupons);
+router.post("/promo/coupons", createCoupon);
+router.put("/promo/coupons/:id", updateCoupon);
+router.delete("/promo/coupons/:id", deleteCoupon);
+
+router.get("/promo/discounts", getDiscounts);
+router.post("/promo/discounts", createDiscount);
+router.put("/promo/discounts/:id", updateDiscount);
+router.delete("/promo/discounts/:id", deleteDiscount);
+
+router.get("/promo/discount-plans", getDiscountPlans);
+router.post("/promo/discount-plans", createDiscountPlan);
+
+router.get("/promo/gift-cards", getGiftCards);
+router.post("/promo/gift-cards", createGiftCard);
+router.put("/promo/gift-cards/:id", updateGiftCard);
+router.delete("/promo/gift-cards/:id", deleteGiftCard);
 
 export default router;
