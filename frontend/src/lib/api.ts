@@ -2585,3 +2585,46 @@ export async function deleteGiftCardApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/promo/gift-cards/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete gift card");
 }
+
+// ==================== 🔐 AUTHENTICATION ====================
+export async function loginApi(credentials: { email: string; password?: string }): Promise<{
+  token: string;
+  user: any;
+}> {
+  const res = await fetch(`${API_BASE_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(credentials),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Login failed");
+  }
+  return await res.json();
+}
+
+export async function getMeApi(token: string): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/auth/me`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch current user");
+  return await res.json();
+}
+
+export async function changePasswordApi(data: {
+  userId: string;
+  oldPassword?: string;
+  newPassword: string;
+}): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/auth/change-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const err = await res.json();
+    throw new Error(err.error || "Failed to change password");
+  }
+  return await res.json();
+}
+

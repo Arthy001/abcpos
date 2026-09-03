@@ -1,5 +1,10 @@
 import { Router } from "express";
 import {
+  login,
+  getMe,
+  changePassword,
+} from "../controllers/auth.controller.js";
+import {
   getExpenses,
   createExpense,
   updateExpense,
@@ -573,5 +578,12 @@ router.get("/promo/gift-cards", getGiftCards);
 router.post("/promo/gift-cards", createGiftCard);
 router.put("/promo/gift-cards/:id", updateGiftCard);
 router.delete("/promo/gift-cards/:id", deleteGiftCard);
+
+// ==========================================
+// 🔐 AUTHENTICATION ENDPOINTS
+// ==========================================
+router.post("/auth/login", login);
+router.get("/auth/me", getMe);
+router.post("/auth/change-password", changePassword);
 
 export default router;

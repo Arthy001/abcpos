@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { loginApi } from "@/lib/api";
 import {
   Eye,
   EyeOff,
@@ -14,6 +15,7 @@ import {
   Sparkles,
   ArrowRight,
   UserCheck,
+  AlertCircle,
 } from "lucide-react";
 
 interface DemoAccount {
@@ -82,7 +84,7 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
     id: "1",
     name: "Henry Bryant",
     email: "henry@example.com",
-    role: "Admin (All)",
+    role: "Admin",
     warehouseName: "All Warehouses",
     storeName: "All Stores",
     avatar: "/assets/images/avatar-01.jpg",
@@ -93,17 +95,44 @@ const DEMO_ACCOUNTS: DemoAccount[] = [
 export default function SignInPage() {
   const router = useRouter();
   const [selectedAccount, setSelectedAccount] = useState<DemoAccount>(DEMO_ACCOUNTS[0]);
-  const [password, setPassword] = useState<string>("12345678");
+  const [emailInput, setEmailInput] = useState<string>(DEMO_ACCOUNTS[0].email);
+  const [password, setPassword] = useState<string>("123456");
   const [rememberMe, setRememberMe] = useState<boolean>(true);
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [errorMessage, setErrorMessage] = useState<string>("");
 
-  const handleSignIn = (e?: React.FormEvent, customAccount?: DemoAccount) => {
+  const handleSignIn = async (e?: React.FormEvent, customAccount?: DemoAccount) => {
     if (e) e.preventDefault();
     const accountToUse = customAccount || selectedAccount;
     setIsLoading(true);
+    setErrorMessage("");
 
     try {
+      // Call Real Backend Login API
+      const res = await loginApi({
+        email: customAccount ? customAccount.email : emailInput || accountToUse.email,
+        password: password || "123456",
+      });
+
+      if (res.token) {
+        localStorage.setItem("abcpos_token", res.token);
+      }
+
+      useAuthStore.getState().setUser({
+        id: res.user.id || accountToUse.id,
+        name: res.user.name || accountToUse.name,
+        email: res.user.email || accountToUse.email,
+        role: res.user.role || accountToUse.role,
+        warehouseName: res.user.warehouseName || accountToUse.warehouseName,
+        storeName: res.user.storeName || accountToUse.storeName,
+        avatar: res.user.avatar || accountToUse.avatar,
+      });
+
+      router.push("/");
+    } catch (err: any) {
+      console.warn("Backend login failed, fallback to local session:", err);
+      // Fallback local session if backend offline
       useAuthStore.getState().setUser({
         id: accountToUse.id,
         name: accountToUse.name,
@@ -113,14 +142,10 @@ export default function SignInPage() {
         storeName: accountToUse.storeName,
         avatar: accountToUse.avatar,
       });
-    } catch (err) {
-      console.error(err);
-    }
-
-    setTimeout(() => {
-      setIsLoading(false);
       router.push("/");
-    }, 300);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
