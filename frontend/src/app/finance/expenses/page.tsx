@@ -1,161 +1,237 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Expense, ExpenseCategory, Store } from "@/types";
+import {
+  fetchExpenses,
+  createExpenseApi,
+  updateExpenseApi,
+  deleteExpenseApi,
+  fetchExpenseCategories,
+  fetchStores,
+} from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   PlusCircle,
   Search,
   FileText,
   FileSpreadsheet,
   RotateCcw,
-  ChevronUp,
   Eye,
   Edit,
   Trash2,
-  ChevronDown,
   X,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
 
-interface ExpenseItem {
-  id: string;
-  reference: string;
-  expenseName: string;
-  category: string;
-  description: string;
-  date: string;
-  amount: string;
-  status: "Approved" | "Pending";
-}
-
 export default function ExpensesPage() {
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [categories, setCategories] = useState<ExpenseCategory[]>([]);
+  const [stores, setStores] = useState<Store[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
+  const [storeFilter, setStoreFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [showAddModal, setShowAddModal] = useState<boolean>(false);
-  const [viewExpense, setViewExpense] = useState<ExpenseItem | null>(null);
+  const [pageSize, setPageSize] = useState<number>(10);
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // 10 Sample items matching Screenshot 2
-  const sampleExpenses: ExpenseItem[] = [
-    {
-      id: "1",
-      reference: "EX849",
-      expenseName: "Electricity Payment",
-      category: "Utilities",
-      description: "Electricity Bill",
-      date: "24 Dec 2024",
-      amount: "$200",
-      status: "Approved",
-    },
-    {
-      id: "2",
-      reference: "EX848",
-      expenseName: "Stationery Purchase",
-      category: "Office Supplies",
-      description: "Stationery items for office",
-      date: "10 Dec 2024",
-      amount: "$50",
-      status: "Pending",
-    },
-    {
-      id: "3",
-      reference: "EX847",
-      expenseName: "AC Repair Service",
-      category: "Repairs & Maintenance",
-      description: "AC Repair for Office",
-      date: "27 Nov 2024",
-      amount: "$800",
-      status: "Approved",
-    },
-    {
-      id: "4",
-      reference: "EX846",
-      expenseName: "Social Media Promotion",
-      category: "Marketing",
-      description: "Social Media Ads Campaign",
-      date: "18 Nov 2024",
-      amount: "$100",
-      status: "Approved",
-    },
-    {
-      id: "5",
-      reference: "EX845",
-      expenseName: "Client Meeting",
-      category: "Travel Expenses",
-      description: "Travel fare for client meeting",
-      date: "06 Nov 2024",
-      amount: "$700",
-      status: "Approved",
-    },
-    {
-      id: "6",
-      reference: "EX844",
-      expenseName: "Team Lunch",
-      category: "Employee Benefits",
-      description: "Team Lunch at Restaurant",
-      date: "25 Oct 2024",
-      amount: "$1000",
-      status: "Pending",
-    },
-    {
-      id: "7",
-      reference: "EX843",
-      expenseName: "Business Flight Ticket",
-      category: "Travel Expenses",
-      description: "Flight tickets for meetings",
-      date: "14 Oct 2024",
-      amount: "$1200",
-      status: "Approved",
-    },
-    {
-      id: "8",
-      reference: "EX842",
-      expenseName: "Chair Purchase",
-      category: "Office Supplies",
-      description: "Ergonomic chairs for staff",
-      date: "03 Oct 2024",
-      amount: "$750",
-      status: "Approved",
-    },
-    {
-      id: "9",
-      reference: "EX841",
-      expenseName: "Plumbing Service",
-      category: "Repairs & Maintenance",
-      description: "Plumbing repairs in office",
-      date: "20 Sep 2024",
-      amount: "$450",
-      status: "Approved",
-    },
-    {
-      id: "10",
-      reference: "EX840",
-      expenseName: "Internet Bill Payment",
-      category: "Utilities",
-      description: "Monthly internet subscription",
-      date: "10 Sep 2024",
-      amount: "$300",
-      status: "Pending",
-    },
-  ];
+  const [showModal, setShowModal] = useState<boolean>(false);
+  const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [viewExpense, setViewExpense] = useState<Expense | null>(null);
+  const [deleteConfirmExpense, setDeleteConfirmExpense] = useState<Expense | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const filteredDisplay = sampleExpenses.filter((item) => {
-    const matchesSearch =
-      item.expenseName.toLowerCase().includes(search.toLowerCase()) ||
-      item.reference.toLowerCase().includes(search.toLowerCase()) ||
-      item.description.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "all" || item.category === categoryFilter;
-    const matchesStatus = statusFilter === "all" || item.status === statusFilter;
+  const [formName, setFormName] = useState<string>("");
+  const [formStore, setFormStore] = useState<string>("");
+  const [formCategory, setFormCategory] = useState<string>("");
+  const [formAmount, setFormAmount] = useState<string>("");
+  const [formDate, setFormDate] = useState<string>("");
+  const [formStatus, setFormStatus] = useState<string>("Approved");
+  const [formDescription, setFormDescription] = useState<string>("");
 
-    return matchesSearch && matchesCategory && matchesStatus;
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "edit_success" | "delete_success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
   });
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [expData, catData, strData] = await Promise.all([
+        fetchExpenses(),
+        fetchExpenseCategories(),
+        fetchStores(),
+      ]);
+      setExpenses(expData || []);
+      setCategories(catData || []);
+      setStores(strData || []);
+    } catch (err) {
+      console.error("Failed to fetch expenses:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOpenAddModal = () => {
+    setEditingExpense(null);
+    setFormName("");
+    setFormStore(stores.length > 0 ? stores[0].name : "Electro Mart");
+    setFormCategory(categories.length > 0 ? categories[0].name : "Utilities");
+    setFormAmount("");
+    setFormDate(new Date().toISOString().split("T")[0]);
+    setFormStatus("Approved");
+    setFormDescription("");
+    setShowModal(true);
+  };
+
+  const handleOpenEditModal = (exp: Expense) => {
+    setEditingExpense(exp);
+    setFormName(exp.expenseName);
+    setFormStore(exp.storeName || (stores.length > 0 ? stores[0].name : "Electro Mart"));
+    setFormCategory(exp.categoryName || (categories.length > 0 ? categories[0].name : "Utilities"));
+    setFormAmount(String(exp.amount));
+    setFormDate(exp.date);
+    setFormStatus(exp.status);
+    setFormDescription(exp.description || "");
+    setShowModal(true);
+  };
+
+  const handleSaveExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formName.trim()) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please enter Expense Name.",
+      });
+      return;
+    }
+    if (!formAmount || isNaN(Number(formAmount)) || Number(formAmount) <= 0) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Invalid Amount",
+        message: "Please enter a valid expense amount greater than 0.",
+      });
+      return;
+    }
+
+    try {
+      setIsSubmitting(true);
+      const payload: Partial<Expense> = {
+        expenseName: formName.trim(),
+        storeName: formStore,
+        categoryName: formCategory,
+        amount: parseFloat(formAmount),
+        date: formDate || new Date().toISOString().split("T")[0],
+        status: formStatus,
+        description: formDescription.trim(),
+      };
+
+      if (editingExpense) {
+        await updateExpenseApi(editingExpense.id, payload);
+        setShowModal(false);
+        setFeedbackModal({
+          isOpen: true,
+          type: "edit_success",
+          title: "Expense Updated!",
+          message: `Expense "${formName}" has been updated successfully.`,
+        });
+      } else {
+        await createExpenseApi(payload);
+        setShowModal(false);
+        setFeedbackModal({
+          isOpen: true,
+          type: "add_success",
+          title: "Expense Created!",
+          message: `Expense "${formName}" has been recorded successfully.`,
+        });
+      }
+      loadData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Operation Failed",
+        message: err.message || "Failed to save expense entry.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDeleteExpense = async () => {
+    if (!deleteConfirmExpense) return;
+    try {
+      setIsSubmitting(true);
+      await deleteExpenseApi(deleteConfirmExpense.id);
+      const deletedName = deleteConfirmExpense.expenseName;
+      setDeleteConfirmExpense(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "delete_success",
+        title: "Expense Deleted",
+        message: `Expense "${deletedName}" has been deleted from the database.`,
+      });
+      loadData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Delete Failed",
+        message: err.message || "Could not delete this expense.",
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const filteredDisplay = useMemo(() => {
+    return expenses.filter((item) => {
+      const term = search.toLowerCase();
+      const matchesSearch =
+        item.expenseName.toLowerCase().includes(term) ||
+        item.reference.toLowerCase().includes(term) ||
+        (item.description && item.description.toLowerCase().includes(term)) ||
+        (item.storeName && item.storeName.toLowerCase().includes(term));
+
+      const matchesCat = categoryFilter === "all" || item.categoryName === categoryFilter;
+      const matchesStore = storeFilter === "all" || item.storeName === storeFilter;
+      const matchesStatus = statusFilter === "all" || item.status.toLowerCase() === statusFilter.toLowerCase();
+
+      return matchesSearch && matchesCat && matchesStore && matchesStatus;
+    });
+  }, [expenses, search, categoryFilter, storeFilter, statusFilter]);
+
+  const totalEntries = filteredDisplay.length;
+  const totalPages = Math.ceil(totalEntries / pageSize) || 1;
+  const paginatedList = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredDisplay.slice(start, start + pageSize);
+  }, [filteredDisplay, currentPage, pageSize]);
+
   const toggleSelectAll = () => {
-    if (selectedIds.length === filteredDisplay.length) {
+    if (selectedIds.length === paginatedList.length) {
       setSelectedIds([]);
     } else {
-      setSelectedIds(filteredDisplay.map((s) => s.id));
+      setSelectedIds(paginatedList.map((s) => s.id));
     }
   };
 
@@ -167,313 +243,583 @@ export default function ExpensesPage() {
     }
   };
 
+  const handleExportCSV = () => {
+    const headers = ["Reference,Expense Name,Category,Store,Amount,Date,Status,Description"];
+    const rows = filteredDisplay.map(
+      (e) =>
+        `"${e.reference}","${e.expenseName}","${e.categoryName}","${e.storeName || ""}","${e.amount}","${e.date}","${e.status}","${e.description || ""}"`
+    );
+    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `expenses_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <AppLayout>
-      <div className="space-y-4 w-full font-sans">
+      <div className="space-y-4">
         {/* Top Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-lg font-bold text-[#111827] tracking-tight">Expenses</h1>
-            <p className="text-xs text-[#6B7280] mt-0.5">Manage Your Expenses</p>
+            <h1 className="text-xl font-bold text-gray-900 tracking-tight">Expenses</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Manage and track company store expenses</p>
           </div>
 
           <div className="flex items-center space-x-2">
-            {/* PDF Export (Red) */}
             <button
-              title="Export PDF"
-              onClick={() => alert("Exporting PDF report...")}
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#EF4444] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+              onClick={() => window.print()}
+              title="Print PDF"
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-gray-600 flex items-center justify-center transition-colors border border-gray-200 shadow-2xs cursor-pointer"
             >
-              <FileText className="w-3.5 h-3.5 fill-red-50 stroke-red-500" />
+              <FileText className="w-4 h-4 text-rose-500" />
             </button>
-
-            {/* Excel Export (Green) */}
             <button
-              title="Export Excel"
-              onClick={() => alert("Exporting Excel report...")}
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#10B981] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+              onClick={handleExportCSV}
+              title="Export CSV"
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-gray-600 flex items-center justify-center transition-colors border border-gray-200 shadow-2xs cursor-pointer"
             >
-              <FileSpreadsheet className="w-3.5 h-3.5 fill-emerald-50 stroke-emerald-600" />
+              <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
             </button>
-
-            {/* Refresh */}
             <button
-              title="Refresh"
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+              onClick={loadData}
+              title="Refresh Data"
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-gray-600 flex items-center justify-center transition-colors border border-gray-200 shadow-2xs cursor-pointer"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className="w-4 h-4" />
             </button>
-
-            {/* Collapse */}
             <button
-              title="Collapse"
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+              onClick={handleOpenAddModal}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
             >
-              <ChevronUp className="w-3.5 h-3.5" />
-            </button>
-
-            {/* + Add Expense Button (Orange) */}
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-xs active:scale-95 transition-all"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
+              <PlusCircle className="w-4 h-4" />
               <span>Add Expense</span>
             </button>
           </div>
         </div>
 
-        {/* Expenses Table Card Container */}
-        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
-          {/* Inner Search & Filters Bar */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="relative w-full sm:w-60">
+        {/* Filter Bar */}
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+            {/* Search */}
+            <div className="relative">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search"
+                placeholder="Search reference, name..."
                 value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 bg-white border border-[#E5E7EB] rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-[#FE9F43] text-[#1F2937] placeholder-[#9CA3AF]"
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full pl-9 pr-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white transition-all"
               />
-              <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-2.5 top-2.5" />
             </div>
 
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value)}
-                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">Category</option>
-                  <option value="Utilities">Utilities</option>
-                  <option value="Office Supplies">Office Supplies</option>
-                  <option value="Repairs & Maintenance">Repairs & Maintenance</option>
-                  <option value="Marketing">Marketing</option>
-                  <option value="Travel Expenses">Travel Expenses</option>
-                  <option value="Employee Benefits">Employee Benefits</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
+            {/* Category Filter */}
+            <div>
+              <SearchableSelect
+                options={[
+                  { value: "all", label: "Category: All" },
+                  ...categories.map((c) => ({ value: c.name, label: c.name })),
+                ]}
+                value={categoryFilter}
+                onChange={(val) => {
+                  setCategoryFilter(val);
+                  setCurrentPage(1);
+                }}
+                placeholder="Category: All"
+              />
+            </div>
 
-              <div className="relative">
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="appearance-none bg-white border border-[#E5E7EB] rounded-lg pl-3 pr-7 py-1.5 text-xs font-normal text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="all">Status</option>
-                  <option value="Approved">Approved</option>
-                  <option value="Pending">Pending</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#9CA3AF] absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
+            {/* Store Filter */}
+            <div>
+              <SearchableSelect
+                options={[
+                  { value: "all", label: "Store: All" },
+                  ...stores.map((s) => ({ value: s.name, label: s.name })),
+                ]}
+                value={storeFilter}
+                onChange={(val) => {
+                  setStoreFilter(val);
+                  setCurrentPage(1);
+                }}
+                placeholder="Store: All"
+              />
+            </div>
+
+            {/* Status Filter */}
+            <div>
+              <SearchableSelect
+                options={[
+                  { value: "all", label: "Status: All" },
+                  { value: "approved", label: "Approved" },
+                  { value: "pending", label: "Pending" },
+                ]}
+                value={statusFilter}
+                onChange={(val) => {
+                  setStatusFilter(val);
+                  setCurrentPage(1);
+                }}
+                placeholder="Status: All"
+              />
             </div>
           </div>
+        </div>
 
-          {/* Clean Table with White Thead */}
-          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <table className="w-full text-left text-xs min-w-[850px]">
-              <thead className="border-b border-[#F1F3F5] text-[#111827] bg-white">
-                <tr>
-                  <th className="py-3 px-3 w-10 text-center">
+        {/* Table Container */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-2xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[800px]">
+              <thead>
+                <tr className="bg-gray-50/75 border-b border-gray-200 text-[11px] font-bold text-gray-500 uppercase tracking-wider">
+                  <th className="py-3 px-4 w-10">
                     <input
                       type="checkbox"
-                      checked={selectedIds.length > 0 && selectedIds.length === filteredDisplay.length}
+                      checked={paginatedList.length > 0 && selectedIds.length === paginatedList.length}
                       onChange={toggleSelectAll}
-                      className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
+                      className="rounded border-gray-300 text-[#FE9F43] focus:ring-[#FE9F43] w-3.5 h-3.5"
                     />
                   </th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Reference</th>
-                  <th className="py-3 px-4 font-bold text-[#111827] min-w-[160px]">Expense Name</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Category</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Description</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Date</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Amount</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Status</th>
-                  <th className="py-3 px-4 text-right font-bold text-[#111827] w-28">Action</th>
+                  <th className="py-3 px-4">Reference</th>
+                  <th className="py-3 px-4">Expense Name</th>
+                  <th className="py-3 px-4">Category</th>
+                  <th className="py-3 px-4">Store</th>
+                  <th className="py-3 px-4">Date</th>
+                  <th className="py-3 px-4">Amount</th>
+                  <th className="py-3 px-4">Status</th>
+                  <th className="py-3 px-4 text-center">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F8F9FA]">
-                {filteredDisplay.map((item) => {
-                  const isSelected = selectedIds.includes(item.id);
-
-                  return (
-                    <tr
-                      key={item.id}
-                      className={`hover:bg-[#F9FAFB] transition-colors ${
-                        isSelected ? "bg-[#FFF8F2]" : ""
-                      }`}
-                    >
-                      <td className="py-3.5 px-3 text-center">
+              <tbody className="divide-y divide-gray-100 text-xs text-gray-700">
+                {loading ? (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-gray-400">
+                      Loading expenses...
+                    </td>
+                  </tr>
+                ) : paginatedList.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-8 text-center text-gray-400">
+                      No expense records found.
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedList.map((item) => (
+                    <tr key={item.id} className="hover:bg-gray-50/50 transition-colors">
+                      <td className="py-3 px-4">
                         <input
                           type="checkbox"
-                          checked={isSelected}
+                          checked={selectedIds.includes(item.id)}
                           onChange={() => toggleSelect(item.id)}
-                          className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
+                          className="rounded border-gray-300 text-[#FE9F43] focus:ring-[#FE9F43] w-3.5 h-3.5"
                         />
                       </td>
-
-                      <td className="py-3.5 px-4 font-mono text-[#64748B]">{item.reference}</td>
-                      <td className="py-3.5 px-4 font-medium text-[#1E293B]">{item.expenseName}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">{item.category}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">{item.description}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">{item.date}</td>
-                      <td className="py-3.5 px-4 font-semibold text-[#1E293B]">{item.amount}</td>
-
-                      {/* Status Badges: Approved (Green) / Pending (Cyan) */}
-                      <td className="py-3.5 px-4">
-                        {item.status === "Approved" ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#28C76F] text-white">
-                            Approved
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-[#00CFE8] text-white">
-                            Pending
-                          </span>
-                        )}
+                      <td className="py-3 px-4 font-semibold text-gray-900">{item.reference}</td>
+                      <td className="py-3 px-4 font-medium text-gray-800">{item.expenseName}</td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-gray-100 text-gray-700">
+                          {item.categoryName}
+                        </span>
                       </td>
-
-                      {/* Action buttons: View, Edit, Delete */}
-                      <td className="py-3.5 px-4 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
+                      <td className="py-3 px-4 text-gray-600">{item.storeName || "-"}</td>
+                      <td className="py-3 px-4 text-gray-500">{item.date}</td>
+                      <td className="py-3 px-4 font-bold text-gray-900">
+                        ${Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                      </td>
+                      <td className="py-3 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                            item.status.toLowerCase() === "approved"
+                              ? "bg-emerald-50 text-emerald-600"
+                              : "bg-amber-50 text-amber-600"
+                          }`}
+                        >
+                          {item.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <div className="flex items-center justify-center space-x-1.5">
                           <button
                             onClick={() => setViewExpense(item)}
-                            title="View Expense"
-                            className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-gray-100 text-[#94A3B8] hover:text-[#334155] flex items-center justify-center transition-colors bg-white"
+                            title="View"
+                            className="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors cursor-pointer"
                           >
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            title="Edit Expense"
-                            className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-orange-50 text-[#94A3B8] hover:text-[#FE9F43] flex items-center justify-center transition-colors bg-white"
+                            onClick={() => handleOpenEditModal(item)}
+                            title="Edit"
+                            className="p-1 text-gray-500 hover:text-amber-600 hover:bg-amber-50 rounded transition-colors cursor-pointer"
                           >
                             <Edit className="w-3.5 h-3.5" />
                           </button>
                           <button
-                            title="Delete Expense"
-                            className="w-7 h-7 rounded border border-[#E2E8F0] hover:bg-red-50 text-[#94A3B8] hover:text-[#EF4444] flex items-center justify-center transition-colors bg-white"
+                            onClick={() => setDeleteConfirmExpense(item)}
+                            title="Delete"
+                            className="p-1 text-gray-500 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </td>
                     </tr>
-                  );
-                })}
+                  ))
+                )}
               </tbody>
             </table>
           </div>
 
-          {/* Table Pagination Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between px-1 pt-3 text-xs text-[#64748B] gap-3 border-t border-[#F1F3F5]">
+          {/* Pagination */}
+          <div className="py-3 px-4 border-t border-gray-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-gray-500">
             <div className="flex items-center space-x-2">
-              <span>Row Per Page</span>
-              <div className="relative">
-                <select className="appearance-none bg-white border border-[#E2E8F0] rounded pl-2.5 pr-6 py-1 text-xs text-[#334155] focus:outline-none cursor-pointer">
-                  <option value="10">10</option>
-                  <option value="25">25</option>
-                  <option value="50">50</option>
-                </select>
-                <ChevronDown className="w-3 h-3 text-[#94A3B8] absolute right-1.5 top-2 pointer-events-none" />
-              </div>
-              <span>Entries</span>
+              <span>Show</span>
+              <select
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setCurrentPage(1);
+                }}
+                className="bg-gray-50 border border-gray-200 rounded px-2 py-1 text-xs text-gray-700 focus:outline-none"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+              </select>
+              <span>entries (Total: {totalEntries})</span>
             </div>
 
-            <div className="flex items-center space-x-1.5">
-              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100 text-[#94A3B8]">
-                &lt;
+            <div className="flex items-center space-x-1">
+              <button
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => prev - 1)}
+                className="px-2.5 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Prev
               </button>
-              <button className="w-6 h-6 rounded-full bg-[#FE9F43] text-white font-bold flex items-center justify-center text-xs shadow-xs">
-                1
-              </button>
-              <button className="w-6 h-6 rounded flex items-center justify-center hover:bg-gray-100 text-[#64748B]">
-                &gt;
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                <button
+                  key={p}
+                  onClick={() => setCurrentPage(p)}
+                  className={`px-2.5 py-1 rounded border text-xs font-semibold transition-colors ${
+                    currentPage === p
+                      ? "bg-[#FE9F43] border-[#FE9F43] text-white"
+                      : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
+                  }`}
+                >
+                  {p}
+                </button>
+              ))}
+              <button
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage((prev) => prev + 1)}
+                className="px-2.5 py-1 rounded border border-gray-200 bg-white hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
               </button>
             </div>
           </div>
         </div>
 
-        {/* Add Expense Modal */}
-        {showAddModal && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-md w-full p-5 space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <h3 className="text-base font-bold text-gray-900">Add Expense</h3>
+        {/* Form Modal (Add / Edit) */}
+        {showModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 overflow-y-auto">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+                <h3 className="text-sm font-bold text-gray-900">
+                  {editingExpense ? "Edit Expense" : "Add New Expense"}
+                </h3>
                 <button
-                  onClick={() => setShowAddModal(false)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100"
+                  onClick={() => setShowModal(false)}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  alert("Expense created successfully!");
-                  setShowAddModal(false);
-                }}
-                className="space-y-4 text-xs"
-              >
-                <div className="space-y-1">
-                  <label className="font-bold text-gray-700">Expense Name *</label>
+              <form onSubmit={handleSaveExpense} className="p-4 space-y-3.5 text-xs">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">
+                    Expense Name <span className="text-rose-500">*</span>
+                  </label>
                   <input
                     type="text"
                     required
                     placeholder="e.g. Electricity Payment"
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                    value={formName}
+                    onChange={(e) => setFormName(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Category *</label>
-                    <select className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]">
-                      <option value="Utilities">Utilities</option>
-                      <option value="Office Supplies">Office Supplies</option>
-                      <option value="Repairs & Maintenance">Repairs & Maintenance</option>
-                      <option value="Marketing">Marketing</option>
-                      <option value="Travel Expenses">Travel Expenses</option>
-                      <option value="Employee Benefits">Employee Benefits</option>
-                    </select>
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Category <span className="text-rose-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      options={categories.map((c) => ({ value: c.name, label: c.name }))}
+                      value={formCategory}
+                      onChange={(val) => setFormCategory(val)}
+                      placeholder="Select Category"
+                    />
                   </div>
-                  <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Amount ($) *</label>
-                    <input
-                      type="number"
-                      required
-                      placeholder="200"
-                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Store <span className="text-rose-500">*</span>
+                    </label>
+                    <SearchableSelect
+                      options={stores.map((s) => ({ value: s.name, label: s.name }))}
+                      value={formStore}
+                      onChange={(val) => setFormStore(val)}
+                      placeholder="Select Store"
                     />
                   </div>
                 </div>
 
-                <div className="space-y-1">
-                  <label className="font-bold text-gray-700">Description</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Electricity Bill for December"
-                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">
+                      Amount ($) <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      required
+                      placeholder="0.00"
+                      value={formAmount}
+                      onChange={(e) => setFormAmount(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-semibold text-gray-700 mb-1">Date</label>
+                    <input
+                      type="date"
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Status</label>
+                  <SearchableSelect
+                    options={[
+                      { value: "Approved", label: "Approved" },
+                      { value: "Pending", label: "Pending" },
+                    ]}
+                    value={formStatus}
+                    onChange={(val) => setFormStatus(val)}
+                    placeholder="Select Status"
                   />
                 </div>
 
-                <div className="flex justify-end space-x-2 pt-2 border-t border-gray-100">
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-1">Description / Note</label>
+                  <textarea
+                    rows={2}
+                    placeholder="Enter expense details..."
+                    value={formDescription}
+                    onChange={(e) => setFormDescription(e.target.value)}
+                    className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                  />
+                </div>
+
+                <div className="flex items-center justify-end space-x-2 pt-2 border-t border-gray-100">
                   <button
                     type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 font-bold rounded-xl"
+                    onClick={() => setShowModal(false)}
+                    className="px-3.5 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white font-bold rounded-xl shadow-sm active:scale-95 transition-all"
+                    disabled={isSubmitting}
+                    className="px-4 py-1.5 rounded-lg bg-[#FE9F43] hover:bg-[#E88B32] text-white font-semibold shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
                   >
-                    Create Expense
+                    {isSubmitting ? "Saving..." : editingExpense ? "Update Expense" : "Save Expense"}
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* View Modal */}
+        {viewExpense && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl overflow-hidden border border-gray-100 animate-in fade-in zoom-in-95 duration-150">
+              <div className="flex items-center justify-between p-4 border-b border-gray-100 bg-gray-50/50">
+                <h3 className="text-sm font-bold text-gray-900">Expense Details</h3>
+                <button
+                  onClick={() => setViewExpense(null)}
+                  className="p-1 text-gray-400 hover:text-gray-600 rounded-lg hover:bg-gray-100 cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-3 text-xs">
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Reference:</span>
+                  <span className="font-bold text-gray-900">{viewExpense.reference}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Expense Name:</span>
+                  <span className="font-semibold text-gray-800">{viewExpense.expenseName}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Category:</span>
+                  <span className="font-semibold text-gray-800">{viewExpense.categoryName}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Store:</span>
+                  <span className="text-gray-800">{viewExpense.storeName || "-"}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Amount:</span>
+                  <span className="font-bold text-lg text-emerald-600">
+                    ${Number(viewExpense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                  </span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Date:</span>
+                  <span className="text-gray-800">{viewExpense.date}</span>
+                </div>
+                <div className="flex justify-between py-1.5 border-b border-gray-100">
+                  <span className="text-gray-500 font-medium">Status:</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                      viewExpense.status.toLowerCase() === "approved"
+                        ? "bg-emerald-50 text-emerald-600"
+                        : "bg-amber-50 text-amber-600"
+                    }`}
+                  >
+                    {viewExpense.status}
+                  </span>
+                </div>
+                {viewExpense.description && (
+                  <div className="pt-2">
+                    <span className="text-gray-500 font-medium block mb-1">Description:</span>
+                    <p className="bg-gray-50 p-2.5 rounded-lg text-gray-700 leading-relaxed">
+                      {viewExpense.description}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              <div className="p-4 bg-gray-50/50 border-t border-gray-100 flex justify-end">
+                <button
+                  onClick={() => setViewExpense(null)}
+                  className="px-4 py-1.5 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-xs font-semibold cursor-pointer"
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Step 1 */}
+        {deleteConfirmExpense && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 space-y-4">
+              <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center mx-auto">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Delete Expense?</h3>
+                <p className="text-xs text-gray-500 mt-1">
+                  Are you sure you want to delete{" "}
+                  <strong className="text-gray-800">"{deleteConfirmExpense.expenseName}"</strong>? This
+                  action cannot be undone.
+                </p>
+              </div>
+              <div className="flex items-center justify-center space-x-2 pt-2">
+                <button
+                  onClick={() => setDeleteConfirmExpense(null)}
+                  className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteExpense}
+                  disabled={isSubmitting}
+                  className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors disabled:opacity-50 cursor-pointer"
+                >
+                  {isSubmitting ? "Deleting..." : "Delete"}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Feedback Modals (GEMINI.md standard) */}
+        {feedbackModal.isOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4">
+            <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-gray-100 animate-in fade-in zoom-in-95 duration-150 space-y-4">
+              {feedbackModal.type === "add_success" && (
+                <div className="w-12 h-12 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto">
+                  <Sparkles className="w-6 h-6" />
+                </div>
+              )}
+              {feedbackModal.type === "edit_success" && (
+                <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
+                  <CheckCircle2 className="w-6 h-6" />
+                </div>
+              )}
+              {feedbackModal.type === "delete_success" && (
+                <div className="w-12 h-12 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto">
+                  <Trash2 className="w-6 h-6" />
+                </div>
+              )}
+              {feedbackModal.type === "error" && (
+                <div className="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                  <AlertTriangle className="w-6 h-6" />
+                </div>
+              )}
+
+              <div>
+                <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+                <p className="text-xs text-gray-500 mt-1">{feedbackModal.message}</p>
+              </div>
+
+              <div className="flex items-center justify-center space-x-2 pt-2">
+                {feedbackModal.type === "add_success" ? (
+                  <>
+                    <button
+                      onClick={() => {
+                        setFeedbackModal((prev) => ({ ...prev, isOpen: false }));
+                        handleOpenAddModal();
+                      }}
+                      className="px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
+                    >
+                      + Add Another
+                    </button>
+                    <button
+                      onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                      className="px-4 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                    >
+                      Done
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    onClick={() => setFeedbackModal((prev) => ({ ...prev, isOpen: false }))}
+                    className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white rounded-lg text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+                  >
+                    OK
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

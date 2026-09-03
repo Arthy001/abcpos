@@ -55,33 +55,14 @@ export default function SuppliersPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleSuppliers: Supplier[] = [
-    { id: "1", code: "SU001", name: "Apex Computers", image: "/assets/images/product-01.jpg", email: "apexcomputers@example.com", phone: "+15964712634", country: "Germany", status: "ACTIVE" },
-    { id: "2", code: "SU002", name: "Beats Headphones", image: "/assets/images/product-03.jpg", email: "beatsheadphone@example.com", phone: "+16372895190", country: "Japan", status: "ACTIVE" },
-    { id: "3", code: "SU003", name: "Dazzle Shoes", image: "/assets/images/product-04.jpg", email: "dazzleshoes@example.com", phone: "+17589201739", country: "USA", status: "ACTIVE" },
-    { id: "4", code: "SU004", name: "Best Accessories", image: "/assets/images/product-05.jpg", email: "bestaccessories@example.com", phone: "+18934092467", country: "Austria", status: "ACTIVE" },
-    { id: "5", code: "SU005", name: "A-Z Store", image: "/assets/images/product-06.jpg", email: "a2zstore@example.com", phone: "+12568749035", country: "Turkey", status: "ACTIVE" },
-    { id: "6", code: "SU006", name: "Hatimi Hardwares", image: "/assets/images/product-07.jpg", email: "hatimihardware@example.com", phone: "+19054674627", country: "Mexico", status: "ACTIVE" },
-    { id: "7", code: "SU007", name: "Aesthetic Bags", image: "/assets/images/product-08.jpg", email: "aestheticbags@example.com", phone: "+18943670365", country: "France", status: "ACTIVE" },
-    { id: "8", code: "SU008", name: "Alpha Mobiles", image: "/assets/images/product-09.jpg", email: "alphamobiles@example.com", phone: "+16473894103", country: "Greece", status: "ACTIVE" },
-    { id: "9", code: "SU009", name: "Sigma Chairs", image: "/assets/images/product-10.jpg", email: "sigmachair@example.com", phone: "+17590274536", country: "Italy", status: "ACTIVE" },
-    { id: "10", code: "SU010", name: "Zenith Bags", image: "/assets/images/product-11.jpg", email: "zenithbags@example.com", phone: "+12564098473", country: "China", status: "ACTIVE" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchSuppliers({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setSuppliers(data);
-      } else if (!search && statusFilter === "all") {
-        setSuppliers(sampleSuppliers);
-      } else {
-        setSuppliers([]);
-      }
+      setSuppliers(data || []);
     } catch (err) {
       console.error(err);
-      setSuppliers(sampleSuppliers);
+      setSuppliers([]);
     } finally {
       setLoading(false);
     }
@@ -170,12 +151,12 @@ export default function SuppliersPage() {
         await deleteSupplierApi(id);
         loadData();
       } catch (err: any) {
-        setSuppliers((prev) => prev.filter((s) => s.id !== id));
+        alert(err.message || "Failed to delete supplier");
       }
     }
   };
 
-  const displayList = suppliers.length > 0 ? suppliers : sampleSuppliers;
+  const displayList = suppliers;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

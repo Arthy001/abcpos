@@ -56,3 +56,11 @@ These rules are strictly enforced across all conversations, new chats, and subag
    - หัวข้อ: "Operation Failed" / "Missing Information"
    - ข้อความ: แสดงรายละเอียดข้อผิดพลาด
    - ปุ่ม: **`OK`**
+
+---
+
+## 4. Terminal & Command Line Rules (PowerShell)
+- **ห้ามใช้ `&&` ในการเชื่อมคำสั่ง**: เนื่องจาก Terminal พื้นฐานใน Windows คือ PowerShell ซึ่งไม่รองรับการใช้ `&&` แบบ bash 
+- ให้ใช้เครื่องหมาย **`;`** (Semicolon) ในการเชื่อมคำสั่งแทนเสมอ ตัวอย่างเช่น:
+  - ❌ ผิด: `git add . && git commit -m "..."`
+  - ✅ ถูก: `git add . ; git commit -m "..."`

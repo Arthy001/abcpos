@@ -56,33 +56,14 @@ export default function BillersPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample fallback matching screenshot
-  const sampleBillers: Biller[] = [
-    { id: "1", code: "BI001", name: "Shaun Farley", avatar: "/assets/images/customer11.jpg", companyName: "GreenTech Industries", email: "shaun@example.com", phone: "+18647961254", country: "USA", status: "ACTIVE" },
-    { id: "2", code: "BI002", name: "Jenny Ellis", avatar: "/assets/images/customer12.jpg", companyName: "BlueSky Logistics", email: "jenny@example.com", phone: "+13197521863", country: "Germany", status: "ACTIVE" },
-    { id: "3", code: "BI003", name: "Leon Baxter", avatar: "/assets/images/customer13.jpg", companyName: "EcoFarm Organics", email: "leon@example.com", phone: "+18496275831", country: "Japan", status: "ACTIVE" },
-    { id: "4", code: "BI004", name: "Karen Flores", avatar: "/assets/images/customer14.jpg", companyName: "SmartTech Solutions", email: "karen@example.com", phone: "+18731498524", country: "Austria", status: "ACTIVE" },
-    { id: "5", code: "BI005", name: "Michael Dawson", avatar: "/assets/images/customer15.jpg", companyName: "Fresh Supplies", email: "michael@example.com", phone: "+12876928738", country: "Turkey", status: "ACTIVE" },
-    { id: "6", code: "BI006", name: "Karen Galvan", avatar: "/assets/images/customer16.jpg", companyName: "BrightSource Lighting", email: "karen@example.com", phone: "+17534896148", country: "Mexico", status: "ACTIVE" },
-    { id: "7", code: "BI007", name: "Thomas Ward", avatar: "/assets/images/customer17.jpg", companyName: "GlobalTech Industries", email: "thomas@example.com", phone: "+16482479624", country: "France", status: "ACTIVE" },
-    { id: "8", code: "BI008", name: "Aliza Duncan", avatar: "/assets/images/customer18.jpg", companyName: "HealthWell Pharma", email: "aliza@example.com", phone: "+13175964827", country: "Greece", status: "ACTIVE" },
-    { id: "9", code: "BI009", name: "James Higham", avatar: "/assets/images/avatar-01.jpg", companyName: "HomeStyle Furnishings", email: "james@example.com", phone: "+13875196482", country: "Italy", status: "ACTIVE" },
-    { id: "10", code: "BI010", name: "Jada Robinson", avatar: "/assets/images/avatar-02.jpg", companyName: "EcoLogistics Partners", email: "robinson@example.com", phone: "+17586143284", country: "China", status: "ACTIVE" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchBillers({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setBillers(data);
-      } else if (!search && statusFilter === "all") {
-        setBillers(sampleBillers);
-      } else {
-        setBillers([]);
-      }
+      setBillers(data || []);
     } catch (err) {
       console.error(err);
-      setBillers(sampleBillers);
+      setBillers([]);
     } finally {
       setLoading(false);
     }
@@ -175,12 +156,12 @@ export default function BillersPage() {
         await deleteBillerApi(id);
         loadData();
       } catch (err: any) {
-        setBillers((prev) => prev.filter((b) => b.id !== id));
+        alert(err.message || "Failed to delete biller");
       }
     }
   };
 
-  const displayList = billers.length > 0 ? billers : sampleBillers;
+  const displayList = billers;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();

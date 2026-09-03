@@ -58,33 +58,14 @@ export default function CustomersPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Sample customers fallback matching screenshot
-  const sampleCustomers: Customer[] = [
-    { id: "1", code: "CU001", name: "Carl Evans", email: "carlevans@example.com", phone: "+12163547758", country: "Germany", avatar: "/assets/images/customer11.jpg", status: "ACTIVE", points: 150 },
-    { id: "2", code: "CU002", name: "Minerva Rameriz", email: "rameriz@example.com", phone: "+11367529510", country: "Japan", avatar: "/assets/images/customer12.jpg", status: "ACTIVE", points: 280 },
-    { id: "3", code: "CU003", name: "Robert Lamon", email: "robert@example.com", phone: "+15362789414", country: "USA", avatar: "/assets/images/customer13.jpg", status: "ACTIVE", points: 420 },
-    { id: "4", code: "CU004", name: "Patricia Lewis", email: "patricia@example.com", phone: "+18513094627", country: "Austria", avatar: "/assets/images/customer14.jpg", status: "ACTIVE", points: 90 },
-    { id: "5", code: "CU005", name: "Mark Joslyn", email: "markjoslyn@example.com", phone: "+14678219025", country: "Turkey", avatar: "/assets/images/customer15.jpg", status: "ACTIVE", points: 310 },
-    { id: "6", code: "CU006", name: "Marsha Betts", email: "marshabetts@example.com", phone: "+10913278319", country: "Mexico", avatar: "/assets/images/customer16.jpg", status: "ACTIVE", points: 195 },
-    { id: "7", code: "CU007", name: "Daniel Jude", email: "daieljude@example.com", phone: "+19125852947", country: "France", avatar: "/assets/images/customer17.jpg", status: "ACTIVE", points: 550 },
-    { id: "8", code: "CU008", name: "Emma Bates", email: "emmabates@example.com", phone: "+13671835209", country: "Greece", avatar: "/assets/images/customer18.jpg", status: "ACTIVE", points: 80 },
-    { id: "9", code: "CU009", name: "Richard Fralick", email: "richard@example.com", phone: "+19756194733", country: "Italy", avatar: "/assets/images/avatar-01.jpg", status: "ACTIVE", points: 620 },
-    { id: "10", code: "CU010", name: "Michelle Robison", email: "robinson@example.com", phone: "+19167850925", country: "China", avatar: "/assets/images/avatar-02.jpg", status: "ACTIVE", points: 110 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchCustomers({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setCustomers(data);
-      } else if (!search && statusFilter === "all") {
-        setCustomers(sampleCustomers);
-      } else {
-        setCustomers([]);
-      }
+      setCustomers(data || []);
     } catch (err) {
       console.error(err);
-      setCustomers(sampleCustomers);
+      setCustomers([]);
     } finally {
       setLoading(false);
     }
@@ -177,13 +158,12 @@ export default function CustomersPage() {
         await deleteCustomerApi(id);
         loadData();
       } catch (err: any) {
-        // If it's a sample fallback customer, remove locally
-        setCustomers((prev) => prev.filter((c) => c.id !== id));
+        alert(err.message || "Failed to delete customer");
       }
     }
   };
 
-  const displayList = customers.length > 0 ? customers : sampleCustomers;
+  const displayList = customers;
 
   const filteredDisplay = displayList.filter((item) => {
     const term = search.toLowerCase();
