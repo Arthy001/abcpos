@@ -21,20 +21,6 @@ export default function BestSellerProductsReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: SalesReportItem[] = [
-    { id: "1", sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", brand: "Lenovo", category: "Computers", soldQty: 5, soldAmount: 3000, instockQty: 100 },
-    { id: "2", sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", brand: "Beats", category: "Electronics", soldQty: 10, soldAmount: 1600, instockQty: 140 },
-    { id: "3", sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", brand: "Nike", category: "Shoe", soldQty: 8, soldAmount: 880, instockQty: 300 },
-    { id: "4", sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", brand: "Apple", category: "Electronics", soldQty: 10, soldAmount: 1200, instockQty: 450 },
-    { id: "5", sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", brand: "Amazon", category: "Electronics", soldQty: 5, soldAmount: 400, instockQty: 320 },
-    { id: "6", sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", brand: "Modern Wave", category: "Furniture", soldQty: 7, soldAmount: 2240, instockQty: 650 },
-    { id: "7", sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", brand: "Dior", category: "Bags", soldQty: 15, soldAmount: 900, instockQty: 700 },
-    { id: "8", sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", brand: "Apple", category: "Phone", soldQty: 12, soldAmount: 6480, instockQty: 630 },
-    { id: "9", sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", brand: "Arlime", category: "Furniture", soldQty: 10, soldAmount: 2000, instockQty: 410 },
-    { id: "10", sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", brand: "The North Face", category: "Bags", soldQty: 20, soldAmount: 900, instockQty: 550 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -45,10 +31,10 @@ export default function BestSellerProductsReportPage() {
       if (res && res.length > 0) {
         setItems(res);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -62,7 +48,7 @@ export default function BestSellerProductsReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

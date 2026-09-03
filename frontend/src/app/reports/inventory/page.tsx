@@ -23,20 +23,6 @@ export default function InventoryReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching system products
-  const sampleItems: InventoryReportItem[] = [
-    { id: "1", sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", unit: "Pc", instockQty: 100, minStock: 10, stockValue: 3000 },
-    { id: "2", sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", unit: "Pc", instockQty: 140, minStock: 10, stockValue: 1600 },
-    { id: "3", sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", unit: "Pc", instockQty: 300, minStock: 15, stockValue: 880 },
-    { id: "4", sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", unit: "Pc", instockQty: 450, minStock: 20, stockValue: 1200 },
-    { id: "5", sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", unit: "Pc", instockQty: 320, minStock: 10, stockValue: 400 },
-    { id: "6", sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", unit: "Pc", instockQty: 650, minStock: 5, stockValue: 2240 },
-    { id: "7", sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", unit: "Pc", instockQty: 700, minStock: 15, stockValue: 900 },
-    { id: "8", sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", unit: "Pc", instockQty: 630, minStock: 20, stockValue: 6480 },
-    { id: "9", sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", unit: "Pc", instockQty: 410, minStock: 5, stockValue: 2000 },
-    { id: "10", sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", unit: "Pc", instockQty: 550, minStock: 15, stockValue: 900 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -47,10 +33,10 @@ export default function InventoryReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +50,7 @@ export default function InventoryReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

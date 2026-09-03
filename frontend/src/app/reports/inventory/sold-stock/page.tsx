@@ -23,20 +23,6 @@ export default function SoldStockPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: SoldStockItem[] = [
-    { id: "1", sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", unit: 6000, quantity: 100, taxValue: 300, total: 300 },
-    { id: "2", sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", unit: 10, quantity: 140, taxValue: 10, total: 1600 },
-    { id: "3", sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", unit: 8, quantity: 300, taxValue: 80, total: 880 },
-    { id: "4", sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", unit: 10, quantity: 450, taxValue: 100, total: 1200 },
-    { id: "5", sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", unit: 5, quantity: 320, taxValue: 400, total: 400 },
-    { id: "6", sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", unit: 7, quantity: 650, taxValue: 220, total: 2240 },
-    { id: "7", sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", unit: 15, quantity: 700, taxValue: 90, total: 900 },
-    { id: "8", sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", unit: 12, quantity: 630, taxValue: 680, total: 6480 },
-    { id: "9", sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", unit: 10, quantity: 410, taxValue: 200, total: 2000 },
-    { id: "10", sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", unit: 20, quantity: 550, taxValue: 400, total: 900 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -47,10 +33,10 @@ export default function SoldStockPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +50,7 @@ export default function SoldStockPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

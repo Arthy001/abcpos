@@ -22,20 +22,6 @@ export default function IncomeReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching realistic data & image
-  const sampleItems: IncomeReportItem[] = [
-    { id: "1", incomeName: "Product Sales", category: "Sales", description: "Monthly store sales", incomeDate: "24 Dec 2024", amount: 4565, paymentMethod: "Cash", status: "RECEIVED" },
-    { id: "2", incomeName: "Consulting Fee", category: "Consulting", description: "Client strategy consulting", incomeDate: "10 Dec 2024", amount: 4494, paymentMethod: "Paypal", status: "RECEIVED" },
-    { id: "3", incomeName: "Store Rent", category: "Rental Income", description: "Branch office rental", incomeDate: "27 Nov 2024", amount: 65945, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { id: "4", incomeName: "Investment Dividend", category: "Investments", description: "Quarterly dividend payout", incomeDate: "18 Nov 2024", amount: 1948, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { id: "5", incomeName: "Web Development", category: "Services", description: "Custom web app service", incomeDate: "06 Nov 2024", amount: 1686, paymentMethod: "Stripe", status: "RECEIVED" },
-    { id: "6", incomeName: "Service Charge", category: "Services", description: "POS setup and training", incomeDate: "25 Oct 2024", amount: 16547, paymentMethod: "Cash", status: "PENDING" },
-    { id: "7", incomeName: "Affiliate Commission", category: "Marketing", description: "Referral commission", incomeDate: "14 Oct 2024", amount: 141845, paymentMethod: "Paypal", status: "RECEIVED" },
-    { id: "8", incomeName: "Maintenance Retainer", category: "Maintenance", description: "Annual maintenance contract", incomeDate: "03 Oct 2024", amount: 44188, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { id: "9", incomeName: "Licensing Fee", category: "Royalties", description: "Brand licensing", incomeDate: "20 Sep 2024", amount: 614848, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { id: "10", incomeName: "Software Subscription", category: "Software", description: "Cloud POS subscription", incomeDate: "10 Sep 2024", amount: 77818, paymentMethod: "Stripe", status: "PENDING" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -47,10 +33,10 @@ export default function IncomeReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +50,7 @@ export default function IncomeReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

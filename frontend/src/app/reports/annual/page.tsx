@@ -17,22 +17,6 @@ export default function AnnualReportPage() {
   const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [selectedStore, setSelectedStore] = useState<string>("All Stores");
 
-  // Sample fallback matching screenshot
-  const sampleItems: AnnualReportItem[] = [
-    { id: "1", monthName: "January", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { id: "2", monthName: "Febuary", jan2026: 30000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { id: "3", monthName: "March", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { id: "4", monthName: "April", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { id: "5", monthName: "May", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { id: "6", monthName: "June", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
-    { id: "7", monthName: "July", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
-    { id: "8", monthName: "August", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
-    { id: "9", monthName: "September", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-    { id: "10", monthName: "October", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-    { id: "11", monthName: "November", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-    { id: "12", monthName: "December", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -43,10 +27,10 @@ export default function AnnualReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -56,7 +40,7 @@ export default function AnnualReportPage() {
     loadData();
   }, []);
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
 
   return (
     <AppLayout>

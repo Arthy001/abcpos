@@ -25,19 +25,6 @@ export default function CustomerReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: CustomerReportItem[] = [
-    { id: "1", reference: "INV2026", customerCode: "CU001", customerName: "Carl Evans", customerImage: "/assets/images/customer11.jpg", totalOrders: 10, amount: 1000, paymentMethod: "Cash", status: "COMPLETED" },
-    { id: "2", reference: "INV2031", customerCode: "CU002", customerName: "Minerva Rameriz", customerImage: "/assets/images/customer12.jpg", totalOrders: 15, amount: 1500, paymentMethod: "Paypal", status: "COMPLETED" },
-    { id: "3", reference: "INV2042", customerCode: "CU003", customerName: "Robert Lamon", customerImage: "/assets/images/customer13.jpg", totalOrders: 22, amount: 1500, paymentMethod: "Paypal", status: "COMPLETED" },
-    { id: "4", reference: "INV2033", customerCode: "CU004", customerName: "Patricia Lewis", customerImage: "/assets/images/customer14.jpg", totalOrders: 14, amount: 2000, paymentMethod: "Stripe", status: "COMPLETED" },
-    { id: "5", reference: "INV2042", customerCode: "CU005", customerName: "Mark Joslyn", customerImage: "/assets/images/customer15.jpg", totalOrders: 12, amount: 800, paymentMethod: "Paypal", status: "COMPLETED" },
-    { id: "6", reference: "INV2011", customerCode: "CU006", customerName: "Marsha Betts", customerImage: "/assets/images/customer16.jpg", totalOrders: 45, amount: 750, paymentMethod: "Cash", status: "COMPLETED" },
-    { id: "7", reference: "INV2014", customerCode: "CU007", customerName: "Daniel Jude", customerImage: "/assets/images/customer17.jpg", totalOrders: 21, amount: 1300, paymentMethod: "Credit Card", status: "COMPLETED" },
-    { id: "8", reference: "INV2056", customerCode: "CU008", customerName: "Emma Bates", customerImage: "/assets/images/customer18.jpg", totalOrders: 78, amount: 1100, paymentMethod: "Stripe", status: "COMPLETED" },
-    { id: "9", reference: "INV2047", customerCode: "CU009", customerName: "Richard Fralick", customerImage: "/assets/images/avatar-01.jpg", totalOrders: 15, amount: 1700, paymentMethod: "Credit Card", status: "COMPLETED" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -49,11 +36,11 @@ export default function CustomerReportPage() {
       if (res.items && res.items.length > 0) {
         setItems(res.items);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
       if (res.total) setTotal(res.total);
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -67,7 +54,7 @@ export default function CustomerReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

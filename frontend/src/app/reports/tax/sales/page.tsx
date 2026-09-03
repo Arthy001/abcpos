@@ -24,20 +24,6 @@ export default function SalesTaxReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: SalesTaxReportItem[] = [
-    { id: "1", reference: "#4237300", customer: "Apex Computers", taxDate: "24 Dec 2024", store: "Electro Mart", amount: 200, paymentMethod: "Stripe", discount: 200, taxAmount: 200 },
-    { id: "2", reference: "#7590325", customer: "Beats Headphones", taxDate: "10 Dec 2024", store: "Quantum Gadgets", amount: 50, paymentMethod: "Paypal", discount: 50, taxAmount: 50 },
-    { id: "3", reference: "#9814521", customer: "Dazzle Shoes", taxDate: "27 Nov 2024", store: "Prime Bazaar", amount: 800, paymentMethod: "Cash", discount: 800, taxAmount: 800 },
-    { id: "4", reference: "#8745225", customer: "Best Accessories", taxDate: "18 Nov 2024", store: "Gadget World", amount: 100, paymentMethod: "Paypal", discount: 100, taxAmount: 100 },
-    { id: "5", reference: "#4237022", customer: "A-Z Store", taxDate: "06 Nov 2024", store: "Volt Vault", amount: 700, paymentMethod: "Cash", discount: 700, taxAmount: 700 },
-    { id: "6", reference: "#8744439", customer: "Hatimi Hardwares", taxDate: "25 Oct 2024", store: "Elite Retail", amount: 1000, paymentMethod: "Cash", discount: 1000, taxAmount: 1000 },
-    { id: "7", reference: "#7590365", customer: "Aesthetic Bags", taxDate: "14 Oct 2024", store: "Prime Mart", amount: 1200, paymentMethod: "Paypal", discount: 1200, taxAmount: 1200 },
-    { id: "8", reference: "#8745478", customer: "Alpha Mobiles", taxDate: "03 Oct 2024", store: "NeoTech Store", amount: 750, paymentMethod: "Stripe", discount: 750, taxAmount: 750 },
-    { id: "9", reference: "#7590321", customer: "Sigma Chairs", taxDate: "20 Sep 2024", store: "Urban Mart", amount: 450, paymentMethod: "Stripe", discount: 450, taxAmount: 450 },
-    { id: "10", reference: "#8745245", customer: "Zenith Bags", taxDate: "10 Sep 2024", store: "Travel Mart", amount: 300, paymentMethod: "Cash", discount: 300, taxAmount: 300 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -49,10 +35,10 @@ export default function SalesTaxReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -66,7 +52,7 @@ export default function SalesTaxReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

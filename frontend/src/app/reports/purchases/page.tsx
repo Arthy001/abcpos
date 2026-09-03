@@ -21,20 +21,6 @@ export default function PurchaseReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: PurchaseReportItem[] = [
-    { id: "1", reference: "PO2026", sku: "PT001", dueDate: "24 Dec 2024", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", instockQty: 100, purchaseQty: 5, purchaseAmount: 500 },
-    { id: "2", reference: "PO2026", sku: "PT002", dueDate: "10 Dec 2024", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", instockQty: 140, purchaseQty: 10, purchaseAmount: 1500 },
-    { id: "3", reference: "PO2026", sku: "PT003", dueDate: "27 Nov 2024", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", instockQty: 300, purchaseQty: 8, purchaseAmount: 600 },
-    { id: "4", reference: "PO2026", sku: "PT004", dueDate: "18 Nov 2024", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", instockQty: 450, purchaseQty: 10, purchaseAmount: 1000 },
-    { id: "5", reference: "PO2026", sku: "PT005", dueDate: "18 Nov 2024", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", instockQty: 320, purchaseQty: 5, purchaseAmount: 1200 },
-    { id: "6", reference: "PO2026", sku: "PT006", dueDate: "25 Oct 2024", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", instockQty: 650, purchaseQty: 7, purchaseAmount: 800 },
-    { id: "7", reference: "PO2026", sku: "PT007", dueDate: "14 Oct 2024", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", instockQty: 700, purchaseQty: 15, purchaseAmount: 2000 },
-    { id: "8", reference: "PO2026", sku: "PT008", dueDate: "03 Oct 2024", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", instockQty: 630, purchaseQty: 12, purchaseAmount: 2000 },
-    { id: "9", reference: "PO2026", sku: "PT009", dueDate: "20 Sep 2024", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", instockQty: 410, purchaseQty: 10, purchaseAmount: 300 },
-    { id: "10", reference: "PO2026", sku: "PT010", dueDate: "10 Sep 2024", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", instockQty: 550, purchaseQty: 20, purchaseAmount: 5000 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -45,10 +31,10 @@ export default function PurchaseReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -62,7 +48,7 @@ export default function PurchaseReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

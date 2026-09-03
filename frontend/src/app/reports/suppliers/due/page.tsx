@@ -25,19 +25,6 @@ export default function SupplierDueReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: SupplierDueReportItem[] = [
-    { id: "1", reference: "INV/PO2026", supplierId: "SU001", supplierName: "Apex Computers", supplierImage: "/assets/images/product-01.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
-    { id: "2", reference: "INV/PO2042", supplierId: "SU003", supplierName: "Dazzle Shoes", supplierImage: "/assets/images/product-03.jpg", totalAmount: 1500, paid: 1500, due: 0, status: "PAID" },
-    { id: "3", reference: "INV/PO2033", supplierId: "SU004", supplierName: "Best Accessories", supplierImage: "/assets/images/product-04.jpg", totalAmount: 2000, paid: 2000, due: 0, status: "PAID" },
-    { id: "4", reference: "INV/PO2042", supplierId: "SU005", supplierName: "A-Z Store", supplierImage: "/assets/images/product-05.jpg", totalAmount: 800, paid: 800, due: 0, status: "PAID" },
-    { id: "5", reference: "INV/PO2011", supplierId: "SU006", supplierName: "Hatimi Hardwares", supplierImage: "/assets/images/product-06.jpg", totalAmount: 750, paid: 750, due: 0, status: "PAID" },
-    { id: "6", reference: "INV/PO2014", supplierId: "SU007", supplierName: "Aesthetic Bags", supplierImage: "/assets/images/product-07.jpg", totalAmount: 1300, paid: 1300, due: 0, status: "OVERDUE" },
-    { id: "7", reference: "INV/PO2056", supplierId: "SU008", supplierName: "Alpha Mobiles", supplierImage: "/assets/images/product-08.jpg", totalAmount: 1100, paid: 1100, due: 0, status: "PAID" },
-    { id: "8", reference: "INV/PO2047", supplierId: "SU009", supplierName: "Sigma Chairs", supplierImage: "/assets/images/product-09.jpg", totalAmount: 2300, paid: 2300, due: 0, status: "PAID" },
-    { id: "9", reference: "INV/PO2017", supplierId: "SU010", supplierName: "Zenith Bags", supplierImage: "/assets/images/product-10.jpg", totalAmount: 1700, paid: 1700, due: 0, status: "UNPAID" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -49,7 +36,7 @@ export default function SupplierDueReportPage() {
       if (res.items && res.items.length > 0) {
         setItems(res.items);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
       setTotals({
         totalAmount: res.totalAmount || 33268,
@@ -57,7 +44,7 @@ export default function SupplierDueReportPage() {
         due: res.due || "$0.0",
       });
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -71,7 +58,7 @@ export default function SupplierDueReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

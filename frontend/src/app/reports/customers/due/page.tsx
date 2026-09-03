@@ -25,19 +25,6 @@ export default function CustomerDueReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: CustomerDueReportItem[] = [
-    { id: "1", reference: "INV2026", customerCode: "CU001", customerName: "Carl Evans", customerImage: "/assets/images/customer11.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
-    { id: "2", reference: "INV2031", customerCode: "CU002", customerName: "Minerva Rameriz", customerImage: "/assets/images/customer12.jpg", totalAmount: 1500, paid: 1500, due: 0, status: "PAID" },
-    { id: "3", reference: "INV2042", customerCode: "CU003", customerName: "Robert Lamon", customerImage: "/assets/images/customer13.jpg", totalAmount: 1600, paid: 1600, due: 0, status: "PAID" },
-    { id: "4", reference: "INV2033", customerCode: "CU004", customerName: "Patricia Lewis", customerImage: "/assets/images/customer14.jpg", totalAmount: 700, paid: 700, due: 0, status: "PAID" },
-    { id: "5", reference: "INV2042", customerCode: "CU005", customerName: "Mark Joslyn", customerImage: "/assets/images/customer15.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
-    { id: "6", reference: "INV2011", customerCode: "CU006", customerName: "Marsha Betts", customerImage: "/assets/images/customer16.jpg", totalAmount: 2000, paid: 2000, due: 0, status: "PAID" },
-    { id: "7", reference: "INV2014", customerCode: "CU007", customerName: "Daniel Jude", customerImage: "/assets/images/customer17.jpg", totalAmount: 600, paid: 600, due: 0, status: "OVERDUE" },
-    { id: "8", reference: "INV2056", customerCode: "CU008", customerName: "Emma Bates", customerImage: "/assets/images/customer18.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "UNPAID" },
-    { id: "9", reference: "INV2047", customerCode: "CU009", customerName: "Richard Fralick", customerImage: "/assets/images/avatar-01.jpg", totalAmount: 500, paid: 500, due: 0, status: "COMPLETED" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -49,7 +36,7 @@ export default function CustomerDueReportPage() {
       if (res.items && res.items.length > 0) {
         setItems(res.items);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
       setTotals({
         totalAmount: res.totalAmount || 33268,
@@ -57,7 +44,7 @@ export default function CustomerDueReportPage() {
         due: res.due || "$0.0",
       });
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -71,7 +58,7 @@ export default function CustomerDueReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

@@ -23,20 +23,6 @@ export default function StockHistoryPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: StockHistoryItem[] = [
-    { id: "1", sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", initialQuantity: 6000, addedQuantity: 100, soldQuantity: 100, defectiveQuantity: 100, finalQuantity: 100 },
-    { id: "2", sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", initialQuantity: 10, addedQuantity: 140, soldQuantity: 140, defectiveQuantity: 140, finalQuantity: 140 },
-    { id: "3", sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", initialQuantity: 8, addedQuantity: 300, soldQuantity: 300, defectiveQuantity: 300, finalQuantity: 300 },
-    { id: "4", sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", initialQuantity: 10, addedQuantity: 450, soldQuantity: 450, defectiveQuantity: 450, finalQuantity: 450 },
-    { id: "5", sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", initialQuantity: 5, addedQuantity: 320, soldQuantity: 320, defectiveQuantity: 320, finalQuantity: 320 },
-    { id: "6", sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", initialQuantity: 7, addedQuantity: 650, soldQuantity: 650, defectiveQuantity: 650, finalQuantity: 650 },
-    { id: "7", sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", initialQuantity: 15, addedQuantity: 700, soldQuantity: 700, defectiveQuantity: 700, finalQuantity: 700 },
-    { id: "8", sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", initialQuantity: 12, addedQuantity: 630, soldQuantity: 630, defectiveQuantity: 630, finalQuantity: 630 },
-    { id: "9", sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", initialQuantity: 10, addedQuantity: 410, soldQuantity: 410, defectiveQuantity: 410, finalQuantity: 410 },
-    { id: "10", sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", initialQuantity: 20, addedQuantity: 550, soldQuantity: 550, defectiveQuantity: 550, finalQuantity: 550 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -47,10 +33,10 @@ export default function StockHistoryPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +50,7 @@ export default function StockHistoryPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

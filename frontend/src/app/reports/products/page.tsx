@@ -25,20 +25,6 @@ export default function ProductReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: ProductReportItem[] = [
-    { id: "1", sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", brand: "Lenovo", qty: 100, price: 600, totalOrdered: 5000, revenue: 787258 },
-    { id: "2", sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", brand: "Beats", qty: 140, price: 160, totalOrdered: 4860, revenue: 689788 },
-    { id: "3", sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", brand: "Nike", qty: 300, price: 110, totalOrdered: 40, revenue: 7757 },
-    { id: "4", sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", brand: "Apple", qty: 450, price: 120, totalOrdered: 9642, revenue: 7555 },
-    { id: "5", sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", brand: "Amazon", qty: 320, price: 80, totalOrdered: 5464, revenue: 39698 },
-    { id: "6", sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", brand: "Modern Wave", qty: 650, price: 320, totalOrdered: 158, revenue: 748 },
-    { id: "7", sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", brand: "Dior", qty: 700, price: 60, totalOrdered: 7845, revenue: 7985 },
-    { id: "8", sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", brand: "Apple", qty: 630, price: 540, totalOrdered: 540, revenue: 8769798 },
-    { id: "9", sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", brand: "Arlime", qty: 410, price: 200, totalOrdered: 200, revenue: 788979 },
-    { id: "10", sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", brand: "The North Face", qty: 550, price: 45, totalOrdered: 45, revenue: 895 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -51,10 +37,10 @@ export default function ProductReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -68,7 +54,7 @@ export default function ProductReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

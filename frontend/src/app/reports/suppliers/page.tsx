@@ -25,19 +25,6 @@ export default function SupplierReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: SupplierReportItem[] = [
-    { id: "1", reference: "INV/PO2026", supplierId: "SU001", supplierName: "Apex Computers", supplierImage: "/assets/images/product-01.jpg", totalItems: 10, amount: 1000, paymentMethod: "Cash", status: "RECEIVED" },
-    { id: "2", reference: "INV/PO2031", supplierId: "SU002", supplierName: "Beats Headphones", supplierImage: "/assets/images/product-02.jpg", totalItems: 15, amount: 1500, paymentMethod: "Paypal", status: "PENDING" },
-    { id: "3", reference: "INV/PO2042", supplierId: "SU003", supplierName: "Dazzle Shoes", supplierImage: "/assets/images/product-03.jpg", totalItems: 22, amount: 1500, paymentMethod: "Paypal", status: "RECEIVED" },
-    { id: "4", reference: "INV/PO2033", supplierId: "SU004", supplierName: "Best Accessories", supplierImage: "/assets/images/product-04.jpg", totalItems: 14, amount: 2000, paymentMethod: "Stripe", status: "ORDERED" },
-    { id: "5", reference: "INV/PO2042", supplierId: "SU005", supplierName: "A-Z Store", supplierImage: "/assets/images/product-05.jpg", totalItems: 12, amount: 800, paymentMethod: "Paypal", status: "RECEIVED" },
-    { id: "6", reference: "INV/PO2011", supplierId: "SU006", supplierName: "Hatimi Hardwares", supplierImage: "/assets/images/product-06.jpg", totalItems: 45, amount: 750, paymentMethod: "Cash", status: "PENDING" },
-    { id: "7", reference: "INV/PO2014", supplierId: "SU007", supplierName: "Aesthetic Bags", supplierImage: "/assets/images/product-07.jpg", totalItems: 21, amount: 1300, paymentMethod: "Credit Card", status: "RECEIVED" },
-    { id: "8", reference: "INV/PO2047", supplierId: "SU009", supplierName: "Sigma Chairs", supplierImage: "/assets/images/product-08.jpg", totalItems: 25, amount: 2300, paymentMethod: "Credit Card", status: "ORDERED" },
-    { id: "9", reference: "INV/PO2017", supplierId: "SU010", supplierName: "Zenith Bags", supplierImage: "/assets/images/product-09.jpg", totalItems: 15, amount: 1700, paymentMethod: "Stripe", status: "PENDING" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -49,11 +36,11 @@ export default function SupplierReportPage() {
       if (res.items && res.items.length > 0) {
         setItems(res.items);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
       if (res.total) setTotal(res.total);
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -67,7 +54,7 @@ export default function SupplierReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

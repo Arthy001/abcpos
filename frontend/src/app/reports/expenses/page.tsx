@@ -22,20 +22,6 @@ export default function ExpenseReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: ExpenseReportItem[] = [
-    { id: "1", expenseName: "Electricity Payment", category: "Utilities", description: "Electricity Bill", expenseDate: "24 Dec 2024", amount: 200, paymentMethod: "Cash", status: "APPROVED" },
-    { id: "2", expenseName: "Stationery Purchase", category: "Office Supplies", description: "Stationery items for office", expenseDate: "10 Dec 2024", amount: 50, paymentMethod: "Paypal", status: "PENDING" },
-    { id: "3", expenseName: "AC Repair Service", category: "Repairs & Maintenance", description: "AC Repair for Office", expenseDate: "27 Nov 2024", amount: 800, paymentMethod: "Cash", status: "APPROVED" },
-    { id: "4", expenseName: "Social Media Promotion", category: "Marketing", description: "Social Media Ads Campaign", expenseDate: "18 Nov 2024", amount: 100, paymentMethod: "Stripe", status: "APPROVED" },
-    { id: "5", expenseName: "Client Meeting", category: "Travel Expenses", description: "Travel fare for client meeting", expenseDate: "06 Nov 2024", amount: 700, paymentMethod: "Credit Card", status: "APPROVED" },
-    { id: "6", expenseName: "Team Lunch", category: "Employee Benefits", description: "Team Lunch at Restaurant", expenseDate: "25 Oct 2024", amount: 1000, paymentMethod: "Cash", status: "PENDING" },
-    { id: "7", expenseName: "Business Flight Ticket", category: "Travel Expenses", description: "Flight tickets for meetings", expenseDate: "14 Oct 2024", amount: 1200, paymentMethod: "Credit Card", status: "APPROVED" },
-    { id: "8", expenseName: "Chair Purchase", category: "Office Supplies", description: "Ergonomic chairs for staff", expenseDate: "03 Oct 2024", amount: 750, paymentMethod: "Bank Transfer", status: "APPROVED" },
-    { id: "9", expenseName: "Plumbing Service", category: "Repairs & Maintenance", description: "Plumbing repairs in office", expenseDate: "20 Sep 2024", amount: 450, paymentMethod: "Cash", status: "APPROVED" },
-    { id: "10", expenseName: "Internet Bill Payment", category: "Utilities", description: "Monthly internet subscription", expenseDate: "10 Sep 2024", amount: 300, paymentMethod: "Paypal", status: "PENDING" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -47,10 +33,10 @@ export default function ExpenseReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +50,7 @@ export default function ExpenseReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

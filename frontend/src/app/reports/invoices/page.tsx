@@ -32,20 +32,6 @@ export default function InvoiceReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: InvoiceReportItem[] = [
-    { id: "1", invoiceNo: "INV001", customer: "Carl Evans", dueDate: "24 Dec 2024", amount: 500, paid: 500, amountDue: 500, status: "PAID" },
-    { id: "2", invoiceNo: "INV002", customer: "Minerva Rameriz", dueDate: "10 Dec 2024", amount: 1500, paid: 1500, amountDue: 1500, status: "PAID" },
-    { id: "3", invoiceNo: "INV003", customer: "Robert Lamon", dueDate: "27 Nov 2024", amount: 600, paid: 600, amountDue: 600, status: "PAID" },
-    { id: "4", invoiceNo: "INV004", customer: "Patricia Lewis", dueDate: "18 Nov 2024", amount: 1000, paid: 1000, amountDue: 1000, status: "PAID" },
-    { id: "5", invoiceNo: "INV005", customer: "Mark Joslyn", dueDate: "06 Nov 2024", amount: 1200, paid: 1200, amountDue: 1200, status: "PAID" },
-    { id: "6", invoiceNo: "INV006", customer: "Marsha Betts", dueDate: "25 Oct 2024", amount: 800, paid: 800, amountDue: 800, status: "PAID" },
-    { id: "7", invoiceNo: "INV007", customer: "Daniel Jude", dueDate: "14 Oct 2024", amount: 2000, paid: 2000, amountDue: 2000, status: "PAID" },
-    { id: "8", invoiceNo: "INV008", customer: "Emma Bates", dueDate: "03 Oct 2024", amount: 100, paid: 100, amountDue: 100, status: "PAID" },
-    { id: "9", invoiceNo: "INV009", customer: "Richard Fralick", dueDate: "20 Sep 2024", amount: 300, paid: 300, amountDue: 300, status: "PAID" },
-    { id: "10", invoiceNo: "INV010", customer: "Michelle Robison", dueDate: "10 Sep 2024", amount: 5000, paid: 5000, amountDue: 5000, status: "UNPAID" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -56,13 +42,13 @@ export default function InvoiceReportPage() {
       if (res.items && res.items.length > 0) {
         setItems(res.items);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
       if (res.summary) {
         setSummary(res.summary);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -76,7 +62,7 @@ export default function InvoiceReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

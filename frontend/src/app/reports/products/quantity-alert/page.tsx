@@ -25,20 +25,6 @@ export default function ProductQuantityAlertPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: ProductQuantityAlertItem[] = [
-    { id: "1", sku: "PT001", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", totalQuantity: 98, alertQuantity: 79 },
-    { id: "2", sku: "PT002", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", totalQuantity: 156, alertQuantity: 66 },
-    { id: "3", sku: "PT003", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", totalQuantity: 89, alertQuantity: 69 },
-    { id: "4", sku: "PT004", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", totalQuantity: 569, alertQuantity: 68 },
-    { id: "5", sku: "PT005", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", totalQuantity: 548, alertQuantity: 33 },
-    { id: "6", sku: "PT006", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", totalQuantity: 456, alertQuantity: 16 },
-    { id: "7", sku: "PT007", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", totalQuantity: 178, alertQuantity: 86 },
-    { id: "8", sku: "PT008", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", totalQuantity: 1768, alertQuantity: 33 },
-    { id: "9", sku: "PT009", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", totalQuantity: 568, alertQuantity: 528 },
-    { id: "10", sku: "PT010", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", totalQuantity: 146, alertQuantity: 11 },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -51,10 +37,10 @@ export default function ProductQuantityAlertPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -68,7 +54,7 @@ export default function ProductQuantityAlertPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(

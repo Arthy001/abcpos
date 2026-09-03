@@ -25,20 +25,6 @@ export default function ProductExpiryReportPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleItems: ProductExpiryReportItem[] = [
-    { id: "1", sku: "PT001", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
-    { id: "2", sku: "PT002", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", manufacturedDate: "25 Dec 2024", expiredDate: "21 Dec 2026" },
-    { id: "3", sku: "PT003", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", manufacturedDate: "26 Dec 2024", expiredDate: "22 Dec 2026" },
-    { id: "4", sku: "PT004", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", manufacturedDate: "30 Dec 2024", expiredDate: "25 Dec 2026" },
-    { id: "5", sku: "PT005", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", manufacturedDate: "28 Dec 2024", expiredDate: "26 Dec 2026" },
-    { id: "6", sku: "PT006", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "29 Dec 2026" },
-    { id: "7", sku: "PT007", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", manufacturedDate: "15 Dec 2024", expiredDate: "30 Dec 2026" },
-    { id: "8", sku: "PT008", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
-    { id: "9", sku: "PT009", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", manufacturedDate: "30 Dec 2024", expiredDate: "20 Dec 2026" },
-    { id: "10", sku: "PT010", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -51,10 +37,10 @@ export default function ProductExpiryReportPage() {
       if (data && data.length > 0) {
         setItems(data);
       } else {
-        setItems(sampleItems);
+        setItems([]);
       }
     } catch (e) {
-      setItems(sampleItems);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -68,7 +54,7 @@ export default function ProductExpiryReportPage() {
     loadData();
   };
 
-  const displayList = items.length > 0 ? items : sampleItems;
+  const displayList = items || [];
   const totalEntries = displayList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
   const paginatedList = displayList.slice(
