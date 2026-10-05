@@ -798,9 +798,10 @@ export async function createOrderApi(orderPayload: {
   customerId?: string | null;
   discount: number;
   tax: number;
-  paymentMethod: "CASH" | "PROMPTPAY" | "CREDIT_CARD";
+  paymentMethod: "CASH" | "PROMPTPAY" | "CREDIT_CARD" | "GIFT_CARD";
   cashierName?: string;
   notes?: string;
+  giftCardCode?: string;
 }): Promise<Order> {
   const res = await fetch(`${API_BASE_URL}/orders`, {
     method: "POST",
@@ -2786,6 +2787,17 @@ export async function updateGiftCardApi(id: string, data: Partial<GiftCard>): Pr
 export async function deleteGiftCardApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/promo/gift-cards/${id}`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to delete gift card");
+}
+
+export async function verifyGiftCardApi(code: string): Promise<GiftCard> {
+  const res = await fetch(`${API_BASE_URL}/promo/gift-cards/verify/${encodeURIComponent(code.trim())}`, {
+    cache: "no-store",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to verify gift card");
+  }
+  return data.giftCard;
 }
 
 // ==================== 🔐 AUTHENTICATION ====================

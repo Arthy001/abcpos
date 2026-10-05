@@ -41,6 +41,7 @@ import {
   createGiftCard,
   updateGiftCard,
   deleteGiftCard,
+  verifyGiftCard,
 } from "../controllers/promo.controller.js";
 import {
   getAuditLogs,
@@ -610,6 +611,7 @@ router.get("/promo/discount-plans", getDiscountPlans);
 router.post("/promo/discount-plans", createDiscountPlan);
 
 router.get("/promo/gift-cards", getGiftCards);
+router.get("/promo/gift-cards/verify/:code", verifyGiftCard);
 router.post("/promo/gift-cards", createGiftCard);
 router.put("/promo/gift-cards/:id", updateGiftCard);
 router.delete("/promo/gift-cards/:id", deleteGiftCard);

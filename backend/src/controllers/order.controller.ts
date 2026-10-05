@@ -20,7 +20,7 @@ export const getOrders = async (req: Request, res: Response) => {
 
 export const createOrder = async (req: Request, res: Response) => {
   try {
-    const { items, customerId, discount = 0, tax = 0, paymentMethod = "CASH", cashierName = "Admin", notes } = req.body;
+    const { items, customerId, discount = 0, tax = 0, paymentMethod = "CASH", cashierName = "Admin", notes, giftCardCode } = req.body;
 
     if (!items || !Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ success: false, message: "Order must contain at least one item." });
@@ -73,7 +73,56 @@ export const createOrder = async (req: Request, res: Response) => {
       });
     }
 
-    const total = calculatedSubtotal - Number(discount) + Number(tax);
+    // Handle Gift Card Validation & Balance Deduction
+    let giftCardInfo: any = null;
+    const totalOrderAmount = Math.max(0, calculatedSubtotal - Number(discount) + Number(tax));
+
+    if (paymentMethod === "GIFT_CARD" || giftCardCode) {
+      const codeToUse = (giftCardCode || "").trim();
+      if (!codeToUse) {
+        return res.status(400).json({ success: false, message: "Gift card code is required for Gift Card payment." });
+      }
+      const card = await prisma.giftCard.findUnique({
+        where: { code: codeToUse },
+      });
+      if (!card) {
+        return res.status(404).json({ success: false, message: `Gift card '${codeToUse}' not found.` });
+      }
+      if (card.status !== "Active") {
+        return res.status(400).json({ success: false, message: `Gift card '${codeToUse}' is not active (Status: ${card.status}).` });
+      }
+      const expiry = new Date(card.expiryDate);
+      if (!isNaN(expiry.getTime()) && expiry < new Date()) {
+        return res.status(400).json({ success: false, message: `Gift card '${codeToUse}' expired on ${card.expiryDate}.` });
+      }
+      if (card.balance <= 0) {
+        return res.status(400).json({ success: false, message: `Gift card '${codeToUse}' has zero balance remaining.` });
+      }
+
+      const deduction = Math.min(card.balance, totalOrderAmount);
+      const remainingBalance = Math.round((card.balance - deduction) * 100) / 100;
+
+      await prisma.giftCard.update({
+        where: { id: card.id },
+        data: {
+          balance: remainingBalance,
+          status: remainingBalance <= 0 ? "Redeemed" : "Active",
+        },
+      });
+
+      giftCardInfo = {
+        code: card.code,
+        customerName: card.customerName,
+        deducted: deduction,
+        remainingBalance,
+      };
+    }
+
+    let finalNotes = notes || "";
+    if (giftCardInfo) {
+      const gcNote = `[Gift Card ${giftCardInfo.code} redeemed: ฿${giftCardInfo.deducted.toLocaleString()}, Bal: ฿${giftCardInfo.remainingBalance.toLocaleString()}]`;
+      finalNotes = finalNotes ? `${finalNotes} ${gcNote}` : gcNote;
+    }
 
     const order = await prisma.order.create({
       data: {
@@ -82,11 +131,11 @@ export const createOrder = async (req: Request, res: Response) => {
         subtotal: calculatedSubtotal,
         discount: Number(discount),
         tax: Number(tax),
-        total: Math.max(0, total),
+        total: totalOrderAmount,
         paymentMethod,
         paymentStatus: "PAID",
         cashierName,
-        notes,
+        notes: finalNotes,
         items: {
           create: orderItemsData,
         },
@@ -97,7 +146,7 @@ export const createOrder = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ success: true, data: order });
+    res.status(201).json({ success: true, data: order, giftCard: giftCardInfo });
   } catch (error: any) {
     res.status(400).json({ success: false, message: error.message });
   }

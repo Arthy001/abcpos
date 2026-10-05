@@ -236,3 +236,41 @@ export const deleteGiftCard = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message || "Failed to delete gift card" });
   }
 };
+
+export const verifyGiftCard = async (req: Request, res: Response) => {
+  try {
+    const code = String(req.params.code || "").trim();
+    if (!code) {
+      return res.status(400).json({ success: false, message: "Gift card code is required" });
+    }
+
+    const card = await prisma.giftCard.findUnique({
+      where: { code },
+    });
+
+    if (!card) {
+      return res.status(404).json({ success: false, message: `Gift card '${code}' not found.` });
+    }
+
+    if (card.status !== "Active") {
+      return res.status(400).json({ success: false, message: `Gift card '${code}' is inactive (Status: ${card.status}).` });
+    }
+
+    // Check expiry date
+    const expiry = new Date(card.expiryDate);
+    if (!isNaN(expiry.getTime()) && expiry < new Date()) {
+      return res.status(400).json({ success: false, message: `Gift card '${code}' expired on ${card.expiryDate}.` });
+    }
+
+    if (card.balance <= 0) {
+      return res.status(400).json({ success: false, message: `Gift card '${code}' has zero balance remaining.` });
+    }
+
+    res.json({
+      success: true,
+      giftCard: card,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message || "Failed to verify gift card" });
+  }
+};

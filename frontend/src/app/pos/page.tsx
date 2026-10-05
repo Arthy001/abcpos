@@ -49,8 +49,10 @@ import {
   DollarSign,
   Ticket,
   Percent,
+  Gift,
+  Loader2,
 } from "lucide-react";
-import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse, Coupon, CompanySettings, PosSettings } from "@/types";
+import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse, Coupon, CompanySettings, PosSettings, GiftCard } from "@/types";
 import {
   fetchProducts,
   fetchCategories,
@@ -65,6 +67,7 @@ import {
   fetchCoupons,
   fetchCompanySettings,
   fetchPosSettings,
+  verifyGiftCardApi,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -142,10 +145,16 @@ export default function POSPage() {
 
   // Modals
   const [showPaymentModal, setShowPaymentModal] = useState<boolean>(false);
-  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "PROMPTPAY" | "CREDIT_CARD">("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "PROMPTPAY" | "CREDIT_CARD" | "GIFT_CARD">("CASH");
   const [cashReceived, setCashReceived] = useState<string>("");
   const [orderNotes, setOrderNotes] = useState<string>("");
   const [isSubmittingOrder, setIsSubmittingOrder] = useState<boolean>(false);
+
+  // Gift Card Payment State
+  const [giftCardCodeInput, setGiftCardCodeInput] = useState<string>("");
+  const [verifiedGiftCard, setVerifiedGiftCard] = useState<GiftCard | null>(null);
+  const [isVerifyingGiftCard, setIsVerifyingGiftCard] = useState<boolean>(false);
+  const [giftCardError, setGiftCardError] = useState<string | null>(null);
 
   // Receipt Modal
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
@@ -153,6 +162,9 @@ export default function POSPage() {
     method: string;
     received: number;
     change: number;
+    giftCardCode?: string;
+    giftCardDeduction?: number;
+    giftCardRemaining?: number;
   } | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState<boolean>(false);
 
@@ -679,6 +691,27 @@ export default function POSPage() {
     playSound("beep");
   };
 
+  // Gift Card Verification Handler
+  const handleVerifyGiftCard = async () => {
+    if (!giftCardCodeInput.trim()) {
+      setGiftCardError("Please enter a gift card code.");
+      return;
+    }
+    try {
+      setIsVerifyingGiftCard(true);
+      setGiftCardError(null);
+      const card = await verifyGiftCardApi(giftCardCodeInput.trim());
+      setVerifiedGiftCard(card);
+      playSound("beep");
+    } catch (err: any) {
+      setVerifiedGiftCard(null);
+      setGiftCardError(err.message || "Invalid or inactive gift card.");
+      playSound("error");
+    } finally {
+      setIsVerifyingGiftCard(false);
+    }
+  };
+
   // Checkout / Pay
   const handleProceedPayment = async () => {
     if (cartItems.length === 0) {
@@ -690,6 +723,17 @@ export default function POSPage() {
     if (paymentMethod === "CASH" && receivedNum < finalPayable) {
       alert("Received cash amount cannot be less than total payable!");
       return;
+    }
+
+    if (paymentMethod === "GIFT_CARD") {
+      if (!verifiedGiftCard) {
+        setGiftCardError("Please enter and verify a valid gift card before checkout.");
+        return;
+      }
+      if (verifiedGiftCard.balance <= 0) {
+        setGiftCardError("This gift card has no remaining balance.");
+        return;
+      }
     }
 
     try {
@@ -710,6 +754,7 @@ export default function POSPage() {
         paymentMethod: paymentMethod,
         cashierName: cashierName,
         notes: noteContent,
+        giftCardCode: paymentMethod === "GIFT_CARD" ? verifiedGiftCard?.code : undefined,
       };
 
       const createdOrder = await createOrderApi(payload);
@@ -717,12 +762,18 @@ export default function POSPage() {
       // Play success chime
       playSound("chime");
 
+      const deduction = verifiedGiftCard ? Math.min(verifiedGiftCard.balance, finalPayable) : 0;
+      const remaining = verifiedGiftCard ? Math.max(0, verifiedGiftCard.balance - finalPayable) : 0;
+
       // Save info for receipt
       setCompletedOrder(createdOrder);
       setLastPaymentInfo({
-        method: paymentMethod,
+        method: paymentMethod === "GIFT_CARD" ? "GIFT CARD / VOUCHER" : paymentMethod,
         received: paymentMethod === "CASH" ? receivedNum : finalPayable,
         change: paymentMethod === "CASH" ? Math.max(0, receivedNum - finalPayable) : 0,
+        giftCardCode: verifiedGiftCard?.code,
+        giftCardDeduction: deduction,
+        giftCardRemaining: remaining,
       });
 
       // Refresh product list to sync live stock from SQLite and drawer cash
@@ -735,6 +786,9 @@ export default function POSPage() {
       setShowPaymentModal(false);
       setCashReceived("");
       setOrderNotes("");
+      setVerifiedGiftCard(null);
+      setGiftCardCodeInput("");
+      setGiftCardError(null);
       setShowReceiptModal(true);
     } catch (err: any) {
       console.error(err);
@@ -1824,11 +1878,11 @@ export default function POSPage() {
               {/* Payment Method Selector Tabs */}
               <div>
                 <label className="text-xs font-bold text-gray-700 mb-1.5 block">Payment Method</label>
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("CASH")}
-                    className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
+                    className={`py-3 px-2 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
                       paymentMethod === "CASH"
                         ? "border-[#FE9F43] bg-orange-50/50 text-[#FE9F43] ring-1 ring-[#FE9F43]"
                         : "border-gray-200 hover:bg-gray-50 text-gray-600"
@@ -1841,7 +1895,7 @@ export default function POSPage() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("PROMPTPAY")}
-                    className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
+                    className={`py-3 px-2 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
                       paymentMethod === "PROMPTPAY"
                         ? "border-[#00CFE8] bg-cyan-50/50 text-[#00CFE8] ring-1 ring-[#00CFE8]"
                         : "border-gray-200 hover:bg-gray-50 text-gray-600"
@@ -1854,7 +1908,7 @@ export default function POSPage() {
                   <button
                     type="button"
                     onClick={() => setPaymentMethod("CREDIT_CARD")}
-                    className={`py-3 px-3 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
+                    className={`py-3 px-2 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
                       paymentMethod === "CREDIT_CARD"
                         ? "border-[#7367F0] bg-purple-50/50 text-[#7367F0] ring-1 ring-[#7367F0]"
                         : "border-gray-200 hover:bg-gray-50 text-gray-600"
@@ -1862,6 +1916,19 @@ export default function POSPage() {
                   >
                     <CreditCard className="w-5 h-5" />
                     <span>Credit Card</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setPaymentMethod("GIFT_CARD")}
+                    className={`py-3 px-2 rounded-xl border flex flex-col items-center justify-center space-y-1 font-bold text-xs transition-all cursor-pointer ${
+                      paymentMethod === "GIFT_CARD"
+                        ? "border-amber-500 bg-amber-50/60 text-amber-700 ring-1 ring-amber-500"
+                        : "border-gray-200 hover:bg-gray-50 text-gray-600"
+                    }`}
+                  >
+                    <Gift className="w-5 h-5 text-amber-500" />
+                    <span>Gift Card</span>
                   </button>
                 </div>
               </div>
@@ -1924,6 +1991,96 @@ export default function POSPage() {
                   <CreditCard className="w-10 h-10 text-purple-600 mx-auto" />
                   <p className="text-xs font-bold text-purple-900">Tap or Swipe Card on EDC Terminal</p>
                   <p className="text-[11px] text-purple-600">Supports VISA, Mastercard, JCB, UnionPay</p>
+                </div>
+              )}
+
+              {/* Gift Card / Voucher Mode */}
+              {paymentMethod === "GIFT_CARD" && (
+                <div className="space-y-3 bg-gradient-to-br from-amber-50/60 to-orange-50/40 p-4 rounded-2xl border border-amber-200">
+                  <div>
+                    <label className="text-xs font-bold text-gray-800 block mb-1.5 flex items-center justify-between">
+                      <span>Gift Card Code (รหัสบัตรของขวัญ)</span>
+                      <span className="text-[10px] text-amber-700 font-normal">Active cards: GC-1122-5000, GC-4422-2500</span>
+                    </label>
+                    <div className="flex gap-2">
+                      <div className="relative flex-1">
+                        <input
+                          type="text"
+                          placeholder="e.g. GC-1122-5000"
+                          value={giftCardCodeInput}
+                          onChange={(e) => {
+                            setGiftCardCodeInput(e.target.value.toUpperCase());
+                            setGiftCardError(null);
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleVerifyGiftCard();
+                            }
+                          }}
+                          className="w-full px-3.5 py-2.5 bg-white border border-gray-300 rounded-xl text-xs font-mono font-bold tracking-wider text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 uppercase"
+                        />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={handleVerifyGiftCard}
+                        disabled={isVerifyingGiftCard || !giftCardCodeInput.trim()}
+                        className="px-4 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-xl text-xs font-bold shadow-xs active:scale-95 transition-all cursor-pointer flex items-center space-x-1.5 shrink-0"
+                      >
+                        {isVerifyingGiftCard ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <Check className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isVerifyingGiftCard ? "Checking..." : "Verify Card"}</span>
+                      </button>
+                    </div>
+
+                    {giftCardError && (
+                      <p className="text-[11px] text-rose-600 mt-1.5 flex items-center gap-1 font-medium">
+                        <AlertTriangle className="w-3 h-3 shrink-0" />
+                        <span>{giftCardError}</span>
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Verified Card Preview */}
+                  {verifiedGiftCard && (
+                    <div className="p-3.5 bg-white rounded-xl border border-amber-300 shadow-xs space-y-2.5 animate-in fade-in zoom-in-95">
+                      <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+                        <div className="flex items-center space-x-2">
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold">
+                            <Gift className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-gray-900">{verifiedGiftCard.customerName}</p>
+                            <p className="text-[10px] font-mono text-gray-400">{verifiedGiftCard.code}</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          {verifiedGiftCard.status}
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs">
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <p className="text-[10px] text-gray-500">Available Card Balance</p>
+                          <p className="text-sm font-black text-emerald-600">฿{verifiedGiftCard.balance.toLocaleString()}</p>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded-lg">
+                          <p className="text-[10px] text-gray-500">Deduct For This Order</p>
+                          <p className="text-sm font-black text-amber-600">฿{Math.min(verifiedGiftCard.balance, finalPayable).toLocaleString()}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px] pt-1 text-gray-600 border-t border-dashed border-gray-200">
+                        <span>Balance Remaining After Sale:</span>
+                        <span className="font-bold text-gray-900 font-mono">
+                          ฿{Math.max(0, verifiedGiftCard.balance - finalPayable).toLocaleString()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -2071,14 +2228,33 @@ export default function POSPage() {
                     <span className="text-gray-500">Paid by:</span>
                     <span className="font-bold">{lastPaymentInfo.method}</span>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-500">Received:</span>
-                    <span>฿{lastPaymentInfo.received.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-bold text-emerald-700">
-                    <span>Change:</span>
-                    <span>฿{lastPaymentInfo.change.toFixed(2)}</span>
-                  </div>
+                  {lastPaymentInfo.giftCardCode ? (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Gift Card:</span>
+                        <span className="font-mono font-bold text-amber-700">{lastPaymentInfo.giftCardCode}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Deducted:</span>
+                        <span className="font-bold text-amber-700">฿{lastPaymentInfo.giftCardDeduction?.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-emerald-700 font-bold">
+                        <span>Card Balance Left:</span>
+                        <span>฿{lastPaymentInfo.giftCardRemaining?.toFixed(2)}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Received:</span>
+                        <span>฿{lastPaymentInfo.received.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between font-bold text-emerald-700">
+                        <span>Change:</span>
+                        <span>฿{lastPaymentInfo.change.toFixed(2)}</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               )}
 
