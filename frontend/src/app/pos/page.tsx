@@ -47,8 +47,10 @@ import {
   ArrowDownLeft,
   ArrowUpRight,
   DollarSign,
+  Ticket,
+  Percent,
 } from "lucide-react";
-import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse } from "@/types";
+import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse, Coupon } from "@/types";
 import {
   fetchProducts,
   fetchCategories,
@@ -60,6 +62,7 @@ import {
   openShiftApi,
   recordShiftMovementApi,
   closeShiftApi,
+  fetchCoupons,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -81,6 +84,7 @@ interface HeldOrder {
   discount: number;
   shipping: number;
   coupon: number;
+  appliedCoupon?: Coupon | null;
 }
 
 export default function POSPage() {
@@ -118,6 +122,13 @@ export default function POSPage() {
   const [couponDiscount, setCouponDiscount] = useState<number>(0);
   const [customDiscount, setCustomDiscount] = useState<number>(0);
   const [roundoff, setRoundoff] = useState<boolean>(true);
+
+  // Coupon & Promo States
+  const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [showCouponModal, setShowCouponModal] = useState<boolean>(false);
+  const [inputCouponCode, setInputCouponCode] = useState<string>("");
+  const [couponError, setCouponError] = useState<string>("");
 
   // Held Orders
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
@@ -393,17 +404,19 @@ export default function POSPage() {
   const loadMasterData = async () => {
     try {
       setLoadingProducts(true);
-      const [prodsData, catsData, custsData, ordersData] = await Promise.all([
+      const [prodsData, catsData, custsData, ordersData, couponsData] = await Promise.all([
         fetchProducts(),
         fetchCategories(),
         fetchCustomers(),
         fetchOrders().catch(() => []),
         refreshShiftData().catch(() => null),
+        fetchCoupons().catch(() => []),
       ]);
       setProducts(prodsData || []);
       setCategories(catsData || []);
       setCustomers(custsData || []);
       setRecentOrders(ordersData || []);
+      setCoupons(couponsData || []);
     } catch (err) {
       console.error("Failed to load POS master data:", err);
     } finally {
@@ -481,6 +494,9 @@ export default function POSPage() {
   const clearCart = () => {
     setCartItems([]);
     setBonusApplied(false);
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCustomDiscount(0);
   };
 
   // Barcode / SKU direct scan
@@ -530,7 +546,12 @@ export default function POSPage() {
   const rawSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.qty, 0);
   const taxAmount = (rawSubtotal * taxPercent) / 100;
   const bonusDiscount = bonusApplied ? 20 : 0;
-  const totalDiscount = customDiscount + couponDiscount + bonusDiscount;
+  const activeCouponDiscount = appliedCoupon
+    ? appliedCoupon.type === "Percentage"
+      ? (rawSubtotal * appliedCoupon.discount) / 100
+      : Math.min(appliedCoupon.discount, rawSubtotal)
+    : couponDiscount;
+  const totalDiscount = customDiscount + activeCouponDiscount + bonusDiscount;
   const tentativeTotal = Math.max(0, rawSubtotal + taxAmount + shippingFee - totalDiscount);
   const roundoffDifference = roundoff ? Math.round(tentativeTotal) - tentativeTotal : 0;
   const finalPayable = Math.max(0, roundoff ? Math.round(tentativeTotal) : tentativeTotal);
@@ -543,7 +564,69 @@ export default function POSPage() {
     1000,
     2000,
     5000,
-  ].filter((v, idx, arr) => arr.indexOf(v) === idx && v >= finalPayable || v === finalPayable);
+  ].filter((v, idx, arr) => (arr.indexOf(v) === idx && v >= finalPayable) || v === finalPayable);
+
+  // Coupon Handlers
+  const handleApplyCoupon = (couponCode: string) => {
+    setCouponError("");
+    const code = couponCode.trim().toUpperCase();
+    if (!code) {
+      setCouponError("Please enter a coupon code");
+      return;
+    }
+    if (cartItems.length === 0) {
+      setCouponError("Cart is empty! Add products first");
+      return;
+    }
+
+    const found = coupons.find((c) => c.code.toUpperCase() === code);
+    if (!found) {
+      setCouponError(`Invalid coupon code: "${code}"`);
+      playSound("error");
+      return;
+    }
+
+    if (found.status !== "Active") {
+      setCouponError(`Coupon "${found.code}" is inactive`);
+      playSound("error");
+      return;
+    }
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    if (found.validStart && todayStr < found.validStart) {
+      setCouponError(`Coupon "${found.code}" is not valid until ${found.validStart}`);
+      playSound("error");
+      return;
+    }
+    if (found.validEnd && todayStr > found.validEnd) {
+      setCouponError(`Coupon "${found.code}" expired on ${found.validEnd}`);
+      playSound("error");
+      return;
+    }
+
+    // Apply
+    setAppliedCoupon(found);
+    setShowCouponModal(false);
+    setInputCouponCode("");
+    setCouponError("");
+    playSound("chime");
+    const discountVal =
+      found.type === "Percentage"
+        ? (rawSubtotal * found.discount) / 100
+        : Math.min(found.discount, rawSubtotal);
+    setFeedbackModal({
+      isOpen: true,
+      type: "add_success",
+      title: "Coupon Applied!",
+      message: `Coupon "${found.code}" (${found.name}) successfully applied for -฿${discountVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
+    });
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    playSound("beep");
+  };
 
   // Hold Order
   const handleHoldOrder = () => {
@@ -561,7 +644,8 @@ export default function POSPage() {
       tax: taxAmount,
       discount: totalDiscount,
       shipping: shippingFee,
-      coupon: couponDiscount,
+      coupon: activeCouponDiscount,
+      appliedCoupon: appliedCoupon,
     };
     setHeldOrders((prev) => [newHold, ...prev]);
     clearCart();
@@ -574,6 +658,9 @@ export default function POSPage() {
     setSelectedCustomer(held.customer);
     setShippingFee(held.shipping);
     setCouponDiscount(held.coupon);
+    if (held.appliedCoupon) {
+      setAppliedCoupon(held.appliedCoupon);
+    }
     setHeldOrders((prev) => prev.filter((h) => h.id !== held.id));
     setShowHeldOrdersModal(false);
     playSound("beep");
@@ -594,6 +681,11 @@ export default function POSPage() {
 
     try {
       setIsSubmittingOrder(true);
+      let noteContent = orderNotes || `POS Sale at ${selectedStore}`;
+      if (appliedCoupon) {
+        noteContent += ` [Coupon: ${appliedCoupon.code} (-฿${activeCouponDiscount.toFixed(2)})]`;
+      }
+
       const payload = {
         items: cartItems.map((i) => ({
           productId: i.id,
@@ -604,7 +696,7 @@ export default function POSPage() {
         tax: taxAmount,
         paymentMethod: paymentMethod,
         cashierName: cashierName,
-        notes: orderNotes || `POS Sale at ${selectedStore}`,
+        notes: noteContent,
       };
 
       const createdOrder = await createOrderApi(payload);
@@ -1465,7 +1557,7 @@ export default function POSPage() {
                     <div className="col-span-6 pr-2 truncate">
                       <p className="font-bold text-gray-800 truncate leading-tight">{item.product.name}</p>
                       <p className="text-[10px] text-gray-400">
-                        ${item.unitPrice.toLocaleString()} each
+                        ฿{item.unitPrice.toLocaleString()} each
                       </p>
                     </div>
 
@@ -1486,7 +1578,7 @@ export default function POSPage() {
                     </div>
 
                     <div className="col-span-3 text-right font-bold text-gray-900 flex items-center justify-end space-x-1">
-                      <span>${(item.unitPrice * item.qty).toLocaleString()}</span>
+                      <span>฿{(item.unitPrice * item.qty).toLocaleString()}</span>
                       <button
                         onClick={() => removeCartItem(item.id)}
                         className="text-gray-300 hover:text-red-500 ml-1"
@@ -1509,9 +1601,37 @@ export default function POSPage() {
                   <Tag className="w-3 h-3 text-emerald-600" />
                   <span className="font-bold text-emerald-800 text-[11px]">Customer Loyalty applied</span>
                 </div>
-                <span className="font-bold text-emerald-600 text-[11px]">-$20.00</span>
+                <span className="font-bold text-emerald-600 text-[11px]">-฿20.00</span>
               </div>
             )}
+
+            {/* Applied Coupon Banner */}
+            {appliedCoupon ? (
+              <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-2 flex items-center justify-between text-xs">
+                <div className="flex items-center space-x-1.5 truncate">
+                  <Ticket className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                  <span className="font-bold text-emerald-900 text-xs truncate">
+                    {appliedCoupon.code}
+                  </span>
+                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-700 font-bold shrink-0">
+                    {appliedCoupon.type === "Percentage" ? `${appliedCoupon.discount}% OFF` : `฿${appliedCoupon.discount} OFF`}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1 shrink-0 ml-1">
+                  <span className="font-black text-emerald-700 text-xs">
+                    -฿{activeCouponDiscount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleRemoveCoupon}
+                    className="p-1 rounded-md text-gray-400 hover:text-rose-600 hover:bg-rose-50 cursor-pointer"
+                    title="Remove Coupon"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : null}
 
             {/* Payment Summary */}
             <div className="space-y-1 text-xs">
@@ -1523,7 +1643,7 @@ export default function POSPage() {
                     className="w-2.5 h-2.5 text-gray-400 hover:text-gray-700 cursor-pointer"
                   />
                 </span>
-                <span className="font-medium text-gray-800">${shippingFee.toFixed(2)}</span>
+                <span className="font-medium text-gray-800">฿{shippingFee.toFixed(2)}</span>
               </div>
 
               <div className="flex justify-between text-gray-600">
@@ -1534,29 +1654,39 @@ export default function POSPage() {
                     className="w-2.5 h-2.5 text-gray-400 hover:text-gray-700 cursor-pointer"
                   />
                 </span>
-                <span className="font-medium text-gray-800">${taxAmount.toFixed(2)}</span>
+                <span className="font-medium text-gray-800">฿{taxAmount.toFixed(2)}</span>
               </div>
 
-              <div className="flex justify-between text-gray-600">
-                <span className="flex items-center space-x-1">
-                  <span>Coupon</span>
-                  <Edit2
-                    onClick={() => handleOpenModifierModal("coupon")}
-                    className="w-2.5 h-2.5 text-gray-400 hover:text-gray-700 cursor-pointer"
-                  />
-                </span>
-                <span className="font-medium text-gray-800">-${couponDiscount.toFixed(2)}</span>
-              </div>
+              {/* Coupon Row */}
+              {!appliedCoupon && (
+                <div className="flex justify-between items-center text-gray-600">
+                  <span className="flex items-center space-x-1">
+                    <span>Coupon / Promo</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCouponError("");
+                      setInputCouponCode("");
+                      setShowCouponModal(true);
+                    }}
+                    className="flex items-center space-x-1 text-[11px] font-bold text-[#FE9F43] hover:text-[#E88B32] cursor-pointer"
+                  >
+                    <Ticket className="w-3 h-3" />
+                    <span>+ Apply Coupon</span>
+                  </button>
+                </div>
+              )}
 
               <div className="flex justify-between text-rose-500 font-medium">
                 <span className="flex items-center space-x-1">
-                  <span>Discount</span>
+                  <span>Custom Discount</span>
                   <Edit2
                     onClick={() => handleOpenModifierModal("discount")}
                     className="w-2.5 h-2.5 text-rose-400 hover:text-rose-700 cursor-pointer"
                   />
                 </span>
-                <span>-${(customDiscount + bonusDiscount).toFixed(2)}</span>
+                <span>-฿{(customDiscount + bonusDiscount).toFixed(2)}</span>
               </div>
 
               {/* Roundoff Switch */}
@@ -1578,20 +1708,20 @@ export default function POSPage() {
                   <span className="text-[11px] font-medium">Roundoff</span>
                 </div>
                 <span className="text-gray-800 font-medium text-[11px]">
-                  {roundoffDifference >= 0 ? `+${roundoffDifference.toFixed(2)}` : roundoffDifference.toFixed(2)}
+                  {roundoffDifference >= 0 ? `+฿${roundoffDifference.toFixed(2)}` : `-฿${Math.abs(roundoffDifference).toFixed(2)}`}
                 </span>
               </div>
 
               <div className="flex justify-between text-gray-700 font-bold pt-1 border-t border-gray-200">
                 <span>Subtotal</span>
-                <span>${rawSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span>฿{rawSubtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
               </div>
 
               {/* Total Payable Prominent */}
               <div className="flex justify-between items-center pt-1 border-t border-gray-200">
                 <span className="text-sm font-bold text-gray-900">Total Payable</span>
                 <span className="text-xl font-black text-[#FE9F43]">
-                  ${finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  ฿{finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </span>
               </div>
 
@@ -1608,7 +1738,7 @@ export default function POSPage() {
                 className="w-full py-2.5 bg-[#28C76F] hover:bg-[#22A75D] disabled:opacity-50 text-white rounded-xl font-bold text-sm shadow-md active:scale-98 transition-all flex items-center justify-center space-x-2 mt-1.5 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Pay Now (${finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
+                <span>Pay Now (฿{finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })})</span>
               </button>
             </div>
           </div>
@@ -1634,7 +1764,7 @@ export default function POSPage() {
           <div>
             <p className="text-[11px] text-gray-500 font-medium">{cartItems.length} items in order</p>
             <p className="text-sm font-extrabold text-gray-900">
-              Total: <span className="text-[#FE9F43]">${finalPayable.toLocaleString()}</span>
+              Total: <span className="text-[#FE9F43]">฿{finalPayable.toLocaleString()}</span>
             </p>
           </div>
         </div>
@@ -1675,7 +1805,7 @@ export default function POSPage() {
               {/* Total Due Banner */}
               <div className="bg-gradient-to-r from-orange-500 to-amber-500 text-white rounded-xl p-4 text-center shadow-xs">
                 <p className="text-xs font-medium text-white/80 uppercase tracking-wider">Total Amount Due</p>
-                <p className="text-3xl font-black mt-0.5">${finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                <p className="text-3xl font-black mt-0.5">฿{finalPayable.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
               </div>
 
               {/* Payment Method Selector Tabs */}
@@ -1730,7 +1860,7 @@ export default function POSPage() {
                     <label className="text-xs font-bold text-gray-700 block mb-1">Cash Received</label>
                     <input
                       type="number"
-                      placeholder={`Enter amount (Min $${finalPayable})`}
+                      placeholder={`Enter amount (Min ฿${finalPayable})`}
                       value={cashReceived}
                       onChange={(e) => setCashReceived(e.target.value)}
                       className="w-full px-3 py-2 bg-white border border-gray-300 rounded-lg text-sm font-bold text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FE9F43]"
@@ -1746,7 +1876,7 @@ export default function POSPage() {
                         onClick={() => setCashReceived(String(amt))}
                         className="px-2.5 py-1 bg-white hover:bg-orange-50 border border-gray-200 hover:border-orange-300 rounded-lg text-xs font-semibold text-gray-700 transition-colors"
                       >
-                        ${amt}
+                        ฿{amt}
                       </button>
                     ))}
                   </div>
@@ -1755,7 +1885,7 @@ export default function POSPage() {
                   <div className="flex items-center justify-between pt-2 border-t border-gray-200">
                     <span className="text-xs font-bold text-gray-600">Change Due (เงินทอน):</span>
                     <span className="text-base font-extrabold text-emerald-600">
-                      ${Math.max(0, (Number(cashReceived) || finalPayable) - finalPayable).toFixed(2)}
+                      ฿{Math.max(0, (Number(cashReceived) || finalPayable) - finalPayable).toFixed(2)}
                     </span>
                   </div>
                 </div>
@@ -1771,7 +1901,7 @@ export default function POSPage() {
                     </div>
                   </div>
                   <p className="text-xs font-bold text-cyan-900">Scan QR Code with Mobile Banking App</p>
-                  <p className="text-[11px] text-cyan-600">Total: ${finalPayable.toFixed(2)}</p>
+                  <p className="text-[11px] text-cyan-600">Total: ฿{finalPayable.toFixed(2)}</p>
                 </div>
               )}
 
@@ -1820,7 +1950,7 @@ export default function POSPage() {
                 ) : (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    <span>Confirm & Pay (${finalPayable.toFixed(2)})</span>
+                    <span>Confirm & Pay (฿{finalPayable.toFixed(2)})</span>
                   </>
                 )}
               </button>
@@ -1887,9 +2017,9 @@ export default function POSPage() {
                   <div key={idx} className="flex justify-between text-[11px]">
                     <span className="truncate max-w-[120px] font-medium">{item.productName}</span>
                     <span className="text-gray-500">
-                      {item.quantity} x ${item.unitPrice}
+                      {item.quantity} x ฿{item.unitPrice}
                     </span>
-                    <span className="font-bold">${item.subtotal}</span>
+                    <span className="font-bold">฿{item.subtotal}</span>
                   </div>
                 ))}
               </div>
@@ -1898,23 +2028,23 @@ export default function POSPage() {
               <div className="space-y-1 text-[11px] border-b border-dashed border-gray-300 pb-2">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${completedOrder.subtotal?.toFixed(2)}</span>
+                  <span>฿{completedOrder.subtotal?.toFixed(2)}</span>
                 </div>
                 {completedOrder.discount > 0 && (
                   <div className="flex justify-between text-rose-600">
-                    <span>Discount:</span>
-                    <span>-${completedOrder.discount?.toFixed(2)}</span>
+                    <span>Discount / Promo:</span>
+                    <span>-฿{completedOrder.discount?.toFixed(2)}</span>
                   </div>
                 )}
                 {completedOrder.tax > 0 && (
                   <div className="flex justify-between">
                     <span>VAT (7%):</span>
-                    <span>${completedOrder.tax?.toFixed(2)}</span>
+                    <span>฿{completedOrder.tax?.toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm font-extrabold text-gray-900 pt-1">
                   <span>TOTAL:</span>
-                  <span>${completedOrder.total?.toFixed(2)}</span>
+                  <span>฿{completedOrder.total?.toFixed(2)}</span>
                 </div>
               </div>
 
@@ -1927,11 +2057,11 @@ export default function POSPage() {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Received:</span>
-                    <span>${lastPaymentInfo.received.toFixed(2)}</span>
+                    <span>฿{lastPaymentInfo.received.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-bold text-emerald-700">
                     <span>Change:</span>
-                    <span>${lastPaymentInfo.change.toFixed(2)}</span>
+                    <span>฿{lastPaymentInfo.change.toFixed(2)}</span>
                   </div>
                 </div>
               )}
@@ -2292,6 +2422,161 @@ export default function POSPage() {
                 className="px-4 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold cursor-pointer"
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* COUPON / PROMO CODE MODAL */}
+      {/* ========================================================================= */}
+      {showCouponModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 space-y-4 shadow-2xl relative border border-gray-200 flex flex-col max-h-[90vh]">
+            {/* Header */}
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2 text-gray-900">
+                <Ticket className="w-5 h-5 text-[#FE9F43]" />
+                <div>
+                  <h3 className="text-base font-bold">Apply Coupon & Promo Code</h3>
+                  <p className="text-[11px] text-gray-500">Enter a promotion code or choose from active vouchers</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowCouponModal(false);
+                  setCouponError("");
+                }}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Input Form */}
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleApplyCoupon(inputCouponCode);
+              }}
+              className="space-y-2"
+            >
+              <label className="text-xs font-bold text-gray-700 block">Enter Promo Code</label>
+              <div className="flex space-x-2">
+                <div className="relative flex-1">
+                  <input
+                    type="text"
+                    placeholder="e.g. VIP2026, SAVE100, OPENING15"
+                    value={inputCouponCode}
+                    onChange={(e) => {
+                      setInputCouponCode(e.target.value.toUpperCase());
+                      setCouponError("");
+                    }}
+                    autoFocus
+                    className="w-full px-3.5 py-2.5 bg-gray-50 border border-gray-300 rounded-xl text-sm font-bold uppercase tracking-wider text-gray-900 focus:bg-white focus:ring-2 focus:ring-orange-400 focus:outline-none"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {couponError && (
+                <div className="p-2.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold flex items-center space-x-1.5 animate-in fade-in">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{couponError}</span>
+                </div>
+              )}
+            </form>
+
+            {/* Available Coupons List from DB */}
+            <div className="space-y-2 flex-1 overflow-y-auto pt-1">
+              <div className="flex items-center justify-between text-xs font-bold text-gray-700">
+                <span>Available Promotions & Coupons</span>
+                <span className="text-gray-400 font-normal text-[11px]">{coupons.filter(c => c.status === "Active").length} active</span>
+              </div>
+
+              {coupons.filter(c => c.status === "Active").length === 0 ? (
+                <div className="text-center py-6 text-gray-400 text-xs">
+                  <Ticket className="w-8 h-8 mx-auto text-gray-300 mb-1" />
+                  <p>No active coupons found</p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {coupons
+                    .filter((c) => c.status === "Active")
+                    .map((coupon) => {
+                      const isApplied = appliedCoupon?.id === coupon.id;
+                      return (
+                        <div
+                          key={coupon.id}
+                          className={`p-3 rounded-2xl border transition-all flex items-center justify-between ${
+                            isApplied
+                              ? "bg-emerald-50/70 border-emerald-300 ring-1 ring-emerald-400"
+                              : "bg-gray-50/60 hover:bg-orange-50/40 border-gray-200 hover:border-orange-200"
+                          }`}
+                        >
+                          <div className="space-y-0.5">
+                            <div className="flex items-center space-x-2">
+                              <span className="font-mono font-black text-xs px-2 py-0.5 rounded-lg bg-orange-100 text-[#FE9F43] border border-orange-200">
+                                {coupon.code}
+                              </span>
+                              <span className="font-bold text-gray-900 text-xs">{coupon.name}</span>
+                            </div>
+                            {coupon.description && (
+                              <p className="text-[11px] text-gray-500 line-clamp-1">{coupon.description}</p>
+                            )}
+                            <div className="flex items-center space-x-3 text-[10px] text-gray-400">
+                              <span className="font-bold text-emerald-600">
+                                {coupon.type === "Percentage" ? `${coupon.discount}% Discount` : `฿${coupon.discount} Flat Discount`}
+                              </span>
+                              {coupon.validEnd && (
+                                <span>Valid till {coupon.validEnd}</span>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="pl-2">
+                            {isApplied ? (
+                              <button
+                                type="button"
+                                onClick={handleRemoveCoupon}
+                                className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                              >
+                                Remove
+                              </button>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleApplyCoupon(coupon.code)}
+                                className="px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+                              >
+                                Use
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="pt-2 border-t border-gray-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCouponModal(false);
+                  setCouponError("");
+                }}
+                className="px-5 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                Close
               </button>
             </div>
           </div>
