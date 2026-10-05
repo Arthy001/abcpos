@@ -177,6 +177,7 @@ export const getOrderById = async (req: Request, res: Response) => {
 export const voidOrder = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const { reason, voidedBy = "Admin" } = req.body || {};
     const order = await prisma.order.findUnique({
       where: { id },
       include: { items: true },
@@ -203,17 +204,41 @@ export const voidOrder = async (req: Request, res: Response) => {
             type: "CUSTOMER_RETURN",
             referenceNo: order.orderNumber,
             unitCost: product.costPrice || null,
-            notes: `Void POS Order ${order.orderNumber}`,
-            createdBy: "Admin",
+            notes: `Void POS Order ${order.orderNumber}${reason ? ` (${reason})` : ""}`,
+            createdBy: voidedBy || "Admin",
           });
         }
       }
     }
 
+    // If order was paid via Gift Card, restore gift card balance
+    if (order.paymentMethod === "GIFT_CARD" && order.notes) {
+      const match = order.notes.match(/Gift Card\s+([A-Z0-9-]+)\s+redeemed:\s*฿?([\d,.]+)/i);
+      if (match && match[1]) {
+        const cardCode = match[1];
+        const card = await prisma.giftCard.findUnique({ where: { code: cardCode } });
+        if (card) {
+          const restoredBalance = Math.min(card.amount, Math.round((card.balance + order.total) * 100) / 100);
+          await prisma.giftCard.update({
+            where: { id: card.id },
+            data: {
+              balance: restoredBalance,
+              status: "Active",
+            },
+          });
+        }
+      }
+    }
+
+    const updatedNotes = order.notes
+      ? `${order.notes} [VOIDED: ${reason || "Cancelled by cashier"} by ${voidedBy} on ${new Date().toLocaleString()}]`
+      : `[VOIDED: ${reason || "Cancelled by cashier"} by ${voidedBy} on ${new Date().toLocaleString()}]`;
+
     const updatedOrder = await prisma.order.update({
       where: { id },
       data: {
         paymentStatus: "CANCELLED",
+        notes: updatedNotes,
       },
       include: {
         customer: true,
@@ -230,3 +255,4 @@ export const voidOrder = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+

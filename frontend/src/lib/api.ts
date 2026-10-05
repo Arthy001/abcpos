@@ -829,10 +829,11 @@ export async function fetchOrderById(id: string): Promise<Order> {
   return data.data;
 }
 
-export async function voidOrderApi(id: string): Promise<Order> {
+export async function voidOrderApi(id: string, payload?: { reason?: string; voidedBy?: string }): Promise<Order> {
   const res = await fetch(`${API_BASE_URL}/orders/${id}/void`, {
     method: "PUT",
     headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
   });
   const data = await res.json();
   if (!res.ok || !data.success) {
