@@ -15,31 +15,18 @@ export default function ProfitLossReportPage() {
   const [loading, setLoading] = useState<boolean>(true);
   const [dateRange, setDateRange] = useState<string>("15/08/2026 - 21/08/2026");
 
-  // Sample fallback matching screenshot
-  const sampleIncome = [
-    { key: "Sales", jan: 50000, feb: 50000, mar: 50000, apr: 50000, may: 50000, jun: 50000, isBold: false },
-    { key: "Service", jan: 30000, feb: 30000, mar: 30000, apr: 30000, may: 30000, jun: 30000, isBold: false },
-    { key: "Purchase Return", jan: 7000, feb: 7000, mar: 7000, apr: 7000, may: 7000, jun: 7000, isBold: false },
-    { key: "Gross Profit", jan: 8000, feb: 8000, mar: 8000, apr: 8000, may: 8000, jun: 8000, isBold: true },
-  ];
-
-  const sampleExpenses = [
-    { key: "Sales", jan: 50000, feb: 50000, mar: 50000, apr: 50000, may: 50000, jun: 50000, isBold: false },
-    { key: "Purrchase", jan: 30000, feb: 30000, mar: 30000, apr: 30000, may: 30000, jun: 30000, isBold: false },
-    { key: "Sales Return", jan: 7000, feb: 7000, mar: 7000, apr: 7000, may: 7000, jun: 7000, isBold: true },
-    { key: "Total Expense", jan: 8000, feb: 8000, mar: 8000, apr: 8000, may: 8000, jun: 8000, isBold: true },
-    { key: "Net Profit", jan: 8000, feb: 8000, mar: 8000, apr: 8000, may: 8000, jun: 8000, isBold: true },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchProfitLossReport();
       if (data && data.length > 0) {
         setItems(data);
+      } else {
+        setItems([]);
       }
     } catch (e) {
       console.error(e);
+      setItems([]);
     } finally {
       setLoading(false);
     }
@@ -48,6 +35,36 @@ export default function ProfitLossReportPage() {
   useEffect(() => {
     loadData();
   }, []);
+
+  const incomeItems = items.filter((i) => i.type === "INCOME");
+  const expenseItems = items.filter((i) => i.type === "EXPENSE");
+
+  const grossProfit = {
+    jan: incomeItems.reduce((acc, cur) => acc + (cur.jan2026 || 0), 0),
+    feb: incomeItems.reduce((acc, cur) => acc + (cur.feb2026 || 0), 0),
+    mar: incomeItems.reduce((acc, cur) => acc + (cur.mar2026 || 0), 0),
+    apr: incomeItems.reduce((acc, cur) => acc + (cur.apr2026 || 0), 0),
+    may: incomeItems.reduce((acc, cur) => acc + (cur.may2026 || 0), 0),
+    jun: incomeItems.reduce((acc, cur) => acc + (cur.jun2026 || 0), 0),
+  };
+
+  const totalExpense = {
+    jan: expenseItems.reduce((acc, cur) => acc + (cur.jan2026 || 0), 0),
+    feb: expenseItems.reduce((acc, cur) => acc + (cur.feb2026 || 0), 0),
+    mar: expenseItems.reduce((acc, cur) => acc + (cur.mar2026 || 0), 0),
+    apr: expenseItems.reduce((acc, cur) => acc + (cur.apr2026 || 0), 0),
+    may: expenseItems.reduce((acc, cur) => acc + (cur.may2026 || 0), 0),
+    jun: expenseItems.reduce((acc, cur) => acc + (cur.jun2026 || 0), 0),
+  };
+
+  const netProfit = {
+    jan: grossProfit.jan - totalExpense.jan,
+    feb: grossProfit.feb - totalExpense.feb,
+    mar: grossProfit.mar - totalExpense.mar,
+    apr: grossProfit.apr - totalExpense.apr,
+    may: grossProfit.may - totalExpense.may,
+    jun: grossProfit.jun - totalExpense.jun,
+  };
 
   return (
     <AppLayout>
@@ -121,31 +138,41 @@ export default function ProfitLossReportPage() {
                     Income
                   </td>
                 </tr>
-                {sampleIncome.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className={`py-3.5 px-5 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      {row.key}
+                {incomeItems.map((row) => (
+                  <tr key={row.id} className="hover:bg-[#F9FAFB] transition-colors">
+                    <td className="py-3.5 px-5 text-[#64748B] font-medium">
+                      {row.itemKey}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.jan.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.jan2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.feb.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.feb2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.mar.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.mar2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.apr.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.apr2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.may.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.may2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.jun.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.jun2026 || 0).toLocaleString()}
                     </td>
                   </tr>
                 ))}
+                {/* Gross Profit Calculated Row */}
+                <tr className="bg-[#FE9F43]/5 border-t border-b border-[#FE9F43]/20 font-bold text-[#1E293B]">
+                  <td className="py-3.5 px-5 font-bold text-[#1E293B]">Gross Profit</td>
+                  <td className="py-3.5 px-4 font-bold text-[#1E293B]">${grossProfit.jan.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-[#1E293B]">${grossProfit.feb.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-[#1E293B]">${grossProfit.mar.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-[#1E293B]">${grossProfit.apr.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-[#1E293B]">${grossProfit.may.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-[#1E293B]">${grossProfit.jun.toLocaleString()}</td>
+                </tr>
 
                 {/* SECTION 2: EXPENSES */}
                 <tr className="bg-[#F8F9FA]/50">
@@ -153,31 +180,52 @@ export default function ProfitLossReportPage() {
                     Expenses
                   </td>
                 </tr>
-                {sampleExpenses.map((row, idx) => (
-                  <tr key={idx} className="hover:bg-[#F9FAFB] transition-colors">
-                    <td className={`py-3.5 px-5 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      {row.key}
+                {expenseItems.map((row) => (
+                  <tr key={row.id} className="hover:bg-[#F9FAFB] transition-colors">
+                    <td className="py-3.5 px-5 text-[#64748B] font-medium">
+                      {row.itemKey}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.jan.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.jan2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.feb.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.feb2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.mar.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.mar2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.apr.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.apr2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.may.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.may2026 || 0).toLocaleString()}
                     </td>
-                    <td className={`py-3.5 px-4 ${row.isBold ? "font-bold text-[#1E293B]" : "text-[#64748B]"}`}>
-                      ${row.jun.toLocaleString()}
+                    <td className="py-3.5 px-4 text-[#64748B]">
+                      ${(row.jun2026 || 0).toLocaleString()}
                     </td>
                   </tr>
                 ))}
+                {/* Total Expense Calculated Row */}
+                <tr className="bg-rose-50/50 border-t border-b border-rose-100 font-bold text-rose-600">
+                  <td className="py-3.5 px-5 font-bold text-rose-600">Total Expense</td>
+                  <td className="py-3.5 px-4 font-bold text-rose-600">${totalExpense.jan.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-rose-600">${totalExpense.feb.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-rose-600">${totalExpense.mar.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-rose-600">${totalExpense.apr.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-rose-600">${totalExpense.may.toLocaleString()}</td>
+                  <td className="py-3.5 px-4 font-bold text-rose-600">${totalExpense.jun.toLocaleString()}</td>
+                </tr>
+
+                {/* Net Profit Row */}
+                <tr className="bg-emerald-50/70 border-t-2 border-b-2 border-emerald-200 font-extrabold text-emerald-700">
+                  <td className="py-4 px-5 font-extrabold text-emerald-800">Net Profit</td>
+                  <td className="py-4 px-4 font-extrabold text-emerald-700">${netProfit.jan.toLocaleString()}</td>
+                  <td className="py-4 px-4 font-extrabold text-emerald-700">${netProfit.feb.toLocaleString()}</td>
+                  <td className="py-4 px-4 font-extrabold text-emerald-700">${netProfit.mar.toLocaleString()}</td>
+                  <td className="py-4 px-4 font-extrabold text-emerald-700">${netProfit.apr.toLocaleString()}</td>
+                  <td className="py-4 px-4 font-extrabold text-emerald-700">${netProfit.may.toLocaleString()}</td>
+                  <td className="py-4 px-4 font-extrabold text-emerald-700">${netProfit.jun.toLocaleString()}</td>
+                </tr>
               </tbody>
             </table>
           </div>

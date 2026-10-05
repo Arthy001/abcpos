@@ -129,6 +129,8 @@ export default function SignInPage() {
         avatar: res.user.avatar || accountToUse.avatar,
       });
 
+      await useAuthStore.getState().fetchRolePermissions();
+
       router.push("/");
     } catch (err: any) {
       console.warn("Backend login failed, fallback to local session:", err);
@@ -142,6 +144,7 @@ export default function SignInPage() {
         storeName: accountToUse.storeName,
         avatar: accountToUse.avatar,
       });
+      await useAuthStore.getState().fetchRolePermissions();
       router.push("/");
     } finally {
       setIsLoading(false);
@@ -192,7 +195,8 @@ export default function SignInPage() {
                     type="button"
                     onClick={() => {
                       setSelectedAccount(acc);
-                      setPassword("12345678");
+                      setEmailInput(acc.email);
+                      setPassword("123456");
                     }}
                     className={`p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
                       isSelected

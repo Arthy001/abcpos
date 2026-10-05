@@ -68,6 +68,30 @@ const DEFAULT_ROLE_FALLBACKS: Record<
     "User Management": { view: true, create: false, edit: false, delete: false },
     "System Settings": { view: true, create: false, edit: false, delete: false },
   },
+  "inventory manager": {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Products & Inventory": { view: true, create: true, edit: true, delete: false },
+    "Stock Management": { view: true, create: true, edit: true, delete: true },
+    "Purchases": { view: true, create: true, edit: true, delete: false },
+    "Peoples (Customers/Suppliers)": { view: true, create: false, edit: false, delete: false },
+    "Reports & Analytics": { view: true, create: true, edit: false, delete: false },
+  },
+  supervisor: {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Products & Inventory": { view: true, create: true, edit: true, delete: false },
+    "Stock Management": { view: true, create: true, edit: true, delete: true },
+    "Purchases": { view: true, create: true, edit: true, delete: false },
+    "Peoples (Customers/Suppliers)": { view: true, create: false, edit: false, delete: false },
+    "Reports & Analytics": { view: true, create: false, edit: false, delete: false },
+  },
+  "warehouse supervisor": {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Products & Inventory": { view: true, create: true, edit: true, delete: false },
+    "Stock Management": { view: true, create: true, edit: true, delete: true },
+    "Purchases": { view: true, create: true, edit: true, delete: false },
+    "Peoples (Customers/Suppliers)": { view: true, create: false, edit: false, delete: false },
+    "Reports & Analytics": { view: true, create: false, edit: false, delete: false },
+  },
   "store keeper": {
     "Dashboard": { view: true, create: false, edit: false, delete: false },
     "Products & Inventory": { view: true, create: false, edit: false, delete: false },
@@ -82,12 +106,17 @@ const DEFAULT_ROLE_FALLBACKS: Record<
     "Products & Inventory": { view: true, create: false, edit: false, delete: false },
     "Peoples (Customers/Suppliers)": { view: true, create: true, edit: false, delete: false },
   },
-  "warehouse supervisor": {
+  salesman: {
     "Dashboard": { view: true, create: false, edit: false, delete: false },
-    "Products & Inventory": { view: true, create: true, edit: true, delete: false },
-    "Stock Management": { view: true, create: true, edit: true, delete: true },
-    "Purchases": { view: true, create: true, edit: true, delete: false },
-    "Peoples (Customers/Suppliers)": { view: true, create: false, edit: false, delete: false },
+    "Sales & POS": { view: true, create: true, edit: true, delete: false },
+    "Products & Inventory": { view: true, create: false, edit: false, delete: false },
+    "Peoples (Customers/Suppliers)": { view: true, create: true, edit: false, delete: false },
+  },
+  purchase: {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Products & Inventory": { view: true, create: false, edit: false, delete: false },
+    "Purchases": { view: true, create: true, edit: true, delete: true },
+    "Peoples (Customers/Suppliers)": { view: true, create: true, edit: true, delete: false },
     "Reports & Analytics": { view: true, create: false, edit: false, delete: false },
   },
   "purchase officer": {
@@ -191,28 +220,46 @@ export const useAuthStore = create<AuthState>()(
         if (!user?.role) return false;
 
         const normalizedRole = user.role.toLowerCase().trim();
-        const matchedKey = Object.keys(rolePermissions).find(
-          (k) => k.toLowerCase().trim() === normalizedRole
-        );
 
-        if (matchedKey && rolePermissions[matchedKey]) {
-          const matrix = rolePermissions[matchedKey];
-          const mod = matrix.find(
-            (m) => m.module?.toLowerCase().trim() === moduleName.toLowerCase().trim()
+        // Candidates for matching role names and aliases (e.g. Supervisor vs Warehouse Supervisor)
+        const roleCandidates = Array.from(new Set([
+          normalizedRole,
+          normalizedRole.replace("warehouse ", "").trim(),
+          normalizedRole.replace("officer", "").trim(),
+          normalizedRole.includes("supervisor") ? "supervisor" : "",
+          normalizedRole.includes("supervisor") ? "warehouse supervisor" : "",
+          normalizedRole.includes("inventory") ? "inventory manager" : "",
+          normalizedRole.includes("purchase") ? "purchase" : "",
+          normalizedRole.includes("purchase") ? "purchase officer" : "",
+          normalizedRole.includes("manager") ? "manager" : "",
+        ])).filter(Boolean);
+
+        // 1. Check DB custom permissions
+        for (const candidate of roleCandidates) {
+          const matchedKey = Object.keys(rolePermissions).find(
+            (k) => k.toLowerCase().trim() === candidate
           );
-          if (mod) {
-            return Boolean(mod.all || mod[action]);
+          if (matchedKey && rolePermissions[matchedKey]) {
+            const matrix = rolePermissions[matchedKey];
+            const mod = matrix.find(
+              (m) => m.module?.toLowerCase().trim() === moduleName.toLowerCase().trim()
+            );
+            if (mod) {
+              return Boolean(mod.all || mod[action]);
+            }
           }
         }
 
-        // Fallback default if not yet customized in DB
-        const fallbackRole = DEFAULT_ROLE_FALLBACKS[normalizedRole];
-        if (fallbackRole) {
-          const modKey = Object.keys(fallbackRole).find(
-            (k) => k.toLowerCase().trim() === moduleName.toLowerCase().trim()
-          );
-          if (modKey && fallbackRole[modKey]) {
-            return Boolean(fallbackRole[modKey][action]);
+        // 2. Fallback defaults
+        for (const candidate of roleCandidates) {
+          const fallbackRole = DEFAULT_ROLE_FALLBACKS[candidate];
+          if (fallbackRole) {
+            const modKey = Object.keys(fallbackRole).find(
+              (k) => k.toLowerCase().trim() === moduleName.toLowerCase().trim()
+            );
+            if (modKey && fallbackRole[modKey]) {
+              return Boolean(fallbackRole[modKey][action]);
+            }
           }
         }
 

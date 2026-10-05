@@ -74,33 +74,14 @@ export default function RolesPermissionsPage() {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>("");
 
-  const sampleRoles: RoleItem[] = [
-    { id: "1", name: "Admin", createdDate: "12 Sep 2024", status: "ACTIVE", description: "Full administrative access" },
-    { id: "2", name: "Manager", createdDate: "24 Oct 2024", status: "ACTIVE", description: "Branch and operation manager" },
-    { id: "3", name: "Salesman", createdDate: "18 Feb 2024", status: "ACTIVE", description: "POS counter clerk" },
-    { id: "4", name: "Supervisor", createdDate: "17 Oct 2024", status: "ACTIVE", description: "Shift and team supervisor" },
-    { id: "5", name: "Store Keeper", createdDate: "20 Jul 2024", status: "ACTIVE", description: "Warehouse stock management" },
-    { id: "6", name: "Inventory Manager", createdDate: "10 Apr 2024", status: "ACTIVE", description: "Inventory audits and stock control" },
-    { id: "7", name: "Delivery Biker", createdDate: "29 Aug 2024", status: "ACTIVE", description: "Order logistics and delivery" },
-    { id: "8", name: "Employee", createdDate: "22 Feb 2024", status: "ACTIVE", description: "Standard employee access" },
-    { id: "9", name: "Cashier", createdDate: "03 Nov 2024", status: "ACTIVE", description: "POS cash register" },
-    { id: "10", name: "Quality Analyst", createdDate: "17 Dec 2024", status: "ACTIVE", description: "QA and inspection" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchRoles({ status: statusFilter, search });
-      if (data && data.length > 0) {
-        setRoles(data);
-      } else if (!search && statusFilter === "all") {
-        setRoles(sampleRoles);
-      } else {
-        setRoles([]);
-      }
+      setRoles(data || []);
     } catch (err) {
       console.error(err);
-      setRoles(sampleRoles);
+      setRoles([]);
     } finally {
       setLoading(false);
     }

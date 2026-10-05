@@ -45,20 +45,6 @@ export default function EmployeeLeavesPage() {
   const [formReason, setFormReason] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  // Sample fallback matching screenshot
-  const sampleEmployeeLeaves: Leave[] = [
-    { id: "1", leaveType: "Sick Leave", fromDate: "24 Dec 2024", toDate: "24 Dec 2024", duration: "01 Day", appliedOn: "23 Dec 2024", status: "APPROVED" },
-    { id: "2", leaveType: "Casual Leave", fromDate: "10 Dec 2024", toDate: "10 Dec 2024", duration: "01 Day", appliedOn: "09 Dec 2024", status: "APPROVED" },
-    { id: "3", leaveType: "Casual Leave", fromDate: "27 Nov 2024", toDate: "28 Nov 2024", duration: "02 Day", appliedOn: "26 Nov 2024", status: "APPLIED" },
-    { id: "4", leaveType: "Sick Leave", fromDate: "18 Nov 2024", toDate: "18 Nov 2024", duration: "02 hrs", appliedOn: "18 Nov 2024", status: "APPROVED" },
-    { id: "5", leaveType: "Casual Leave", fromDate: "06 Nov 2024", toDate: "08 Nov 2024", duration: "03 Days", appliedOn: "05 Nov 2024", status: "APPROVED" },
-    { id: "6", leaveType: "Sick Leave", fromDate: "25 Oct 2024", toDate: "25 Oct 2024", duration: "01 Day", appliedOn: "24 Oct 2024", status: "REJECTED" },
-    { id: "7", leaveType: "Casual Leave", fromDate: "14 Oct 2024", toDate: "15 Oct 2024", duration: "02 Day", appliedOn: "13 Oct 2024", status: "APPROVED" },
-    { id: "8", leaveType: "Casual Leave", fromDate: "03 Oct 2024", toDate: "03 Oct 2024", duration: "01 Day", appliedOn: "02 Oct 2024", status: "APPLIED" },
-    { id: "9", leaveType: "Sick Leave", fromDate: "20 Sep 2024", toDate: "21 Sep 2024", duration: "02 Day", appliedOn: "19 Sep 2024", status: "APPROVED" },
-    { id: "10", leaveType: "Casual Leave", fromDate: "10 Sep 2024", toDate: "10 Sep 2024", duration: "02 hrs", appliedOn: "09 Sep 2024", status: "REJECTED" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
@@ -66,7 +52,7 @@ export default function EmployeeLeavesPage() {
       setLeaves(data || []);
     } catch (err) {
       console.error(err);
-      setLeaves(sampleEmployeeLeaves);
+      setLeaves([]);
     } finally {
       setLoading(false);
     }

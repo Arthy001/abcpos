@@ -32,33 +32,14 @@ export default function DeleteAccountRequestsPage() {
   const [selectedRequest, setSelectedRequest] = useState<DeleteAccountRequestItem | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
-  const sampleRequests: DeleteAccountRequestItem[] = [
-    { id: "1", userName: "Steven", requisitionDate: "25 Sep 2023", deleteRequestDate: "01 Oct 2023", userAvatar: "/assets/images/avatar-01.jpg" },
-    { id: "2", userName: "Susan Lopez", requisitionDate: "30 Sep 2023", deleteRequestDate: "05 Oct 2023", userAvatar: "/assets/images/customer12.jpg" },
-    { id: "3", userName: "Robert Grossman", requisitionDate: "10 Sep 2023", deleteRequestDate: "25 Sep 2023", userAvatar: "/assets/images/customer13.jpg" },
-    { id: "4", userName: "Janet Hembre", requisitionDate: "15 Sep 2023", deleteRequestDate: "20 Sep 2023", userAvatar: "/assets/images/customer14.jpg" },
-    { id: "5", userName: "Russell Belle", requisitionDate: "15 Aug 2023", deleteRequestDate: "01 Sep 2023", userAvatar: "/assets/images/customer15.jpg" },
-    { id: "6", userName: "Henry Bryant", requisitionDate: "12 Aug 2023", deleteRequestDate: "01 Sep 2023", userAvatar: "/assets/images/avatar-02.jpg" },
-    { id: "7", userName: "Michael Dawson", requisitionDate: "15 Sep 2023", deleteRequestDate: "01 Oct 2023", userAvatar: "/assets/images/customer16.jpg" },
-    { id: "8", userName: "Thomas Ward", requisitionDate: "01 Jan 2023", deleteRequestDate: "01 Feb 2023", userAvatar: "/assets/images/avatar-03.jpg" },
-    { id: "9", userName: "Jada Robinson", requisitionDate: "22 Oct 2023", deleteRequestDate: "15 Nov 2023", userAvatar: "/assets/images/customer17.jpg" },
-    { id: "10", userName: "Aliza Duncan", requisitionDate: "02 Nov 2023", deleteRequestDate: "01 Dec 2023", userAvatar: "/assets/images/customer18.jpg" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const data = await fetchDeleteAccountRequests({ search });
-      if (data && data.length > 0) {
-        setRequests(data);
-      } else if (!search) {
-        setRequests(sampleRequests);
-      } else {
-        setRequests([]);
-      }
+      setRequests(data || []);
     } catch (err) {
       console.error(err);
-      setRequests(sampleRequests);
+      setRequests([]);
     } finally {
       setLoading(false);
     }

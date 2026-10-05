@@ -21,34 +21,14 @@ export default function AttendanceAdminPage() {
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
-  // Sample fallback matching screenshot
-  const sampleAdminRecords: AttendanceRecord[] = [
-    { id: "1", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:00 AM", clockOut: "07:15 PM", production: "09h 00m", breakTime: "0h 45m", overtime: "0h 20m", totalHours: "09h 20m" },
-    { id: "2", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:15 AM", clockOut: "07:12 PM", production: "09h 00m", breakTime: "01h 15m", overtime: "0h 12m", totalHours: "09h 12m" },
-    { id: "3", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:40 AM", clockOut: "07:00 PM", production: "08h 45m", breakTime: "01h 00m", overtime: "00h 00m", totalHours: "08h 45m" },
-    { id: "4", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:45 AM", clockOut: "08:10 PM", production: "09h 12m", breakTime: "00h 50m", overtime: "00 14m", totalHours: "09h 14m" },
-    { id: "5", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", date: "01 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-" },
-    { id: "6", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:17 AM", clockOut: "07:34 PM", production: "09h 26m", breakTime: "01h 20m", overtime: "00h 26m", totalHours: "09h 26m" },
-    { id: "7", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", date: "01 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-" },
-    { id: "8", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:42 AM", clockOut: "07:20 PM", production: "09h 17m", breakTime: "01h 00m", overtime: "00h 17m", totalHours: "09h 17m" },
-    { id: "9", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:18 AM", clockOut: "07:11 PM", production: "09h 32m", breakTime: "01h 15m", overtime: "00h 32m", totalHours: "09h 32m" },
-    { id: "10", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:30 AM", clockOut: "08:10 PM", production: "09h 00m", breakTime: "00h 34m", overtime: "00h 20m", totalHours: "09h 20m" },
-  ];
-
   const loadData = async () => {
     try {
       setLoading(true);
       const res = await fetchAttendanceRecords({ status: statusFilter, search });
-      if (res.records && res.records.length > 0) {
-        setRecords(res.records);
-      } else if (!search && statusFilter === "all") {
-        setRecords(sampleAdminRecords);
-      } else {
-        setRecords([]);
-      }
+      setRecords(res.records || []);
     } catch (err) {
       console.error(err);
-      setRecords(sampleAdminRecords);
+      setRecords([]);
     } finally {
       setLoading(false);
     }

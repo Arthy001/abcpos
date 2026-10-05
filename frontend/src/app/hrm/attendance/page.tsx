@@ -40,20 +40,6 @@ export default function AttendanceEmployeePage() {
   const [isOnBreak, setIsOnBreak] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<string>("05:45:22");
 
-  // Fallback sample records matching screenshot
-  const sampleRecords: AttendanceRecord[] = [
-    { id: "1", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:15 AM", clockOut: "08:55 PM", production: "9h 00m", breakTime: "1h 13m", overtime: "00h 50m", totalHours: "09h 50m", progress: 85 },
-    { id: "2", date: "02 Jan 2026", status: "PRESENT", clockIn: "09:07 AM", clockOut: "08:40 PM", production: "9h 10m", breakTime: "1h 07m", overtime: "01h 13m", totalHours: "10h 23m", progress: 90 },
-    { id: "3", date: "03 Jan 2026", status: "PRESENT", clockIn: "09:04 AM", clockOut: "08:52 PM", production: "8h 47m", breakTime: "1h 04m", overtime: "01h 07m", totalHours: "10h 04m", progress: 88 },
-    { id: "4", date: "04 Jan 2026", status: "PRESENT", clockIn: "09:45 AM", clockOut: "08:10 PM", production: "09h 12m", breakTime: "00h 50m", overtime: "00h 14m", totalHours: "09h 14m", progress: 82 },
-    { id: "5", date: "06 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-", progress: 0 },
-    { id: "6", date: "07 Jan 2023", status: "PRESENT", clockIn: "09:03 AM", clockOut: "08:57 PM", production: "8h 50m", breakTime: "1h 26m", overtime: "0h 43m", totalHours: "08h 33m", progress: 80 },
-    { id: "7", date: "04 Jan 2023", status: "HOLIDAY", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-", progress: 0 },
-    { id: "8", date: "07 Jan 2023", status: "PRESENT", clockIn: "09:42 AM", clockOut: "07:20 PM", production: "09h 17m", breakTime: "01h 00m", overtime: "00h 17m", totalHours: "09h 17m", progress: 86 },
-    { id: "9", date: "07 Jan 2023", status: "PRESENT", clockIn: "09:18 AM", clockOut: "07:11 PM", production: "09h 32m", breakTime: "01h 15m", overtime: "00h 32m", totalHours: "09h 32m", progress: 89 },
-    { id: "10", date: "07 Jan 2023", status: "PRESENT", clockIn: "09:30 AM", clockOut: "08:10 PM", production: "09h 00m", breakTime: "00h 34m", overtime: "00h 20m", totalHours: "09h 32m", progress: 87 },
-  ];
-
   // Update live clock
   useEffect(() => {
     const timer = setInterval(() => {
@@ -70,17 +56,13 @@ export default function AttendanceEmployeePage() {
     try {
       setLoading(true);
       const res = await fetchAttendanceRecords({ status: statusFilter, search });
-      if (res.records && res.records.length > 0) {
-        setRecords(res.records);
+      setRecords(res.records || []);
+      if (res.summary) {
         setSummary(res.summary);
-      } else if (!search && statusFilter === "all") {
-        setRecords(sampleRecords);
-      } else {
-        setRecords([]);
       }
     } catch (err) {
       console.error(err);
-      setRecords(sampleRecords);
+      setRecords([]);
     } finally {
       setLoading(false);
     }
