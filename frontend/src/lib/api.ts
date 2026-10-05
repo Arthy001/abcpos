@@ -2009,6 +2009,100 @@ export async function updatePosSettingsApi(payload: Partial<PosSettings>): Promi
   return data.posSettings;
 }
 
+// ==================== TAX RATES ====================
+export interface TaxRate {
+  id: string;
+  name: string;
+  rate: number;
+  status: string;
+  isDefault: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function fetchTaxRatesApi(): Promise<TaxRate[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/tax-rates`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch tax rates");
+  const data = await res.json();
+  return data.taxRates || [];
+}
+
+export async function createTaxRateApi(payload: { name: string; rate: number; status?: string; isDefault?: boolean }): Promise<TaxRate> {
+  const res = await fetch(`${API_BASE_URL}/settings/tax-rates`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create tax rate");
+  return data.taxRate;
+}
+
+export async function updateTaxRateApi(id: string, payload: Partial<TaxRate>): Promise<TaxRate> {
+  const res = await fetch(`${API_BASE_URL}/settings/tax-rates/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update tax rate");
+  return data.taxRate;
+}
+
+export async function deleteTaxRateApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/tax-rates/${id}`, {
+    method: "DELETE",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete tax rate");
+}
+
+// ==================== PAYMENT GATEWAYS ====================
+export interface PaymentGateway {
+  id: string;
+  code: string;
+  name: string;
+  title: string;
+  description?: string | null;
+  apiKey?: string | null;
+  secretKey?: string | null;
+  merchantId?: string | null;
+  mode: "SANDBOX" | "LIVE";
+  isEnabled: boolean;
+  icon?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function fetchPaymentGatewaysApi(): Promise<PaymentGateway[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/payment-gateways`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch payment gateways");
+  const data = await res.json();
+  return data.gateways || [];
+}
+
+export async function updatePaymentGatewayApi(id: string, payload: Partial<PaymentGateway>): Promise<PaymentGateway> {
+  const res = await fetch(`${API_BASE_URL}/settings/payment-gateways/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update payment gateway");
+  return data.gateway;
+}
+
+export async function togglePaymentGatewayApi(id: string, isEnabled: boolean): Promise<PaymentGateway> {
+  const res = await fetch(`${API_BASE_URL}/settings/payment-gateways/${id}/toggle`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isEnabled }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to toggle payment gateway");
+  return data.gateway;
+}
+
 // ==================== BALANCE SHEET & TRIAL BALANCE ====================
 export async function fetchBalanceSheetApi(): Promise<BalanceSheetData> {
   const res = await fetch(`${API_BASE_URL}/finance/balance-sheet`, { cache: "no-store" });

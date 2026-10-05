@@ -615,7 +615,7 @@ export interface Order {
   discount: number;
   tax: number;
   total: number;
-  paymentMethod: "CASH" | "PROMPTPAY" | "CREDIT_CARD";
+  paymentMethod: "CASH" | "PROMPTPAY" | "CREDIT_CARD" | "GIFT_CARD" | string;
   paymentStatus: "PAID" | "PENDING" | "CANCELLED";
   cashierName: string;
   notes?: string | null;

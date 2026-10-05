@@ -33,14 +33,16 @@ export const getCurrentShift = async (req: Request, res: Response) => {
     let totalCashSales = 0;
     let totalPromptPaySales = 0;
     let totalCardSales = 0;
+    let totalOtherSales = 0;
 
     for (const o of orders) {
       if (o.paymentMethod === "CASH") totalCashSales += o.total;
       else if (o.paymentMethod === "PROMPTPAY") totalPromptPaySales += o.total;
       else if (o.paymentMethod === "CREDIT_CARD") totalCardSales += o.total;
+      else totalOtherSales += o.total;
     }
 
-    const totalSales = totalCashSales + totalPromptPaySales + totalCardSales;
+    const totalSales = totalCashSales + totalPromptPaySales + totalCardSales + totalOtherSales;
     const orderCount = orders.length;
 
     const cashIn = shift.movements
@@ -199,14 +201,16 @@ export const closeShift = async (req: Request, res: Response) => {
     let totalCashSales = 0;
     let totalPromptPaySales = 0;
     let totalCardSales = 0;
+    let totalOtherSales = 0;
 
     for (const o of orders) {
       if (o.paymentMethod === "CASH") totalCashSales += o.total;
       else if (o.paymentMethod === "PROMPTPAY") totalPromptPaySales += o.total;
       else if (o.paymentMethod === "CREDIT_CARD") totalCardSales += o.total;
+      else totalOtherSales += o.total;
     }
 
-    const totalSales = totalCashSales + totalPromptPaySales + totalCardSales;
+    const totalSales = totalCashSales + totalPromptPaySales + totalCardSales + totalOtherSales;
     const orderCount = orders.length;
 
     const cashIn = shift.movements

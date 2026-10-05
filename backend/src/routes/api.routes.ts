@@ -243,6 +243,13 @@ import {
   updatePrefixSettings,
   getPosSettings,
   updatePosSettings,
+  getTaxRates,
+  createTaxRate,
+  updateTaxRate,
+  deleteTaxRate,
+  getPaymentGateways,
+  updatePaymentGateway,
+  togglePaymentGateway,
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
 import {
@@ -559,6 +566,13 @@ router.get("/settings/prefixes", getPrefixSettings);
 router.put("/settings/prefixes", updatePrefixSettings);
 router.get("/settings/pos", getPosSettings);
 router.put("/settings/pos", updatePosSettings);
+router.get("/settings/tax-rates", getTaxRates);
+router.post("/settings/tax-rates", createTaxRate);
+router.put("/settings/tax-rates/:id", updateTaxRate);
+router.delete("/settings/tax-rates/:id", deleteTaxRate);
+router.get("/settings/payment-gateways", getPaymentGateways);
+router.put("/settings/payment-gateways/:id", updatePaymentGateway);
+router.patch("/settings/payment-gateways/:id/toggle", togglePaymentGateway);
 
 // Audit Logs & Activity History
 router.get("/audit-logs", getAuditLogs);

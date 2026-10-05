@@ -124,10 +124,15 @@ export const createOrder = async (req: Request, res: Response) => {
       finalNotes = finalNotes ? `${finalNotes} ${gcNote}` : gcNote;
     }
 
+    const activeShift = await prisma.posShift.findFirst({
+      where: { status: "OPEN" },
+    });
+
     const order = await prisma.order.create({
       data: {
         orderNumber,
         customerId: customerId || null,
+        shiftId: activeShift?.id || null,
         subtotal: calculatedSubtotal,
         discount: Number(discount),
         tax: Number(tax),
