@@ -234,6 +234,12 @@ import {
   updateNotificationSettings,
   getConnectedApps,
   toggleConnectedApp,
+  getCompanySettings,
+  updateCompanySettings,
+  getPrefixSettings,
+  updatePrefixSettings,
+  getPosSettings,
+  updatePosSettings,
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
 import {
@@ -544,6 +550,12 @@ router.get("/settings/notifications", getNotificationSettings);
 router.put("/settings/notifications", updateNotificationSettings);
 router.get("/settings/connected-apps", getConnectedApps);
 router.put("/settings/connected-apps/:id", toggleConnectedApp);
+router.get("/settings/company", getCompanySettings);
+router.put("/settings/company", updateCompanySettings);
+router.get("/settings/prefixes", getPrefixSettings);
+router.put("/settings/prefixes", updatePrefixSettings);
+router.get("/settings/pos", getPosSettings);
+router.put("/settings/pos", updatePosSettings);
 
 // Audit Logs & Activity History
 router.get("/audit-logs", getAuditLogs);

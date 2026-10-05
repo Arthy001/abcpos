@@ -812,6 +812,61 @@ export interface ConnectedAppItem {
   connectedDate?: string | null;
 }
 
+export interface CompanySettings {
+  id?: string;
+  companyName: string;
+  email: string;
+  phone: string;
+  fax?: string | null;
+  website?: string | null;
+  companyIcon?: string | null;
+  favicon?: string | null;
+  logo?: string | null;
+  darkLogo?: string | null;
+  address: string;
+  country: string;
+  state: string;
+  city: string;
+  postalCode: string;
+  taxId?: string | null;
+}
+
+export interface PrefixSettings {
+  id?: string;
+  productSku: string;
+  supplier: string;
+  purchase: string;
+  purchaseReturn: string;
+  sales: string;
+  salesReturn: string;
+  customer: string;
+  expense: string;
+  stockTransfer: string;
+  stockAdjustment: string;
+  salesOrder: string;
+  posInvoice: string;
+  estimation: string;
+  transaction: string;
+  employee: string;
+  shift?: string;
+}
+
+export interface PosSettings {
+  id?: string;
+  posPrinter: string;
+  paperSize?: string;
+  soundEffect: boolean;
+  autoPrintReceipt?: boolean;
+  cod: boolean;
+  cheque: boolean;
+  card: boolean;
+  paypal: boolean;
+  bankTransfer: boolean;
+  cash: boolean;
+  promptpay?: boolean;
+  quickCashAmounts?: string;
+}
+
 export interface AuditLogItem {
   id: string;
   action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE" | "RESTORED";

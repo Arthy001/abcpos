@@ -90,9 +90,12 @@ export const openShift = async (req: Request, res: Response) => {
       });
     }
 
+    const prefixConfig = await prisma.prefixSettings.findFirst();
+    const rawShiftPrefix = prefixConfig?.shift || "SFT-";
+    const cleanShiftPrefix = rawShiftPrefix.replace(/\s+/g, "").replace(/-+$/, "") + "-";
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const randomSuffix = Math.floor(100 + Math.random() * 900);
-    const shiftNumber = `SFT-${dateStr}-${randomSuffix}`;
+    const shiftNumber = `${cleanShiftPrefix}${dateStr}-${randomSuffix}`;
 
     const newShift = await prisma.posShift.create({
       data: {

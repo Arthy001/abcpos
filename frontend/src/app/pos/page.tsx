@@ -50,7 +50,7 @@ import {
   Ticket,
   Percent,
 } from "lucide-react";
-import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse, Coupon } from "@/types";
+import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse, Coupon, CompanySettings, PosSettings } from "@/types";
 import {
   fetchProducts,
   fetchCategories,
@@ -63,6 +63,8 @@ import {
   recordShiftMovementApi,
   closeShiftApi,
   fetchCoupons,
+  fetchCompanySettings,
+  fetchPosSettings,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -129,6 +131,10 @@ export default function POSPage() {
   const [showCouponModal, setShowCouponModal] = useState<boolean>(false);
   const [inputCouponCode, setInputCouponCode] = useState<string>("");
   const [couponError, setCouponError] = useState<string>("");
+
+  // System & POS Settings
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
+  const [posSettings, setPosSettings] = useState<PosSettings | null>(null);
 
   // Held Orders
   const [heldOrders, setHeldOrders] = useState<HeldOrder[]>([]);
@@ -404,19 +410,26 @@ export default function POSPage() {
   const loadMasterData = async () => {
     try {
       setLoadingProducts(true);
-      const [prodsData, catsData, custsData, ordersData, couponsData] = await Promise.all([
+      const [prodsData, catsData, custsData, ordersData, _shift, couponsData, companyData, posData] = await Promise.all([
         fetchProducts(),
         fetchCategories(),
         fetchCustomers(),
         fetchOrders().catch(() => []),
         refreshShiftData().catch(() => null),
         fetchCoupons().catch(() => []),
+        fetchCompanySettings().catch(() => null),
+        fetchPosSettings().catch(() => null),
       ]);
       setProducts(prodsData || []);
       setCategories(catsData || []);
       setCustomers(custsData || []);
       setRecentOrders(ordersData || []);
       setCoupons(couponsData || []);
+      if (companyData) setCompanySettings(companyData);
+      if (posData) {
+        setPosSettings(posData);
+        if (posData.soundEffect !== undefined) setSoundEnabled(posData.soundEffect);
+      }
     } catch (err) {
       console.error("Failed to load POS master data:", err);
     } finally {
@@ -556,14 +569,14 @@ export default function POSPage() {
   const roundoffDifference = roundoff ? Math.round(tentativeTotal) - tentativeTotal : 0;
   const finalPayable = Math.max(0, roundoff ? Math.round(tentativeTotal) : tentativeTotal);
 
-  // Quick Cash presets
+  // Quick Cash presets (from POS settings if configured)
+  const configuredQuickCash = posSettings?.quickCashAmounts
+    ? posSettings.quickCashAmounts.split(",").map((v) => Number(v.trim())).filter((v) => !isNaN(v) && v > 0)
+    : [100, 500, 1000, 2000, 5000];
+
   const quickCashOptions = [
     finalPayable,
-    100,
-    500,
-    1000,
-    2000,
-    5000,
+    ...configuredQuickCash,
   ].filter((v, idx, arr) => (arr.indexOf(v) === idx && v >= finalPayable) || v === finalPayable);
 
   // Coupon Handlers
@@ -1981,9 +1994,12 @@ export default function POSPage() {
             <div id="pos-receipt-print" className="p-5 font-mono text-xs text-gray-800 space-y-3 overflow-y-auto">
               {/* Slip Header */}
               <div className="text-center space-y-1 pb-2 border-b border-dashed border-gray-300">
-                <h2 className="font-extrabold text-sm tracking-tight text-gray-900">ABC POS STORE</h2>
-                <p className="text-[10px] text-gray-500">{selectedStore} &bull; Tax ID: 010556209999</p>
-                <p className="text-[10px] text-gray-500">Tel: +66 2 123 4567</p>
+                <h2 className="font-extrabold text-sm tracking-tight text-gray-900">{companySettings?.companyName || "ABC POS STORE"}</h2>
+                <p className="text-[10px] text-gray-500">{selectedStore} &bull; Tax ID: {companySettings?.taxId || "010556209999"}</p>
+                <p className="text-[10px] text-gray-500">Tel: {companySettings?.phone || "+66 2 123 4567"}</p>
+                {companySettings?.address && (
+                  <p className="text-[9px] text-gray-400">{companySettings.address}, {companySettings.city}</p>
+                )}
               </div>
 
               {/* Order Info */}
@@ -2897,8 +2913,8 @@ export default function POSPage() {
             {/* Printable Thermal Receipt */}
             <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 font-mono text-xs text-gray-800 space-y-3">
               <div className="text-center space-y-1">
-                <h2 className="text-base font-extrabold tracking-tight text-gray-900">ABC POS RETAIL</h2>
-                <p className="text-[10px] text-gray-500">{selectedStore || "Electro Mart"}</p>
+                <h2 className="text-base font-extrabold tracking-tight text-gray-900">{companySettings?.companyName || "ABC POS RETAIL"}</h2>
+                <p className="text-[10px] text-gray-500">{selectedStore || "Electro Mart"} &bull; Tax ID: {companySettings?.taxId || "010556209999"}</p>
                 <div className="border-b border-dashed border-gray-300 my-2"></div>
                 <p className="font-black text-gray-900 text-xs">*** SHIFT Z-REPORT ***</p>
                 <p className="text-[11px] text-gray-700 font-bold">Shift: {selectedZReportShift.shiftNumber}</p>

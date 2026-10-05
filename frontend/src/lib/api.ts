@@ -55,6 +55,9 @@ import {
   UserSessionLog,
   UserNotificationSettings,
   ConnectedAppItem,
+  CompanySettings,
+  PrefixSettings,
+  PosSettings,
   AuditLogItem,
   Purchase,
   PurchaseItem,
@@ -1944,6 +1947,63 @@ export async function toggleConnectedAppApi(id: string, status: "CONNECTED" | "D
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to update connected app");
   return data.app;
+}
+
+// ==================== COMPANY SETTINGS ====================
+export async function fetchCompanySettings(): Promise<CompanySettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/company`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch company settings");
+  const data = await res.json();
+  return data.company;
+}
+
+export async function updateCompanySettingsApi(payload: Partial<CompanySettings>): Promise<CompanySettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/company`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update company settings");
+  return data.company;
+}
+
+// ==================== PREFIX SETTINGS ====================
+export async function fetchPrefixSettings(): Promise<PrefixSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/prefixes`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch prefix settings");
+  const data = await res.json();
+  return data.prefixes;
+}
+
+export async function updatePrefixSettingsApi(payload: Partial<PrefixSettings>): Promise<PrefixSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/prefixes`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update prefix settings");
+  return data.prefixes;
+}
+
+// ==================== POS SETTINGS ====================
+export async function fetchPosSettings(): Promise<PosSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/pos`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch POS settings");
+  const data = await res.json();
+  return data.posSettings;
+}
+
+export async function updatePosSettingsApi(payload: Partial<PosSettings>): Promise<PosSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/pos`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update POS settings");
+  return data.posSettings;
 }
 
 // ==================== AUDIT LOGS & RESTORE ====================

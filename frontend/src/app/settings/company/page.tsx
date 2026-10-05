@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SettingsSidebar } from "@/components/settings/SettingsSidebar";
+import { fetchCompanySettings, updateCompanySettingsApi } from "@/lib/api";
+import { CompanySettings } from "@/types";
 import {
   RotateCcw,
   ChevronUp,
@@ -10,31 +12,83 @@ import {
   X,
   ChevronDown,
   CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  Building2,
 } from "lucide-react";
 
 export default function CompanySettingsPage() {
-  const [companyName, setCompanyName] = useState("Dreams POS Retail Co., Ltd.");
-  const [email, setEmail] = useState("contact@dreamspos.com");
-  const [phone, setPhone] = useState("+1 (555) 019-2834");
-  const [fax, setFax] = useState("+1 (555) 019-2835");
-  const [website, setWebsite] = useState("https://dreamspos.com");
+  const [formData, setFormData] = useState<CompanySettings>({
+    companyName: "ABC POS Retail Co., Ltd.",
+    email: "contact@abcpos.com",
+    phone: "+66 2 123 4567",
+    fax: "+66 2 123 4568",
+    website: "https://abcpos.com",
+    taxId: "010556209999",
+    address: "88/9 Sukhumvit Road, Khlong Toei",
+    country: "Thailand",
+    state: "Bangkok",
+    city: "Bangkok",
+    postalCode: "10110",
+  });
 
-  const [address, setAddress] = useState("8890 Technology Blvd, Suite 400");
-  const [country, setCountry] = useState("United States");
-  const [stateName, setStateName] = useState("California");
-  const [city, setCity] = useState("Los Angeles");
-  const [postalCode, setPostalCode] = useState("90001");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
-
-  const showFeedback = (msg: string) => {
-    setFeedbackMsg(msg);
-    setTimeout(() => setFeedbackMsg(null), 3000);
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const data = await fetchCompanySettings();
+      if (data) {
+        setFormData({
+          id: data.id,
+          companyName: data.companyName || "",
+          email: data.email || "",
+          phone: data.phone || "",
+          fax: data.fax || "",
+          website: data.website || "",
+          taxId: data.taxId || "",
+          address: data.address || "",
+          country: data.country || "Thailand",
+          state: data.state || "Bangkok",
+          city: data.city || "Bangkok",
+          postalCode: data.postalCode || "10110",
+        });
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || "Failed to load company settings");
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const handleChange = (field: keyof CompanySettings, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    showFeedback("Company Settings saved successfully!");
+    try {
+      setSaving(true);
+      setErrorMessage(null);
+      const res = await updateCompanySettingsApi(formData);
+      if (res) {
+        setFormData((prev) => ({ ...prev, ...res }));
+        setShowSuccessModal(true);
+      }
+    } catch (err: any) {
+      console.error(err);
+      setErrorMessage(err.message || "Failed to save company settings");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -44,18 +98,21 @@ export default function CompanySettingsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-xl font-bold text-[#1E293B] tracking-tight">Settings</h1>
-            <p className="text-xs text-[#64748B] mt-0.5">Manage your settings on portal</p>
+            <p className="text-xs text-[#64748B] mt-0.5">Manage your settings and company profile on portal</p>
           </div>
 
           <div className="flex items-center space-x-2">
             <button
+              type="button"
               title="Refresh"
-              onClick={() => showFeedback("Company settings refreshed")}
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+              onClick={loadData}
+              disabled={loading}
+              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs cursor-pointer disabled:opacity-50"
             >
-              <RotateCcw className="w-3.5 h-3.5" />
+              <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
             <button
+              type="button"
               title="Collapse"
               className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
             >
@@ -64,14 +121,6 @@ export default function CompanySettingsPage() {
           </div>
         </div>
 
-        {/* Feedback Alert */}
-        {feedbackMsg && (
-          <div className="flex items-center space-x-2 p-3.5 rounded-xl bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-medium">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-            <span>{feedbackMsg}</span>
-          </div>
-        )}
-
         {/* 2-Column Settings Layout */}
         <div className="flex flex-col lg:flex-row gap-5 items-start">
           {/* Left Settings Sidebar */}
@@ -79,8 +128,20 @@ export default function CompanySettingsPage() {
 
           {/* Right Content Panel: Company Settings */}
           <form onSubmit={handleSave} className="flex-1 w-full bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden">
-            <div className="p-6 border-b border-[#F1F3F5]">
-              <h2 className="text-sm font-bold text-[#1E293B]">Company Settings</h2>
+            <div className="p-6 border-b border-[#F1F3F5] flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold text-[#1E293B] flex items-center gap-2">
+                  <Building2 className="w-4 h-4 text-[#FE9F43]" />
+                  Company Settings
+                </h2>
+                <p className="text-[11px] text-[#64748B] mt-0.5">Real database profile for receipt headers, invoices and tax documents</p>
+              </div>
+              {loading && (
+                <div className="flex items-center space-x-2 text-xs text-gray-500">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-[#FE9F43]" />
+                  <span>Loading...</span>
+                </div>
+              )}
             </div>
 
             <div className="p-6 space-y-8">
@@ -93,13 +154,26 @@ export default function CompanySettingsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Company Name */}
-                  <div className="space-y-1.5">
+                  <div className="space-y-1.5 sm:col-span-2">
                     <label className="text-xs font-medium text-[#1E293B]">Company Name <span className="text-rose-500">*</span></label>
                     <input
                       type="text"
                       required
-                      value={companyName}
-                      onChange={(e) => setCompanyName(e.target.value)}
+                      value={formData.companyName}
+                      onChange={(e) => handleChange("companyName", e.target.value)}
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  {/* Tax ID */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#1E293B]">Tax ID (เลขประจำตัวผู้เสียภาษี) <span className="text-rose-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.taxId || ""}
+                      onChange={(e) => handleChange("taxId", e.target.value)}
+                      placeholder="e.g. 010556209999"
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
@@ -110,8 +184,8 @@ export default function CompanySettingsPage() {
                     <input
                       type="email"
                       required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
+                      value={formData.email}
+                      onChange={(e) => handleChange("email", e.target.value)}
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
@@ -122,162 +196,54 @@ export default function CompanySettingsPage() {
                     <input
                       type="text"
                       required
-                      value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
+                      value={formData.phone}
+                      onChange={(e) => handleChange("phone", e.target.value)}
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
 
                   {/* Fax */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-medium text-[#1E293B]">Fax <span className="text-rose-500">*</span></label>
+                    <label className="text-xs font-medium text-[#1E293B]">Fax</label>
                     <input
                       type="text"
-                      required
-                      value={fax}
-                      onChange={(e) => setFax(e.target.value)}
+                      value={formData.fax || ""}
+                      onChange={(e) => handleChange("fax", e.target.value)}
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
 
                   {/* Website */}
-                  <div className="space-y-1.5 sm:col-span-2">
-                    <label className="text-xs font-medium text-[#1E293B]">Website <span className="text-rose-500">*</span></label>
+                  <div className="space-y-1.5 sm:col-span-3">
+                    <label className="text-xs font-medium text-[#1E293B]">Website</label>
                     <input
                       type="text"
-                      required
-                      value={website}
-                      onChange={(e) => setWebsite(e.target.value)}
+                      value={formData.website || ""}
+                      onChange={(e) => handleChange("website", e.target.value)}
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
                 </div>
               </div>
 
-              {/* 2. Company Images */}
+              {/* 2. Company Images & Branding */}
               <div className="space-y-4 pt-2">
                 <div className="flex items-center space-x-2 text-xs font-bold text-[#1E293B]">
                   <span className="w-1.5 h-1.5 rounded-full bg-[#FE9F43]"></span>
-                  <span>Company Images</span>
+                  <span>Company Branding</span>
                 </div>
 
-                <div className="space-y-5">
-                  {/* Row 1: Company Icon */}
+                <div className="space-y-4">
+                  {/* Row: Company Logo */}
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-[#E9ECEF] bg-[#FDFDFE]">
                     <div>
-                      <h4 className="text-xs font-bold text-[#1E293B]">Company Icon</h4>
-                      <p className="text-[11px] text-[#64748B]">Upload Icon of your Company</p>
+                      <h4 className="text-xs font-bold text-[#1E293B]">Store Receipt Brand</h4>
+                      <p className="text-[11px] text-[#64748B]">Displays on top of Thermal Print Slips & Invoices</p>
                     </div>
 
                     <div className="flex items-center space-x-4">
-                      <div className="space-y-1 text-right sm:text-left">
-                        <button
-                          type="button"
-                          className="flex items-center space-x-1.5 px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Image</span>
-                        </button>
-                        <p className="text-[10px] text-[#64748B]">Recommended size is 450px x 450px. Max size 5mb.</p>
-                      </div>
-
-                      <div className="relative w-12 h-12 rounded-xl border border-gray-200 bg-white p-2 flex items-center justify-center shrink-0 shadow-2xs">
-                        <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-black text-xs">
-                          D
-                        </div>
-                        <button type="button" className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 2: Favicon */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-[#E9ECEF] bg-[#FDFDFE]">
-                    <div>
-                      <h4 className="text-xs font-bold text-[#1E293B]">Favicon</h4>
-                      <p className="text-[11px] text-[#64748B]">Upload Favicon of your Company</p>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <div className="space-y-1 text-right sm:text-left">
-                        <button
-                          type="button"
-                          className="flex items-center space-x-1.5 px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Image</span>
-                        </button>
-                        <p className="text-[10px] text-[#64748B]">Recommended size is 450px x 450px. Max size 5mb.</p>
-                      </div>
-
-                      <div className="relative w-12 h-12 rounded-xl border border-gray-200 bg-white p-2 flex items-center justify-center shrink-0 shadow-2xs">
-                        <div className="w-7 h-7 rounded-lg bg-[#0F172A] text-white flex items-center justify-center font-black text-xs">
-                          D
-                        </div>
-                        <button type="button" className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 3: Company Logo */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-[#E9ECEF] bg-[#FDFDFE]">
-                    <div>
-                      <h4 className="text-xs font-bold text-[#1E293B]">Company Logo</h4>
-                      <p className="text-[11px] text-[#64748B]">Upload Logo of your Company</p>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <div className="space-y-1 text-right sm:text-left">
-                        <button
-                          type="button"
-                          className="flex items-center space-x-1.5 px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Image</span>
-                        </button>
-                        <p className="text-[10px] text-[#64748B]">Recommended size is 450px x 450px. Max size 5mb.</p>
-                      </div>
-
-                      <div className="relative h-12 px-3 rounded-xl border border-gray-200 bg-white flex items-center justify-center shrink-0 shadow-2xs">
-                        <span className="font-extrabold text-sm text-[#0F172A] tracking-tight">
-                          <span className="text-[#FE9F43]">D</span>reams<span className="text-[9px] bg-rose-500 text-white px-1 ml-0.5 rounded-xs font-bold">POS</span>
-                        </span>
-                        <button type="button" className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
-                          <X className="w-2.5 h-2.5" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Row 4: Company Dark Logo */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl border border-[#E9ECEF] bg-[#FDFDFE]">
-                    <div>
-                      <h4 className="text-xs font-bold text-[#1E293B]">Company Dark Logo</h4>
-                      <p className="text-[11px] text-[#64748B]">Upload Logo of your Company</p>
-                    </div>
-
-                    <div className="flex items-center space-x-4">
-                      <div className="space-y-1 text-right sm:text-left">
-                        <button
-                          type="button"
-                          className="flex items-center space-x-1.5 px-4 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer"
-                        >
-                          <Upload className="w-3.5 h-3.5" />
-                          <span>Upload Image</span>
-                        </button>
-                        <p className="text-[10px] text-[#64748B]">Recommended size is 450px x 450px. Max size 5mb.</p>
-                      </div>
-
-                      <div className="relative h-12 px-3 rounded-xl border border-gray-800 bg-[#0F172A] flex items-center justify-center shrink-0 shadow-2xs">
-                        <span className="font-extrabold text-sm text-white tracking-tight">
-                          <span className="text-[#FE9F43]">D</span>reams<span className="text-[9px] bg-rose-500 text-white px-1 ml-0.5 rounded-xs font-bold">POS</span>
-                        </span>
-                        <button type="button" className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-rose-500 text-white flex items-center justify-center text-[10px] font-bold">
-                          <X className="w-2.5 h-2.5" />
-                        </button>
+                      <div className="h-10 px-4 rounded-xl border border-gray-200 bg-white flex items-center justify-center shrink-0 shadow-2xs font-extrabold text-sm text-[#0F172A]">
+                        <span className="text-[#FE9F43] mr-0.5">ABC</span> POS STORE
                       </div>
                     </div>
                   </div>
@@ -298,27 +264,27 @@ export default function CompanySettingsPage() {
                     <input
                       type="text"
                       required
-                      value={address}
-                      onChange={(e) => setAddress(e.target.value)}
+                      value={formData.address}
+                      onChange={(e) => handleChange("address", e.target.value)}
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
 
                   {/* Country, State, City, Postal Code */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                     {/* Country */}
                     <div className="space-y-1.5">
                       <label className="text-xs font-medium text-[#1E293B]">Country <span className="text-rose-500">*</span></label>
                       <div className="relative">
                         <select
-                          value={country}
-                          onChange={(e) => setCountry(e.target.value)}
+                          value={formData.country}
+                          onChange={(e) => handleChange("country", e.target.value)}
                           className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
                         >
-                          <option value="United States">United States</option>
                           <option value="Thailand">Thailand</option>
-                          <option value="United Kingdom">United Kingdom</option>
+                          <option value="United States">United States</option>
                           <option value="Singapore">Singapore</option>
+                          <option value="Malaysia">Malaysia</option>
                         </select>
                         <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] absolute right-3 top-3 pointer-events-none" />
                       </div>
@@ -326,38 +292,26 @@ export default function CompanySettingsPage() {
 
                     {/* State */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-[#1E293B]">State <span className="text-rose-500">*</span></label>
-                      <div className="relative">
-                        <select
-                          value={stateName}
-                          onChange={(e) => setStateName(e.target.value)}
-                          className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                        >
-                          <option value="California">California</option>
-                          <option value="New York">New York</option>
-                          <option value="Bangkok">Bangkok</option>
-                          <option value="Texas">Texas</option>
-                        </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] absolute right-3 top-3 pointer-events-none" />
-                      </div>
+                      <label className="text-xs font-medium text-[#1E293B]">Province / State <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.state}
+                        onChange={(e) => handleChange("state", e.target.value)}
+                        className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                      />
                     </div>
 
                     {/* City */}
                     <div className="space-y-1.5">
-                      <label className="text-xs font-medium text-[#1E293B]">City <span className="text-rose-500">*</span></label>
-                      <div className="relative">
-                        <select
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                        >
-                          <option value="Los Angeles">Los Angeles</option>
-                          <option value="San Francisco">San Francisco</option>
-                          <option value="New York City">New York City</option>
-                          <option value="Bangkok">Bangkok</option>
-                        </select>
-                        <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] absolute right-3 top-3 pointer-events-none" />
-                      </div>
+                      <label className="text-xs font-medium text-[#1E293B]">City / District <span className="text-rose-500">*</span></label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.city}
+                        onChange={(e) => handleChange("city", e.target.value)}
+                        className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                      />
                     </div>
 
                     {/* Postal Code */}
@@ -366,8 +320,8 @@ export default function CompanySettingsPage() {
                       <input
                         type="text"
                         required
-                        value={postalCode}
-                        onChange={(e) => setPostalCode(e.target.value)}
+                        value={formData.postalCode}
+                        onChange={(e) => handleChange("postalCode", e.target.value)}
                         className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                       />
                     </div>
@@ -380,21 +334,68 @@ export default function CompanySettingsPage() {
             <div className="flex items-center justify-end space-x-3 p-5 bg-white border-t border-[#F1F3F5]">
               <button
                 type="button"
-                onClick={() => showFeedback("Cancelled changes")}
-                className="px-5 py-2 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-lg text-xs font-bold transition-all cursor-pointer"
+                onClick={loadData}
+                disabled={saving || loading}
+                className="px-5 py-2 bg-[#0F172A] hover:bg-[#1E293B] text-white rounded-lg text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
               >
-                Cancel
+                Reset
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer"
+                disabled={saving || loading}
+                className="flex items-center space-x-1.5 px-5 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer disabled:opacity-50"
               >
-                Save Changes
+                {saving && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>{saving ? "Saving..." : "Save Changes"}</span>
               </button>
             </div>
           </form>
         </div>
       </div>
+
+      {/* GEMINI Rule #3: Edit Success Modal */}
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-gray-100 space-y-4">
+            <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle2 className="w-8 h-8 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Company Settings Updated!</h3>
+              <p className="text-xs text-gray-500 mt-1">
+                Company profile "{formData.companyName}" has been successfully saved to database.
+              </p>
+            </div>
+            <button
+              onClick={() => setShowSuccessModal(false)}
+              className="w-full py-2.5 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md shadow-blue-500/20 active:scale-98 transition-all cursor-pointer"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* GEMINI Rule #3: Error / Validation Modal */}
+      {errorMessage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center shadow-2xl border border-gray-100 space-y-4">
+            <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto shadow-inner">
+              <AlertTriangle className="w-8 h-8 text-rose-600" />
+            </div>
+            <div>
+              <h3 className="text-base font-bold text-gray-900">Operation Failed</h3>
+              <p className="text-xs text-rose-600 mt-1">{errorMessage}</p>
+            </div>
+            <button
+              onClick={() => setErrorMessage(null)}
+              className="w-full py-2.5 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-md shadow-rose-500/20 active:scale-98 transition-all cursor-pointer"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </AppLayout>
   );
 }

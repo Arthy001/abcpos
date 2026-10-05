@@ -26,10 +26,13 @@ export const createOrder = async (req: Request, res: Response) => {
       return res.status(400).json({ success: false, message: "Order must contain at least one item." });
     }
 
-    // Generate unique order number (e.g. ORD-YYYYMMDD-XXXX)
+    // Generate unique order number (e.g. dynamic prefix from settings + YYYYMMDD-XXXX)
+    const prefixConfig = await prisma.prefixSettings.findFirst();
+    const rawPrefix = prefixConfig?.posInvoice || prefixConfig?.salesOrder || "ORD-";
+    const cleanPrefix = rawPrefix.replace(/\s+/g, "").replace(/-+$/, "") + "-";
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     const randomSuffix = Math.floor(1000 + Math.random() * 9000);
-    const orderNumber = `ORD-${dateStr}-${randomSuffix}`;
+    const orderNumber = `${cleanPrefix}${dateStr}-${randomSuffix}`;
 
     // Perform order creation & stock deduction
     let calculatedSubtotal = 0;

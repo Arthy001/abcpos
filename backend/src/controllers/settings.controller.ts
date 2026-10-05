@@ -165,3 +165,142 @@ export const toggleConnectedApp = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: error.message || "Failed to toggle connected app" });
   }
 };
+
+// ==================== COMPANY SETTINGS ====================
+export const getCompanySettings = async (req: Request, res: Response) => {
+  try {
+    let company = await prisma.companySettings.findFirst();
+    if (!company) {
+      company = await prisma.companySettings.create({
+        data: {
+          companyName: "ABC POS Retail Co., Ltd.",
+          email: "contact@abcpos.com",
+          phone: "+66 2 123 4567",
+          fax: "+66 2 123 4568",
+          website: "https://abcpos.com",
+          address: "88/9 Sukhumvit Road, Khlong Toei",
+          country: "Thailand",
+          state: "Bangkok",
+          city: "Bangkok",
+          postalCode: "10110",
+          taxId: "010556209999",
+        },
+      });
+    }
+    res.json({ success: true, company });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch company settings" });
+  }
+};
+
+export const updateCompanySettings = async (req: Request, res: Response) => {
+  try {
+    const existing = await prisma.companySettings.findFirst();
+    if (!existing) {
+      const created = await prisma.companySettings.create({ data: req.body });
+      return res.json({ success: true, company: created });
+    }
+    const updated = await prisma.companySettings.update({
+      where: { id: existing.id },
+      data: req.body,
+    });
+    res.json({ success: true, company: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update company settings" });
+  }
+};
+
+// ==================== PREFIX SETTINGS ====================
+export const getPrefixSettings = async (req: Request, res: Response) => {
+  try {
+    let prefixes = await prisma.prefixSettings.findFirst();
+    if (!prefixes) {
+      prefixes = await prisma.prefixSettings.create({
+        data: {
+          productSku: "SKU - ",
+          supplier: "SUP - ",
+          purchase: "PU - ",
+          purchaseReturn: "PR - ",
+          sales: "SA - ",
+          salesReturn: "SR - ",
+          customer: "CT - ",
+          expense: "EX - ",
+          stockTransfer: "ST - ",
+          stockAdjustment: "SA - ",
+          salesOrder: "SO - ",
+          posInvoice: "PINV - ",
+          estimation: "EST - ",
+          transaction: "TRN - ",
+          employee: "EMP - ",
+          shift: "SFT - ",
+        },
+      });
+    }
+    res.json({ success: true, prefixes });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch prefix settings" });
+  }
+};
+
+export const updatePrefixSettings = async (req: Request, res: Response) => {
+  try {
+    const existing = await prisma.prefixSettings.findFirst();
+    if (!existing) {
+      const created = await prisma.prefixSettings.create({ data: req.body });
+      return res.json({ success: true, prefixes: created });
+    }
+    const updated = await prisma.prefixSettings.update({
+      where: { id: existing.id },
+      data: req.body,
+    });
+    res.json({ success: true, prefixes: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update prefix settings" });
+  }
+};
+
+// ==================== POS SETTINGS ====================
+export const getPosSettings = async (req: Request, res: Response) => {
+  try {
+    let posSettings = await prisma.posSettings.findFirst();
+    if (!posSettings) {
+      posSettings = await prisma.posSettings.create({
+        data: {
+          posPrinter: "HP Printer",
+          paperSize: "80mm",
+          soundEffect: true,
+          autoPrintReceipt: true,
+          cod: true,
+          cheque: false,
+          card: true,
+          paypal: true,
+          bankTransfer: true,
+          cash: true,
+          promptpay: true,
+          quickCashAmounts: "20,50,100,500,1000",
+        },
+      });
+    }
+    res.json({ success: true, posSettings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch POS settings" });
+  }
+};
+
+export const updatePosSettings = async (req: Request, res: Response) => {
+  try {
+    const existing = await prisma.posSettings.findFirst();
+    if (!existing) {
+      const created = await prisma.posSettings.create({ data: req.body });
+      return res.json({ success: true, posSettings: created });
+    }
+    const updated = await prisma.posSettings.update({
+      where: { id: existing.id },
+      data: req.body,
+    });
+    res.json({ success: true, posSettings: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update POS settings" });
+  }
+};
+

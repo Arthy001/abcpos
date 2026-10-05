@@ -784,6 +784,71 @@ model ConnectedAppItem {
   updatedAt        DateTime @updatedAt
 }
 
+// ==========================================
+// 🏢 SYSTEM & POS SETTINGS
+// ==========================================
+
+model CompanySettings {
+  id          String   @id @default(uuid())
+  companyName String   @default("ABC POS Retail Co., Ltd.")
+  email       String   @default("contact@abcpos.com")
+  phone       String   @default("+66 2 123 4567")
+  fax         String?  @default("+66 2 123 4568")
+  website     String?  @default("https://abcpos.com")
+  companyIcon String?  @default("/assets/images/company-icon.png")
+  favicon     String?  @default("/assets/images/favicon.png")
+  logo        String?  @default("/assets/images/logo.png")
+  darkLogo    String?  @default("/assets/images/logo-dark.png")
+  address     String   @default("88/9 Sukhumvit Road, Khlong Toei")
+  country     String   @default("Thailand")
+  state       String   @default("Bangkok")
+  city        String   @default("Bangkok")
+  postalCode  String   @default("10110")
+  taxId       String?  @default("010556209999")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PrefixSettings {
+  id              String   @id @default(uuid())
+  productSku      String   @default("SKU - ")
+  supplier        String   @default("SUP - ")
+  purchase        String   @default("PU - ")
+  purchaseReturn  String   @default("PR - ")
+  sales           String   @default("SA - ")
+  salesReturn     String   @default("SR - ")
+  customer        String   @default("CT - ")
+  expense         String   @default("EX - ")
+  stockTransfer   String   @default("ST - ")
+  stockAdjustment String   @default("SA - ")
+  salesOrder      String   @default("SO - ")
+  posInvoice      String   @default("PINV - ")
+  estimation      String   @default("EST - ")
+  transaction     String   @default("TRN - ")
+  employee        String   @default("EMP - ")
+  shift           String   @default("SFT - ")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model PosSettings {
+  id               String   @id @default(uuid())
+  posPrinter       String   @default("HP Printer")
+  paperSize        String   @default("80mm")
+  soundEffect      Boolean  @default(true)
+  autoPrintReceipt Boolean  @default(true)
+  cod              Boolean  @default(true)
+  cheque           Boolean  @default(false)
+  card             Boolean  @default(true)
+  paypal           Boolean  @default(true)
+  bankTransfer     Boolean  @default(true)
+  cash             Boolean  @default(true)
+  promptpay        Boolean  @default(true)
+  quickCashAmounts String   @default("20,50,100,500,1000")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
 model AuditLog {
   id          String   @id @default(uuid())
   action      String   // "DELETE", "UPDATE", "CREATE", "RESTORE"
