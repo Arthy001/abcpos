@@ -58,6 +58,8 @@ import {
   CompanySettings,
   PrefixSettings,
   PosSettings,
+  BalanceSheetData,
+  TrialBalanceData,
   AuditLogItem,
   Purchase,
   PurchaseItem,
@@ -2004,6 +2006,21 @@ export async function updatePosSettingsApi(payload: Partial<PosSettings>): Promi
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to update POS settings");
   return data.posSettings;
+}
+
+// ==================== BALANCE SHEET & TRIAL BALANCE ====================
+export async function fetchBalanceSheetApi(): Promise<BalanceSheetData> {
+  const res = await fetch(`${API_BASE_URL}/finance/balance-sheet`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch balance sheet data");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function fetchTrialBalanceApi(): Promise<TrialBalanceData> {
+  const res = await fetch(`${API_BASE_URL}/finance/trial-balance`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch trial balance data");
+  const data = await res.json();
+  return data.data;
 }
 
 // ==================== AUDIT LOGS & RESTORE ====================

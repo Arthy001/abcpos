@@ -322,3 +322,156 @@ export const createMoneyTransfer = async (req: Request, res: Response) => {
     res.status(400).json({ error: error.message || "Failed to execute money transfer" });
   }
 };
+
+// ==========================================
+// 📊 BALANCE SHEET & TRIAL BALANCE (REAL DB)
+// ==========================================
+
+export const getBalanceSheetData = async (req: Request, res: Response) => {
+  try {
+    // 1. Liquid Bank Accounts
+    const bankAccounts = await prisma.bankAccount.findMany({
+      orderBy: { accountName: "asc" },
+    });
+    const totalBankBalance = bankAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+
+    // 2. Real Inventory Valuation from Products
+    const products = await prisma.product.findMany();
+    const inventoryValue = products.reduce((sum, p) => {
+      const cost = p.costPrice > 0 ? p.costPrice : p.price * 0.7;
+      return sum + (p.stock > 0 ? p.stock * cost : 0);
+    }, 0);
+    const totalProductsCount = products.length;
+    const totalStockQty = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+
+    // 3. Accounts Receivable (Customer Unpaid Sales)
+    const sales = await prisma.sale.findMany();
+    const accountsReceivable = sales.reduce((sum, s) => {
+      const due = s.due ?? (s.grandTotal - (s.paid || 0));
+      return sum + (due > 0 ? due : 0);
+    }, 0);
+
+    // Total Current Assets
+    const totalAssets = totalBankBalance + inventoryValue + accountsReceivable;
+
+    // 4. Accounts Payable (Supplier Unpaid Purchases)
+    const purchases = await prisma.purchase.findMany();
+    const accountsPayable = purchases.reduce((sum, p) => {
+      const due = p.due ?? (p.total - (p.paid || 0));
+      return sum + (due > 0 ? due : 0);
+    }, 0);
+    const totalLiabilities = accountsPayable;
+
+    // 5. Incomes & Expenses (Retained Earnings)
+    const incomes = await prisma.income.findMany();
+    const expenses = await prisma.expense.findMany();
+    const totalIncome = incomes.reduce((sum, i) => sum + (i.amount || 0), 0);
+    const totalExpense = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+    const netIncome = totalIncome - totalExpense;
+
+    // Total Equity = Total Assets - Total Liabilities
+    const totalEquity = totalAssets - totalLiabilities;
+    const retainedEarnings = netIncome;
+    const ownerCapital = totalEquity - retainedEarnings;
+
+    res.json({
+      success: true,
+      data: {
+        assets: {
+          totalAssets,
+          bankAccounts,
+          totalBankBalance,
+          inventoryValue,
+          totalProductsCount,
+          totalStockQty,
+          accountsReceivable,
+        },
+        liabilities: {
+          totalLiabilities,
+          accountsPayable,
+        },
+        equity: {
+          totalEquity,
+          retainedEarnings,
+          ownerCapital,
+          totalIncome,
+          totalExpense,
+          netIncome,
+        },
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to calculate balance sheet" });
+  }
+};
+
+export const getTrialBalanceData = async (req: Request, res: Response) => {
+  try {
+    // 1. Bank Accounts
+    const bankAccounts = await prisma.bankAccount.findMany();
+    const totalBankBalance = bankAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+
+    // 2. Real Inventory Valuation
+    const products = await prisma.product.findMany();
+    const inventoryValue = products.reduce((sum, p) => {
+      const cost = p.costPrice > 0 ? p.costPrice : p.price * 0.7;
+      return sum + (p.stock > 0 ? p.stock * cost : 0);
+    }, 0);
+
+    // 3. Accounts Receivable
+    const sales = await prisma.sale.findMany();
+    const accountsReceivable = sales.reduce((sum, s) => {
+      const due = s.due ?? (s.grandTotal - (s.paid || 0));
+      return sum + (due > 0 ? due : 0);
+    }, 0);
+
+    // 4. Operating Expenses
+    const expenses = await prisma.expense.findMany();
+    const totalExpenses = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
+
+    // 5. Operating Incomes
+    const incomes = await prisma.income.findMany();
+    const totalIncomes = incomes.reduce((sum, i) => sum + (i.amount || 0), 0);
+
+    // 6. Accounts Payable
+    const purchases = await prisma.purchase.findMany();
+    const accountsPayable = purchases.reduce((sum, p) => {
+      const due = p.due ?? (p.total - (p.paid || 0));
+      return sum + (due > 0 ? due : 0);
+    }, 0);
+
+    // Debits
+    const debitEntries = [
+      { code: "1010", accountName: "Cash in Banks & Registers", category: "Current Assets", debit: totalBankBalance, credit: 0 },
+      { code: "1020", accountName: "Current Inventory Asset (Stock Valuation)", category: "Current Assets", debit: inventoryValue, credit: 0 },
+      { code: "1030", accountName: "Accounts Receivable (Customer Dues)", category: "Current Assets", debit: accountsReceivable, credit: 0 },
+      { code: "5010", accountName: "Operating Expenses (YTD)", category: "Expenses", debit: totalExpenses, credit: 0 },
+    ];
+
+    const totalDebit = debitEntries.reduce((s, e) => s + e.debit, 0);
+
+    // Credits
+    const balancingEquity = totalDebit - (totalIncomes + accountsPayable);
+
+    const creditEntries = [
+      { code: "2010", accountName: "Accounts Payable (Supplier Dues)", category: "Current Liabilities", debit: 0, credit: accountsPayable },
+      { code: "4010", accountName: "Sales & Revenue Income (YTD)", category: "Revenue", debit: 0, credit: totalIncomes },
+      { code: "3010", accountName: "Capital & Retained Earnings", category: "Equity", debit: 0, credit: balancingEquity },
+    ];
+
+    const totalCredit = creditEntries.reduce((s, e) => s + e.credit, 0);
+
+    res.json({
+      success: true,
+      data: {
+        debitEntries,
+        creditEntries,
+        totalDebit,
+        totalCredit,
+        isBalanced: Math.abs(totalDebit - totalCredit) < 0.01,
+      },
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to calculate trial balance" });
+  }
+};

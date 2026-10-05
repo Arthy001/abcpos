@@ -23,6 +23,8 @@ import {
   deleteBankAccount,
   getMoneyTransfers,
   createMoneyTransfer,
+  getBalanceSheetData,
+  getTrialBalanceData,
 } from "../controllers/finance.controller.js";
 import {
   getCoupons,
@@ -588,6 +590,8 @@ router.delete("/finance/bank-accounts/:id", deleteBankAccount);
 
 router.get("/finance/money-transfers", getMoneyTransfers);
 router.post("/finance/money-transfers", createMoneyTransfer);
+router.get("/finance/balance-sheet", getBalanceSheetData);
+router.get("/finance/trial-balance", getTrialBalanceData);
 
 // ==========================================
 // 🎁 PROMO & DISCOUNT ENDPOINTS

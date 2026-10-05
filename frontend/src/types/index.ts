@@ -867,6 +867,46 @@ export interface PosSettings {
   quickCashAmounts?: string;
 }
 
+export interface BalanceSheetData {
+  assets: {
+    totalAssets: number;
+    bankAccounts: BankAccount[];
+    totalBankBalance: number;
+    inventoryValue: number;
+    totalProductsCount: number;
+    totalStockQty: number;
+    accountsReceivable: number;
+  };
+  liabilities: {
+    totalLiabilities: number;
+    accountsPayable: number;
+  };
+  equity: {
+    totalEquity: number;
+    retainedEarnings: number;
+    ownerCapital: number;
+    totalIncome: number;
+    totalExpense: number;
+    netIncome: number;
+  };
+}
+
+export interface TrialBalanceEntry {
+  code: string;
+  accountName: string;
+  category: string;
+  debit: number;
+  credit: number;
+}
+
+export interface TrialBalanceData {
+  debitEntries: TrialBalanceEntry[];
+  creditEntries: TrialBalanceEntry[];
+  totalDebit: number;
+  totalCredit: number;
+  isBalanced: boolean;
+}
+
 export interface AuditLogItem {
   id: string;
   action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE" | "RESTORED";
