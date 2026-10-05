@@ -263,6 +263,9 @@ export interface SalesReportItem {
   category: string;
   soldQty: number;
   soldAmount: number;
+  costAmount?: number;
+  profitAmount?: number;
+  profitMargin?: number;
   instockQty: number;
   store?: string;
   date?: string;
@@ -500,6 +503,12 @@ export interface ProfitLossReportItem {
   apr2026: number;
   may2026: number;
   jun2026: number;
+  jul2026?: number;
+  aug2026?: number;
+  sep2026?: number;
+  oct2026?: number;
+  nov2026?: number;
+  dec2026?: number;
 }
 
 export interface AnnualReportItem {

@@ -1298,33 +1298,53 @@ export async function deletePayrollApi(id: string): Promise<void> {
 }
 
 // ==================== SALES REPORTS & BESTSELLERS ====================
-export async function fetchSalesReport(params?: { store?: string; product?: string; search?: string }): Promise<{
+export async function fetchSalesReport(params?: {
+  store?: string;
+  product?: string;
+  category?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<{
   summary: SalesReportSummary;
   items: SalesReportItem[];
 }> {
   const query = new URLSearchParams();
-  if (params?.store && params.store !== "All") query.set("store", params.store);
-  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.store && params.store !== "All" && params.store !== "all") query.set("store", params.store);
+  if (params?.product && params.product !== "All" && params.product !== "all") query.set("product", params.product);
+  if (params?.category && params.category !== "All" && params.category !== "all") query.set("category", params.category);
+  if (params?.startDate) query.set("startDate", params.startDate);
+  if (params?.endDate) query.set("endDate", params.endDate);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/reports/sales?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) {
     return {
-      summary: { totalAmount: "$4,56,000", totalPaid: "$2,56,42", totalUnpaid: "$1,52,45", overdue: "$2,56,12" },
+      summary: { totalAmount: "฿0", totalPaid: "฿0", totalUnpaid: "฿0", overdue: "฿0" },
       items: [],
     };
   }
   const data = await res.json();
   return {
-    summary: data.summary || { totalAmount: "$4,56,000", totalPaid: "$2,56,42", totalUnpaid: "$1,52,45", overdue: "$2,56,12" },
+    summary: data.summary || { totalAmount: "฿0", totalPaid: "฿0", totalUnpaid: "฿0", overdue: "฿0" },
     items: data.items || [],
   };
 }
 
-export async function fetchBestsellersReport(params?: { store?: string; product?: string; search?: string }): Promise<SalesReportItem[]> {
+export async function fetchBestsellersReport(params?: {
+  store?: string;
+  product?: string;
+  category?: string;
+  search?: string;
+  startDate?: string;
+  endDate?: string;
+}): Promise<SalesReportItem[]> {
   const query = new URLSearchParams();
-  if (params?.store && params.store !== "All") query.set("store", params.store);
-  if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.store && params.store !== "All" && params.store !== "all") query.set("store", params.store);
+  if (params?.product && params.product !== "All" && params.product !== "all") query.set("product", params.product);
+  if (params?.category && params.category !== "All" && params.category !== "all") query.set("category", params.category);
+  if (params?.startDate) query.set("startDate", params.startDate);
+  if (params?.endDate) query.set("endDate", params.endDate);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/reports/bestsellers?${query.toString()}`, { cache: "no-store" });
