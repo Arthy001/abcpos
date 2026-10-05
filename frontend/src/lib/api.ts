@@ -3,6 +3,9 @@ import {
   Category,
   DashboardStats,
   Order,
+  PosShift,
+  PosShiftMovement,
+  PosShiftCurrentResponse,
   Product,
   SubCategory,
   Unit,
@@ -829,6 +832,89 @@ export async function voidOrderApi(id: string): Promise<Order> {
   if (!res.ok || !data.success) {
     throw new Error(data.message || "Failed to void order");
   }
+  return data.data;
+}
+
+// ==================== POS SHIFTS & CASH DRAWER ====================
+export async function fetchCurrentShift(): Promise<PosShiftCurrentResponse> {
+  const res = await fetch(`${API_BASE_URL}/pos-shifts/current`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch current shift");
+  return res.json();
+}
+
+export async function openShiftApi(payload: {
+  cashierName?: string;
+  openingFloat: number;
+  storeName?: string;
+  notes?: string;
+}): Promise<PosShift> {
+  const res = await fetch(`${API_BASE_URL}/pos-shifts/open`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to open shift");
+  }
+  return data.data;
+}
+
+export async function recordShiftMovementApi(payload: {
+  shiftId: string;
+  type: "PAY_IN" | "PAY_OUT";
+  amount: number;
+  reason?: string;
+}): Promise<PosShiftMovement> {
+  const res = await fetch(`${API_BASE_URL}/pos-shifts/movement`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to record cash movement");
+  }
+  return data.data;
+}
+
+export async function closeShiftApi(payload: {
+  shiftId: string;
+  closingCashCounted: number;
+  notes?: string;
+}): Promise<PosShift> {
+  const res = await fetch(`${API_BASE_URL}/pos-shifts/close`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to close shift");
+  }
+  return data.data;
+}
+
+export async function fetchShiftsHistory(params?: {
+  status?: string;
+  cashierName?: string;
+  search?: string;
+}): Promise<PosShift[]> {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.cashierName && params.cashierName !== "all") query.set("cashierName", params.cashierName);
+  if (params?.search) query.set("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/pos-shifts?${query.toString()}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch shift history");
+  const data = await res.json();
+  return data.data || [];
+}
+
+export async function fetchShiftById(id: string): Promise<PosShift> {
+  const res = await fetch(`${API_BASE_URL}/pos-shifts/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch shift details");
+  const data = await res.json();
   return data.data;
 }
 

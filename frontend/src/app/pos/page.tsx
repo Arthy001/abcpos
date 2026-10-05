@@ -42,8 +42,13 @@ import {
   ArrowRight,
   Receipt,
   Store as StoreIcon,
+  Unlock,
+  Lock,
+  ArrowDownLeft,
+  ArrowUpRight,
+  DollarSign,
 } from "lucide-react";
-import { Product, Category, Customer, Order } from "@/types";
+import { Product, Category, Customer, Order, PosShift, PosShiftMovement, PosShiftCurrentResponse } from "@/types";
 import {
   fetchProducts,
   fetchCategories,
@@ -51,6 +56,10 @@ import {
   createCustomerApi,
   createOrderApi,
   fetchOrders,
+  fetchCurrentShift,
+  openShiftApi,
+  recordShiftMovementApi,
+  closeShiftApi,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -152,6 +161,173 @@ export default function POSPage() {
   const [editingModifier, setEditingModifier] = useState<"shipping" | "tax" | "coupon" | "discount" | null>(null);
   const [modifierValue, setModifierValue] = useState<string>("");
 
+  // Register Shift State
+  const [currentShiftData, setCurrentShiftData] = useState<{
+    hasActiveShift: boolean;
+    shift: PosShift | null;
+    liveMetrics?: any;
+  }>({ hasActiveShift: false, shift: null });
+  const [showShiftDropdown, setShowShiftDropdown] = useState<boolean>(false);
+  const shiftDropdownRef = useRef<HTMLDivElement>(null);
+
+  // Shift Modals State
+  const [showOpenShiftModal, setShowOpenShiftModal] = useState<boolean>(false);
+  const [openCashier, setOpenCashier] = useState<string>(cashierName);
+  const [openFloat, setOpenFloat] = useState<number>(1000);
+  const [openNotes, setOpenNotes] = useState<string>("");
+  const [isOpeningShift, setIsOpeningShift] = useState<boolean>(false);
+
+  const [showShiftMovementModal, setShowShiftMovementModal] = useState<boolean>(false);
+  const [movementType, setMovementType] = useState<"PAY_IN" | "PAY_OUT">("PAY_IN");
+  const [movementAmount, setMovementAmount] = useState<number>(100);
+  const [movementReason, setMovementReason] = useState<string>("");
+  const [isRecordingMovement, setIsRecordingMovement] = useState<boolean>(false);
+
+  const [showCloseShiftModal, setShowCloseShiftModal] = useState<boolean>(false);
+  const [closingCashCounted, setClosingCashCounted] = useState<number>(0);
+  const [closeShiftNotes, setCloseShiftNotes] = useState<string>("");
+  const [isClosingShift, setIsClosingShift] = useState<boolean>(false);
+
+  // Z-Report Slip Modal
+  const [selectedZReportShift, setSelectedZReportShift] = useState<PosShift | null>(null);
+
+  // Feedback Modal
+  const [feedbackModal, setFeedbackModal] = useState<{
+    isOpen: boolean;
+    type: "add_success" | "edit_success" | "delete_success" | "error";
+    title: string;
+    message: string;
+  }>({
+    isOpen: false,
+    type: "add_success",
+    title: "",
+    message: "",
+  });
+
+  // Close shift dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (shiftDropdownRef.current && !shiftDropdownRef.current.contains(event.target as Node)) {
+        setShowShiftDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const refreshShiftData = async () => {
+    try {
+      const res = await fetchCurrentShift();
+      setCurrentShiftData(res);
+      if (res.hasActiveShift && res.liveMetrics) {
+        setClosingCashCounted(res.liveMetrics.expectedCash || 0);
+      }
+    } catch (err) {
+      console.error("Failed to load shift status:", err);
+    }
+  };
+
+  const handleOpenShiftSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      setIsOpeningShift(true);
+      const newShift = await openShiftApi({
+        cashierName: openCashier || cashierName,
+        openingFloat: Number(openFloat),
+        notes: openNotes,
+      });
+      setShowOpenShiftModal(false);
+      setShowShiftDropdown(false);
+      setFeedbackModal({
+        isOpen: true,
+        type: "add_success",
+        title: "Shift Opened!",
+        message: `Shift #${newShift.shiftNumber} opened with opening float ฿${newShift.openingFloat.toLocaleString()}.`,
+      });
+      playSound("chime");
+      await refreshShiftData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Open Shift",
+        message: err.message || "An error occurred while opening shift.",
+      });
+      playSound("error");
+    } finally {
+      setIsOpeningShift(false);
+    }
+  };
+
+  const handleRecordMovementSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentShiftData.shift) return;
+    try {
+      setIsRecordingMovement(true);
+      await recordShiftMovementApi({
+        shiftId: currentShiftData.shift.id,
+        type: movementType,
+        amount: Number(movementAmount),
+        reason: movementReason || (movementType === "PAY_IN" ? "Cash added" : "Cash dropped"),
+      });
+      setShowShiftMovementModal(false);
+      setShowShiftDropdown(false);
+      setMovementReason("");
+      setFeedbackModal({
+        isOpen: true,
+        type: "edit_success",
+        title: "Cash Movement Recorded!",
+        message: `Recorded ${movementType === "PAY_IN" ? "Pay In" : "Pay Out"} of ฿${Number(movementAmount).toLocaleString()} successfully.`,
+      });
+      playSound("beep");
+      await refreshShiftData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Movement Failed",
+        message: err.message || "Failed to record cash movement.",
+      });
+      playSound("error");
+    } finally {
+      setIsRecordingMovement(false);
+    }
+  };
+
+  const handleCloseShiftSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentShiftData.shift) return;
+    try {
+      setIsClosingShift(true);
+      const closedShift = await closeShiftApi({
+        shiftId: currentShiftData.shift.id,
+        closingCashCounted: Number(closingCashCounted),
+        notes: closeShiftNotes,
+      });
+      setShowCloseShiftModal(false);
+      setShowShiftDropdown(false);
+      setSelectedZReportShift(closedShift);
+      setFeedbackModal({
+        isOpen: true,
+        type: "edit_success",
+        title: "Shift Closed Successfully!",
+        message: `Shift #${closedShift.shiftNumber} closed. Cash Variance: ฿${(closedShift.cashVariance ?? 0).toLocaleString()}. You can now print the Z-Report slip.`,
+      });
+      playSound("chime");
+      await refreshShiftData();
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Failed to Close Shift",
+        message: err.message || "An error occurred while closing shift.",
+      });
+      playSound("error");
+    } finally {
+      setIsClosingShift(false);
+    }
+  };
+
   // Audio synthesizer via Web Audio API
   const playSound = (type: "beep" | "chime" | "error") => {
     if (!soundEnabled) return;
@@ -222,6 +398,7 @@ export default function POSPage() {
         fetchCategories(),
         fetchCustomers(),
         fetchOrders().catch(() => []),
+        refreshShiftData().catch(() => null),
       ]);
       setProducts(prodsData || []);
       setCategories(catsData || []);
@@ -443,9 +620,10 @@ export default function POSPage() {
         change: paymentMethod === "CASH" ? Math.max(0, receivedNum - finalPayable) : 0,
       });
 
-      // Refresh product list to sync live stock from SQLite
+      // Refresh product list to sync live stock from SQLite and drawer cash
       fetchProducts().then((p) => setProducts(p || []));
       fetchOrders().then((o) => setRecentOrders(o || []));
+      refreshShiftData();
 
       // Reset cart & close payment modal, open receipt modal
       clearCart();
@@ -553,8 +731,8 @@ export default function POSPage() {
     <div className="h-screen bg-[#F4F6F9] flex flex-col font-sans select-none text-slate-800 overflow-hidden">
       {/* 1. TOP NAVBAR HEADER */}
       <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-5 sticky top-0 z-30 shadow-2xs shrink-0">
-        {/* Brand Logo & Live Time Badge */}
-        <div className="flex items-center space-x-3 sm:space-x-4">
+        {/* Brand Logo & Live Time Badge & Shift Status */}
+        <div className="flex items-center space-x-2 sm:space-x-3">
           <Link href="/" className="flex items-center space-x-2 group">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FE9F43] to-[#FF8008] flex items-center justify-center text-white font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
               A
@@ -565,9 +743,136 @@ export default function POSPage() {
           </Link>
 
           {/* Live Clock Pill */}
-          <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-2xs">
+          <div className="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 bg-emerald-500 text-white rounded-lg text-xs font-bold shadow-2xs">
             <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
             <span className="font-mono">{timeStr}</span>
+          </div>
+
+          {/* Shift Status Indicator & Action Dropdown */}
+          <div className="relative" ref={shiftDropdownRef}>
+            {currentShiftData.hasActiveShift && currentShiftData.shift ? (
+              <button
+                onClick={() => setShowShiftDropdown(!showShiftDropdown)}
+                className="flex items-center space-x-2 px-2.5 sm:px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-300 hover:bg-emerald-100 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer"
+                title="Shift Active - Click for Cash Drawer Actions"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="font-bold">Shift #{currentShiftData.shift.shiftNumber}</span>
+                <span className="hidden md:inline text-emerald-700 font-extrabold border-l border-emerald-300 pl-1.5">
+                  ฿{(currentShiftData.liveMetrics?.expectedCash ?? currentShiftData.shift.openingFloat).toLocaleString()}
+                </span>
+                <ChevronDown className="w-3 h-3 text-emerald-600" />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setOpenCashier(cashierName);
+                  setOpenFloat(1000);
+                  setShowOpenShiftModal(true);
+                }}
+                className="flex items-center space-x-1.5 px-2.5 sm:px-3 py-1 bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100 rounded-lg text-xs font-bold transition-all shadow-2xs cursor-pointer animate-pulse"
+                title="No active register shift - Click to open shift"
+              >
+                <Unlock className="w-3.5 h-3.5 text-amber-600" />
+                <span>+ Open Shift</span>
+              </button>
+            )}
+
+            {/* Shift Dropdown Menu */}
+            {showShiftDropdown && currentShiftData.shift && (
+              <div className="absolute left-0 mt-1.5 w-72 bg-white rounded-2xl shadow-2xl border border-gray-200 py-2 z-50 animate-in fade-in zoom-in-95 duration-100">
+                <div className="px-3.5 py-2 border-b border-gray-100 bg-gray-50/70 rounded-t-2xl">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-gray-900">
+                      Shift #{currentShiftData.shift.shiftNumber}
+                    </span>
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-100 text-emerald-700 border border-emerald-300">
+                      ACTIVE
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-gray-500 mt-0.5">
+                    Cashier: <span className="font-semibold text-gray-700">{currentShiftData.shift.cashierName}</span>
+                  </p>
+                </div>
+
+                {/* Drawer Summary */}
+                <div className="px-3.5 py-2.5 space-y-1.5 text-xs border-b border-gray-100">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Opening Float:</span>
+                    <span className="font-bold text-gray-900">
+                      ฿{currentShiftData.shift.openingFloat.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Cash Sales:</span>
+                    <span className="font-bold text-emerald-600">
+                      +฿{(currentShiftData.liveMetrics?.cashSales ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Pay In / Out:</span>
+                    <span className="font-bold text-gray-900">
+                      +฿{(currentShiftData.liveMetrics?.totalPayIn ?? 0).toLocaleString()} / -฿{(currentShiftData.liveMetrics?.totalPayOut ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-gray-900 font-bold pt-1.5 border-t border-dashed border-gray-200">
+                    <span>Expected in Drawer:</span>
+                    <span className="text-emerald-700 font-black text-sm">
+                      ฿{(currentShiftData.liveMetrics?.expectedCash ?? 0).toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Actions */}
+                <div className="p-1.5 space-y-1">
+                  <button
+                    onClick={() => {
+                      setShowShiftDropdown(false);
+                      setMovementType("PAY_IN");
+                      setMovementAmount(100);
+                      setShowShiftMovementModal(true);
+                    }}
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl text-left transition-colors cursor-pointer"
+                  >
+                    <ArrowDownLeft className="w-4 h-4 text-emerald-600" />
+                    <span>Cash In / Out (Pay In/Out)</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowShiftDropdown(false);
+                      setSelectedZReportShift(currentShiftData.shift);
+                    }}
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-semibold text-gray-700 hover:bg-gray-100 rounded-xl text-left transition-colors cursor-pointer"
+                  >
+                    <Printer className="w-4 h-4 text-blue-600" />
+                    <span>View / Print Shift Summary</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setShowShiftDropdown(false);
+                      setClosingCashCounted(currentShiftData.liveMetrics?.expectedCash ?? 0);
+                      setShowCloseShiftModal(true);
+                    }}
+                    className="w-full flex items-center space-x-2 px-3 py-2 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-xl text-left transition-colors cursor-pointer"
+                  >
+                    <Lock className="w-4 h-4 text-rose-600" />
+                    <span>Close Shift & Reconcile</span>
+                  </button>
+
+                  <div className="pt-1 border-t border-gray-100">
+                    <Link
+                      href="/sales/shifts"
+                      className="w-full flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold text-gray-500 hover:text-gray-900 rounded-lg transition-colors"
+                    >
+                      <span>All Shifts & Drawer Audit</span>
+                      <ArrowRight className="w-3 h-3" />
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1987,6 +2292,467 @@ export default function POSPage() {
                 className="px-4 py-1.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold cursor-pointer"
               >
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SHIFT MODAL 1: OPEN SHIFT MODAL */}
+      {/* ========================================================================= */}
+      {showOpenShiftModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative border border-gray-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2 text-gray-900">
+                <Unlock className="w-5 h-5 text-emerald-500" />
+                <h3 className="text-base font-bold">Open Register Shift</h3>
+              </div>
+              <button
+                onClick={() => setShowOpenShiftModal(false)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleOpenShiftSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Cashier Name</label>
+                <input
+                  type="text"
+                  value={openCashier}
+                  onChange={(e) => setOpenCashier(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-semibold focus:ring-2 focus:ring-orange-400 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">
+                  Opening Float (เงินทอนเริ่มต้น ฿)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={openFloat}
+                  onChange={(e) => setOpenFloat(Number(e.target.value))}
+                  required
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-lg font-black text-gray-900 focus:ring-2 focus:ring-orange-400 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Notes (Optional)</label>
+                <input
+                  type="text"
+                  value={openNotes}
+                  onChange={(e) => setOpenNotes(e.target.value)}
+                  placeholder="e.g. Morning Shift"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-400 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowOpenShiftModal(false)}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isOpeningShift}
+                  className="flex-1 py-2.5 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+                >
+                  {isOpeningShift ? "Opening..." : "Open Register"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SHIFT MODAL 2: CASH DRAWER MOVEMENT (PAY IN / OUT) */}
+      {/* ========================================================================= */}
+      {showShiftMovementModal && currentShiftData.shift && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative border border-gray-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2 text-gray-900">
+                <DollarSign className="w-5 h-5 text-orange-500" />
+                <h3 className="text-base font-bold">Cash Movement (In/Out)</h3>
+              </div>
+              <button
+                onClick={() => setShowShiftMovementModal(false)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Type selector */}
+            <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1 rounded-2xl">
+              <button
+                type="button"
+                onClick={() => setMovementType("PAY_IN")}
+                className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-all cursor-pointer ${
+                  movementType === "PAY_IN"
+                    ? "bg-white text-emerald-700 shadow-xs"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                <ArrowDownLeft className="w-3.5 h-3.5" />
+                <span>Pay In (ใส่เงินเพิ่ม)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMovementType("PAY_OUT")}
+                className={`py-2 rounded-xl text-xs font-bold flex items-center justify-center space-x-1 transition-all cursor-pointer ${
+                  movementType === "PAY_OUT"
+                    ? "bg-white text-rose-700 shadow-xs"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                <ArrowUpRight className="w-3.5 h-3.5" />
+                <span>Pay Out (หยิบเงินออก)</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleRecordMovementSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Amount (฿)</label>
+                <input
+                  type="number"
+                  step="any"
+                  min="1"
+                  value={movementAmount}
+                  onChange={(e) => setMovementAmount(Number(e.target.value))}
+                  required
+                  className="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-lg font-black text-gray-900 focus:ring-2 focus:ring-orange-400 focus:bg-white"
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Reason / Note</label>
+                <input
+                  type="text"
+                  value={movementReason}
+                  onChange={(e) => setMovementReason(e.target.value)}
+                  placeholder={movementType === "PAY_IN" ? "e.g. Added change coins" : "e.g. Bank drop, petty cash"}
+                  required
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-400 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowShiftMovementModal(false)}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isRecordingMovement}
+                  className={`flex-1 py-2.5 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all ${
+                    movementType === "PAY_IN" ? "bg-emerald-600 hover:bg-emerald-700" : "bg-rose-600 hover:bg-rose-700"
+                  }`}
+                >
+                  {isRecordingMovement ? "Saving..." : "Record Movement"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SHIFT MODAL 3: CLOSE SHIFT MODAL */}
+      {/* ========================================================================= */}
+      {showCloseShiftModal && currentShiftData.shift && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative border border-gray-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2 text-gray-900">
+                <Lock className="w-5 h-5 text-rose-500" />
+                <h3 className="text-base font-bold">Close Register & Shift</h3>
+              </div>
+              <button
+                onClick={() => setShowCloseShiftModal(false)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Shift expected breakdown */}
+            <div className="bg-gray-50 p-3 rounded-2xl space-y-1.5 text-xs border border-gray-200">
+              <div className="flex justify-between text-gray-600">
+                <span>Shift #:</span>
+                <span className="font-bold text-gray-900">{currentShiftData.shift.shiftNumber}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Opening Float:</span>
+                <span className="font-bold text-gray-900">฿{currentShiftData.shift.openingFloat.toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Cash Sales:</span>
+                <span className="font-bold text-emerald-600">+฿{(currentShiftData.liveMetrics?.cashSales ?? 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-gray-600">
+                <span>Pay In / Out:</span>
+                <span className="font-bold text-gray-900">
+                  +฿{(currentShiftData.liveMetrics?.totalPayIn ?? 0).toLocaleString()} / -฿{(currentShiftData.liveMetrics?.totalPayOut ?? 0).toLocaleString()}
+                </span>
+              </div>
+              <div className="flex justify-between text-gray-900 font-extrabold pt-1.5 border-t border-dashed border-gray-300">
+                <span>Expected in Drawer:</span>
+                <span className="text-emerald-700 text-sm">฿{(currentShiftData.liveMetrics?.expectedCash ?? 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <form onSubmit={handleCloseShiftSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-semibold text-gray-900 block mb-1">
+                  Counted Cash in Drawer (เงินสดที่นับได้จริง ฿)
+                </label>
+                <input
+                  type="number"
+                  step="any"
+                  value={closingCashCounted}
+                  onChange={(e) => setClosingCashCounted(Number(e.target.value))}
+                  required
+                  className="w-full px-3 py-2.5 bg-white border border-gray-300 rounded-xl text-lg font-black text-gray-900 focus:ring-2 focus:ring-orange-500"
+                />
+
+                {/* Real-time Variance Preview */}
+                {(() => {
+                  const expected = currentShiftData.liveMetrics?.expectedCash || 0;
+                  const diff = closingCashCounted - expected;
+                  const isDiffZero = Math.abs(diff) < 0.01;
+                  return (
+                    <div
+                      className={`mt-2 p-2.5 rounded-xl border text-xs flex items-center justify-between font-bold ${
+                        isDiffZero
+                          ? "bg-emerald-50 border-emerald-200 text-emerald-800"
+                          : diff > 0
+                          ? "bg-amber-50 border-amber-200 text-amber-800"
+                          : "bg-rose-50 border-rose-200 text-rose-800"
+                      }`}
+                    >
+                      <span>Drawer Variance:</span>
+                      <span>
+                        {isDiffZero
+                          ? "Exact Balanced (฿0)"
+                          : diff > 0
+                          ? `Cash Over +฿${diff.toLocaleString()}`
+                          : `Cash Short -฿${Math.abs(diff).toLocaleString()}`}
+                      </span>
+                    </div>
+                  );
+                })()}
+              </div>
+
+              <div>
+                <label className="text-xs font-semibold text-gray-700 block mb-1">Closing Notes</label>
+                <input
+                  type="text"
+                  value={closeShiftNotes}
+                  onChange={(e) => setCloseShiftNotes(e.target.value)}
+                  placeholder="e.g. Shift ended, safe drop confirmed"
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:ring-2 focus:ring-orange-400 focus:bg-white"
+                />
+              </div>
+
+              <div className="flex space-x-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCloseShiftModal(false)}
+                  className="flex-1 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-bold cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isClosingShift}
+                  className="flex-1 py-2.5 bg-rose-600 hover:bg-rose-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer active:scale-95 transition-all"
+                >
+                  {isClosingShift ? "Closing..." : "Close Shift & Z-Report"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* SHIFT MODAL 4: PRINTABLE Z-REPORT THERMAL SLIP MODAL */}
+      {/* ========================================================================= */}
+      {selectedZReportShift && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-3xl max-w-sm w-full p-6 space-y-4 shadow-2xl relative border border-gray-200">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2 text-gray-900">
+                <Receipt className="w-4 h-4 text-orange-500" />
+                <h3 className="text-sm font-bold">Shift Z-Report Slip</h3>
+              </div>
+              <button
+                onClick={() => setSelectedZReportShift(null)}
+                className="p-1 rounded-lg text-gray-400 hover:bg-gray-100"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Printable Thermal Receipt */}
+            <div className="p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-300 font-mono text-xs text-gray-800 space-y-3">
+              <div className="text-center space-y-1">
+                <h2 className="text-base font-extrabold tracking-tight text-gray-900">ABC POS RETAIL</h2>
+                <p className="text-[10px] text-gray-500">{selectedStore || "Electro Mart"}</p>
+                <div className="border-b border-dashed border-gray-300 my-2"></div>
+                <p className="font-black text-gray-900 text-xs">*** SHIFT Z-REPORT ***</p>
+                <p className="text-[11px] text-gray-700 font-bold">Shift: {selectedZReportShift.shiftNumber}</p>
+                <p className="text-[10px] text-gray-500">
+                  Opened: {new Date(selectedZReportShift.openedAt).toLocaleString()}
+                </p>
+                <p className="text-[10px] text-gray-500">
+                  Closed: {selectedZReportShift.closedAt ? new Date(selectedZReportShift.closedAt).toLocaleString() : "ACTIVE / IN-PROGRESS"}
+                </p>
+                <p className="text-[10px] text-gray-500">Cashier: {selectedZReportShift.cashierName}</p>
+              </div>
+
+              <div className="border-b border-dashed border-gray-300 my-2"></div>
+
+              {/* Sales Breakdown */}
+              <div className="space-y-1 text-[11px]">
+                <p className="font-bold text-gray-900 uppercase">Sales By Tender:</p>
+                <div className="flex justify-between">
+                  <span>Cash Sales:</span>
+                  <span>฿{(selectedZReportShift.totalCashSales || currentShiftData.liveMetrics?.cashSales || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>PromptPay QR:</span>
+                  <span>฿{(selectedZReportShift.totalPromptPaySales || currentShiftData.liveMetrics?.promptpaySales || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Credit Card:</span>
+                  <span>฿{(selectedZReportShift.totalCardSales || currentShiftData.liveMetrics?.cardSales || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
+                  <span>Total Sales ({selectedZReportShift.orderCount || currentShiftData.liveMetrics?.orderCount || 0} bills):</span>
+                  <span>฿{(selectedZReportShift.totalSales || currentShiftData.liveMetrics?.totalSales || 0).toLocaleString()}</span>
+                </div>
+              </div>
+
+              <div className="border-b border-dashed border-gray-300 my-2"></div>
+
+              {/* Drawer Reconciliation */}
+              <div className="space-y-1 text-[11px]">
+                <p className="font-bold text-gray-900 uppercase">Cash Reconciliation:</p>
+                <div className="flex justify-between">
+                  <span>Opening Float:</span>
+                  <span>฿{selectedZReportShift.openingFloat.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Cash Sales:</span>
+                  <span>+฿{(selectedZReportShift.totalCashSales || currentShiftData.liveMetrics?.cashSales || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Pay In:</span>
+                  <span>+฿{(selectedZReportShift.cashIn || currentShiftData.liveMetrics?.totalPayIn || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-rose-600">
+                  <span>Pay Out:</span>
+                  <span>-฿{(selectedZReportShift.cashOut || currentShiftData.liveMetrics?.totalPayOut || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-gray-900 pt-1 border-t border-dashed border-gray-200">
+                  <span>Expected in Drawer:</span>
+                  <span>฿{(selectedZReportShift.expectedCash || currentShiftData.liveMetrics?.expectedCash || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-bold text-gray-900">
+                  <span>Actual Counted:</span>
+                  <span>฿{(selectedZReportShift.closingCashCounted ?? currentShiftData.liveMetrics?.expectedCash ?? 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between font-black text-sm pt-1 border-t border-dashed border-gray-300">
+                  <span>Variance:</span>
+                  <span
+                    className={
+                      (selectedZReportShift.cashVariance || 0) === 0
+                        ? "text-emerald-700"
+                        : (selectedZReportShift.cashVariance || 0) > 0
+                        ? "text-amber-700"
+                        : "text-rose-700"
+                    }
+                  >
+                    {(selectedZReportShift.cashVariance || 0) >= 0 ? "+฿" : "-฿"}
+                    {Math.abs(selectedZReportShift.cashVariance || 0).toLocaleString()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="border-b border-dashed border-gray-300 my-2"></div>
+              <div className="text-center text-[10px] text-gray-400">
+                <p>*** END OF SHIFT REPORT ***</p>
+                <p>Manager Signature: __________________</p>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex space-x-2 pt-1">
+              <button
+                onClick={() => setSelectedZReportShift(null)}
+                className="flex-1 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-bold text-xs cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={() => window.print()}
+                className="flex-1 py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-xl font-bold text-xs flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer active:scale-95 transition-all"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print Z-Report</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FEEDBACK MODAL */}
+      {feedbackModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-gray-100">
+            {feedbackModal.type === "add_success" && (
+              <div className="w-14 h-14 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center mx-auto ring-8 ring-emerald-50/50">
+                <Sparkles className="w-7 h-7 stroke-[1.75]" />
+              </div>
+            )}
+            {feedbackModal.type === "edit_success" && (
+              <div className="w-14 h-14 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto ring-8 ring-blue-50/50">
+                <CheckCircle2 className="w-7 h-7 stroke-[1.75]" />
+              </div>
+            )}
+            {feedbackModal.type === "error" && (
+              <div className="w-14 h-14 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto ring-8 ring-rose-50/50">
+                <AlertTriangle className="w-7 h-7 stroke-[1.75]" />
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+            </div>
+
+            <div className="pt-2 flex items-center justify-center space-x-2">
+              <button
+                onClick={() => setFeedbackModal({ ...feedbackModal, isOpen: false })}
+                className="px-6 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              >
+                OK
               </button>
             </div>
           </div>

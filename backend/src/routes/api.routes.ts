@@ -236,6 +236,14 @@ import {
   toggleConnectedApp,
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
+import {
+  getCurrentShift,
+  openShift,
+  recordShiftMovement,
+  closeShift,
+  getShiftsHistory,
+  getShiftById,
+} from "../controllers/pos-shift.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 import {
   getPurchases,
@@ -421,6 +429,15 @@ router.get("/orders", getOrders);
 router.get("/orders/:id", getOrderById);
 router.post("/orders", createOrder);
 router.put("/orders/:id/void", voidOrder);
+
+// POS Shifts & Cash Drawer
+router.get("/pos-shifts/current", getCurrentShift);
+router.post("/pos-shifts/open", openShift);
+router.post("/pos-shifts/movement", recordShiftMovement);
+router.post("/pos-shifts/close", closeShift);
+router.get("/pos-shifts", getShiftsHistory);
+router.get("/pos-shifts/history", getShiftsHistory);
+router.get("/pos-shifts/:id", getShiftById);
 
 // HRM: Shifts
 router.get("/shifts", getShifts);

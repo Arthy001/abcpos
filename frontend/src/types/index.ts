@@ -628,6 +628,58 @@ export interface CartItem {
   quantity: number;
 }
 
+export interface PosShiftMovement {
+  id: string;
+  shiftId: string;
+  type: "PAY_IN" | "PAY_OUT";
+  amount: number;
+  reason?: string | null;
+  createdTime: string;
+}
+
+export interface PosShift {
+  id: string;
+  shiftNumber: string;
+  cashierName: string;
+  cashierId?: string | null;
+  storeName: string;
+  openingFloat: number;
+  status: "OPEN" | "CLOSED";
+  openedAt: string;
+  closedAt?: string | null;
+  closingCashCounted?: number | null;
+  expectedCash?: number | null;
+  cashVariance?: number | null;
+  totalCashSales: number;
+  totalPromptPaySales: number;
+  totalCardSales: number;
+  totalSales: number;
+  orderCount: number;
+  cashIn: number;
+  cashOut: number;
+  notes?: string | null;
+  movements?: PosShiftMovement[];
+  orders?: Order[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface PosShiftCurrentResponse {
+  success: boolean;
+  hasActiveShift: boolean;
+  shift: PosShift | null;
+  liveMetrics?: {
+    orderCount: number;
+    totalCashSales: number;
+    totalPromptPaySales: number;
+    totalCardSales: number;
+    totalSales: number;
+    cashIn: number;
+    cashOut: number;
+    expectedCash: number;
+  };
+}
+
 export interface DashboardStats {
   summary: {
     totalSales: number;

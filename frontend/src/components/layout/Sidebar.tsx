@@ -167,6 +167,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
           subItems: [
             { name: "Online Orders", href: "/sales/online-orders" },
             { name: "POS Orders", href: "/sales/pos-orders" },
+            { name: "POS Shifts & Drawer", href: "/sales/shifts" },
           ],
         },
         { name: "Invoices", href: "/invoices", icon: FileText },
