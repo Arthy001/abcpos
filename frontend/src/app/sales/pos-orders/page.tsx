@@ -1,8 +1,8 @@
 "use client";
 
 import React from "react";
-import { SalesOrderTemplate } from "@/components/sales/SalesOrderTemplate";
+import { PosOrdersManager } from "@/components/pos/PosOrdersManager";
 
 export default function PosOrdersPage() {
-  return <SalesOrderTemplate pageTitle="POS Orders" pageSubtitle="Manage Your POS Sales Orders" />;
+  return <PosOrdersManager pageTitle="POS Orders" pageSubtitle="Manage Your POS Sales Orders & Receipts" />;
 }

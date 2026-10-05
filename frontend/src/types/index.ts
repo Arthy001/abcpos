@@ -625,6 +625,8 @@ export interface DashboardStats {
     totalOrders: number;
     totalProducts: number;
     lowStockCount: number;
+    todaySales?: number;
+    todayOrders?: number;
   };
   chartData: {
     month: string;

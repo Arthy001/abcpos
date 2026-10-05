@@ -99,3 +99,77 @@ export const createOrder = async (req: Request, res: Response) => {
     res.status(400).json({ success: false, message: error.message });
   }
 };
+
+export const getOrderById = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+    if (!order) return res.status(404).json({ success: false, message: "Order not found" });
+    res.json({ success: true, data: order });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+export const voidOrder = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const order = await prisma.order.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!order) {
+      return res.status(404).json({ success: false, message: "Order not found" });
+    }
+
+    if (order.paymentStatus === "CANCELLED") {
+      return res.status(400).json({ success: false, message: "Order is already cancelled/voided" });
+    }
+
+    // Restore stock for all items
+    for (const item of (order as any).items || []) {
+      if (item.productId) {
+        const product = await prisma.product.findUnique({ where: { id: item.productId } });
+        if (product) {
+          await recordStockMovement({
+            productId: product.id,
+            productName: product.name,
+            warehouseId: product.warehouseId || null,
+            quantityDelta: item.quantity,
+            type: "CUSTOMER_RETURN",
+            referenceNo: order.orderNumber,
+            unitCost: product.costPrice || null,
+            notes: `Void POS Order ${order.orderNumber}`,
+            createdBy: "Admin",
+          });
+        }
+      }
+    }
+
+    const updatedOrder = await prisma.order.update({
+      where: { id },
+      data: {
+        paymentStatus: "CANCELLED",
+      },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+
+    res.json({
+      success: true,
+      data: updatedOrder,
+      message: `Order ${order.orderNumber} successfully voided and inventory restored.`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -235,7 +235,7 @@ import {
   getConnectedApps,
   toggleConnectedApp,
 } from "../controllers/settings.controller.js";
-import { getOrders, createOrder } from "../controllers/order.controller.js";
+import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 import {
   getPurchases,
@@ -418,7 +418,9 @@ router.delete("/products/:id", deleteProduct);
 
 // Orders / POS
 router.get("/orders", getOrders);
+router.get("/orders/:id", getOrderById);
 router.post("/orders", createOrder);
+router.put("/orders/:id/void", voidOrder);
 
 // HRM: Shifts
 router.get("/shifts", getShifts);

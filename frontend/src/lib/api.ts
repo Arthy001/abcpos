@@ -813,6 +813,25 @@ export async function fetchOrders(): Promise<Order[]> {
   return data.data;
 }
 
+export async function fetchOrderById(id: string): Promise<Order> {
+  const res = await fetch(`${API_BASE_URL}/orders/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch order");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function voidOrderApi(id: string): Promise<Order> {
+  const res = await fetch(`${API_BASE_URL}/orders/${id}/void`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) {
+    throw new Error(data.message || "Failed to void order");
+  }
+  return data.data;
+}
+
 // ==================== CUSTOMERS ====================
 export async function fetchCustomers(params?: {
   status?: string;
