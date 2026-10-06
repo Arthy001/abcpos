@@ -7,8 +7,25 @@ const prisma = new PrismaClient();
 // 💸 EXPENSES & EXPENSE CATEGORIES
 // ==========================================
 
+const DEFAULT_EXPENSE_CATEGORIES = [
+  { name: "Utilities & Electricity", code: "EXP-UTL", description: "Water, electricity, internet bills", status: "ACTIVE" },
+  { name: "Store Rent & Lease", code: "EXP-RNT", description: "Monthly retail space rental", status: "ACTIVE" },
+  { name: "Salaries & Wages", code: "EXP-SAL", description: "Part-time cashier & staff payroll", status: "ACTIVE" },
+  { name: "Packaging & Supplies", code: "EXP-PKG", description: "Bags, thermal paper rolls, receipts", status: "ACTIVE" },
+];
+
+const DEFAULT_EXPENSES = [
+  { reference: "EXP-2026-001", expenseName: "Store Electricity Bill - Bangkok Branch", categoryName: "Utilities & Electricity", date: "2026-10-01", amount: 4850, status: "Approved", storeName: "Apex Retail Bangkok", notes: "Monthly MEA power consumption" },
+  { reference: "EXP-2026-002", expenseName: "Thermal POS Paper Rolls (50 Rolls)", categoryName: "Packaging & Supplies", date: "2026-10-03", amount: 1200, status: "Approved", storeName: "Apex Retail Bangkok", notes: "80mm premium thermal paper" },
+  { reference: "EXP-2026-003", expenseName: "Store Cleaning Service", categoryName: "Utilities & Electricity", date: "2026-10-05", amount: 800, status: "Approved", storeName: "Nonthaburi Branch", notes: "Bi-weekly store deep cleaning" },
+];
+
 export const getExpenses = async (req: Request, res: Response) => {
   try {
+    const count = await prisma.expense.count();
+    if (count === 0) {
+      await prisma.expense.createMany({ data: DEFAULT_EXPENSES });
+    }
     const expenses = await prisma.expense.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -79,6 +96,10 @@ export const deleteExpense = async (req: Request, res: Response) => {
 
 export const getExpenseCategories = async (req: Request, res: Response) => {
   try {
+    const count = await prisma.expenseCategory.count();
+    if (count === 0) {
+      await prisma.expenseCategory.createMany({ data: DEFAULT_EXPENSE_CATEGORIES });
+    }
     const categories = await prisma.expenseCategory.findMany({
       orderBy: { name: "asc" },
     });
@@ -109,8 +130,23 @@ export const createExpenseCategory = async (req: Request, res: Response) => {
 // 💵 INCOME & INCOME CATEGORIES
 // ==========================================
 
+const DEFAULT_INCOME_CATEGORIES = [
+  { name: "Consulting & Service Fee", code: "INC-SRV", description: "Technical setup and advisory fee", status: "ACTIVE" },
+  { name: "Delivery & Shipping Surcharge", code: "INC-SHP", description: "Customer express delivery charge", status: "ACTIVE" },
+  { name: "Scrap & Recycled Asset Sale", code: "INC-SCR", description: "Sale of old store equipment and boxes", status: "ACTIVE" },
+];
+
+const DEFAULT_INCOMES = [
+  { reference: "INC-2026-001", incomeName: "Express Delivery Surcharge", storeName: "Apex Retail Bangkok", categoryName: "Delivery & Shipping Surcharge", date: "2026-10-02", amount: 1500, status: "Received", notes: "GrabExpress bulk fee received" },
+  { reference: "INC-2026-002", incomeName: "Warehouse Pallets Resale", storeName: "Main Warehouse", categoryName: "Scrap & Recycled Asset Sale", date: "2026-10-04", amount: 2400, status: "Received", notes: "Sold 30 wooden pallets" },
+];
+
 export const getIncomes = async (req: Request, res: Response) => {
   try {
+    const count = await prisma.income.count();
+    if (count === 0) {
+      await prisma.income.createMany({ data: DEFAULT_INCOMES });
+    }
     const incomes = await prisma.income.findMany({
       orderBy: { createdAt: "desc" },
     });
@@ -181,6 +217,10 @@ export const deleteIncome = async (req: Request, res: Response) => {
 
 export const getIncomeCategories = async (req: Request, res: Response) => {
   try {
+    const count = await prisma.incomeCategory.count();
+    if (count === 0) {
+      await prisma.incomeCategory.createMany({ data: DEFAULT_INCOME_CATEGORIES });
+    }
     const categories = await prisma.incomeCategory.findMany({
       orderBy: { name: "asc" },
     });
@@ -211,8 +251,18 @@ export const createIncomeCategory = async (req: Request, res: Response) => {
 // 🏦 BANK ACCOUNTS & MONEY TRANSFERS
 // ==========================================
 
+const DEFAULT_BANK_ACCOUNTS = [
+  { accountName: "ABCPOS Retail Main Current", accountNumber: "048-2-94819-2", bankName: "Kasikornbank (KBANK)", branch: "Siam Paragon Branch", balance: 245000, status: "ACTIVE" },
+  { accountName: "ABCPOS Petty Cash Drawer", accountNumber: "POS-CASH-01", bankName: "Cash Drawer (THB)", branch: "Bangkok Store Register", balance: 15000, status: "ACTIVE" },
+  { accountName: "ABCPOS Savings & Payroll", accountNumber: "102-8-39201-4", bankName: "Siam Commercial Bank (SCB)", branch: "Silom Complex Branch", balance: 580000, status: "ACTIVE" },
+];
+
 export const getBankAccounts = async (req: Request, res: Response) => {
   try {
+    const count = await prisma.bankAccount.count();
+    if (count === 0) {
+      await prisma.bankAccount.createMany({ data: DEFAULT_BANK_ACCOUNTS });
+    }
     const accounts = await prisma.bankAccount.findMany({
       orderBy: { createdAt: "desc" },
     });
