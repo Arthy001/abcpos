@@ -1927,6 +1927,9 @@ export async function fetchNotificationSettings(): Promise<UserNotificationSetti
   return data.notifications;
 }
 
+export const getNotificationSettingsApi = fetchNotificationSettings;
+export type { UserNotificationSettings };
+
 export async function updateNotificationSettingsApi(payload: Partial<UserNotificationSettings>): Promise<UserNotificationSettings> {
   const res = await fetch(`${API_BASE_URL}/settings/notifications`, {
     method: "PUT",
