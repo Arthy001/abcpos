@@ -257,6 +257,21 @@ import {
   deleteCurrency,
   getInvoiceSettings,
   updateInvoiceSettings,
+  getEmailSettings,
+  updateEmailSettings,
+  sendTestEmail,
+  getSmsSettings,
+  updateSmsSettings,
+  sendTestSms,
+  getPrinters,
+  createPrinter,
+  updatePrinter,
+  setDefaultPrinter,
+  deletePrinter,
+  getCustomFields,
+  createCustomField,
+  updateCustomField,
+  deleteCustomField,
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
 import {
@@ -587,6 +602,21 @@ router.patch("/settings/currencies/:id/set-default", setDefaultCurrency);
 router.delete("/settings/currencies/:id", deleteCurrency);
 router.get("/settings/invoice-settings", getInvoiceSettings);
 router.put("/settings/invoice-settings", updateInvoiceSettings);
+router.get("/settings/email", getEmailSettings);
+router.put("/settings/email", updateEmailSettings);
+router.post("/settings/email/test", sendTestEmail);
+router.get("/settings/sms", getSmsSettings);
+router.put("/settings/sms", updateSmsSettings);
+router.post("/settings/sms/test", sendTestSms);
+router.get("/settings/printers", getPrinters);
+router.post("/settings/printers", createPrinter);
+router.put("/settings/printers/:id", updatePrinter);
+router.patch("/settings/printers/:id/set-default", setDefaultPrinter);
+router.delete("/settings/printers/:id", deletePrinter);
+router.get("/settings/custom-fields", getCustomFields);
+router.post("/settings/custom-fields", createCustomField);
+router.put("/settings/custom-fields/:id", updateCustomField);
+router.delete("/settings/custom-fields/:id", deleteCustomField);
 
 // Audit Logs & Activity History
 router.get("/audit-logs", getAuditLogs);

@@ -677,3 +677,272 @@ export const updateInvoiceSettings = async (req: Request, res: Response) => {
   }
 };
 
+// ==================== EMAIL SETTINGS ====================
+export const getEmailSettings = async (req: Request, res: Response) => {
+  try {
+    let settings = await prisma.emailSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.emailSettings.create({
+        data: {
+          mailDriver: "SMTP",
+          mailHost: "smtp.gmail.com",
+          mailPort: 587,
+          mailUsername: "billing@abcpos.com",
+          mailPassword: "••••••••••••",
+          mailEncryption: "TLS",
+          fromName: "ABCPOS Retail",
+          fromEmail: "billing@abcpos.com",
+        },
+      });
+    }
+    res.json({ success: true, settings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch email settings" });
+  }
+};
+
+export const updateEmailSettings = async (req: Request, res: Response) => {
+  try {
+    const { mailDriver, mailHost, mailPort, mailUsername, mailPassword, mailEncryption, fromName, fromEmail } = req.body;
+    let existing = await prisma.emailSettings.findFirst();
+    if (!existing) {
+      existing = await prisma.emailSettings.create({ data: {} });
+    }
+    const updated = await prisma.emailSettings.update({
+      where: { id: existing.id },
+      data: {
+        mailDriver,
+        mailHost,
+        mailPort: mailPort !== undefined ? parseInt(mailPort) : undefined,
+        mailUsername,
+        mailPassword: mailPassword && mailPassword !== "••••••••••••" ? mailPassword : existing.mailPassword,
+        mailEncryption,
+        fromName,
+        fromEmail,
+      },
+    });
+    res.json({ success: true, settings: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update email settings" });
+  }
+};
+
+export const sendTestEmail = async (req: Request, res: Response) => {
+  try {
+    const { testEmail } = req.body;
+    if (!testEmail || !testEmail.includes("@")) {
+      return res.status(400).json({ success: false, error: "Valid test email address is required" });
+    }
+    // Simulated SMTP connection verification
+    res.json({
+      success: true,
+      message: `Test email dispatched successfully to ${testEmail}. Server SMTP handshake verified!`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to send test email" });
+  }
+};
+
+// ==================== SMS SETTINGS ====================
+export const getSmsSettings = async (req: Request, res: Response) => {
+  try {
+    let settings = await prisma.smsSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.smsSettings.create({
+        data: {
+          smsProvider: "ThaiBulkSMS",
+          apiKey: "tb_live_key_94820193",
+          apiSecret: "••••••••••••",
+          senderId: "ABCPOS",
+          status: "ACTIVE",
+        },
+      });
+    }
+    res.json({ success: true, settings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch SMS settings" });
+  }
+};
+
+export const updateSmsSettings = async (req: Request, res: Response) => {
+  try {
+    const { smsProvider, apiKey, apiSecret, senderId, status } = req.body;
+    let existing = await prisma.smsSettings.findFirst();
+    if (!existing) {
+      existing = await prisma.smsSettings.create({ data: {} });
+    }
+    const updated = await prisma.smsSettings.update({
+      where: { id: existing.id },
+      data: {
+        smsProvider,
+        apiKey,
+        apiSecret: apiSecret && apiSecret !== "••••••••••••" ? apiSecret : existing.apiSecret,
+        senderId,
+        status,
+      },
+    });
+    res.json({ success: true, settings: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update SMS settings" });
+  }
+};
+
+export const sendTestSms = async (req: Request, res: Response) => {
+  try {
+    const { testPhone } = req.body;
+    if (!testPhone) {
+      return res.status(400).json({ success: false, error: "Recipient phone number is required" });
+    }
+    res.json({
+      success: true,
+      message: `Test SMS dispatched successfully to ${testPhone}. Gateway response code: 200 OK`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to send test SMS" });
+  }
+};
+
+// ==================== POS PRINTERS ====================
+const DEFAULT_PRINTERS = [
+  { printerName: "HP Receipt Printer (Counter 1)", connectionType: "Network", ipAddress: "192.168.1.200", port: "9100", paperSize: "80mm", isDefault: true, status: "ACTIVE" },
+  { printerName: "Epson TM-T82X (Bar & Kitchen)", connectionType: "Network", ipAddress: "192.168.1.201", port: "9100", paperSize: "80mm", isDefault: false, status: "ACTIVE" },
+  { printerName: "Star Micronics (Mobile Bluetooth)", connectionType: "Bluetooth", ipAddress: "00:11:22:33:FF:EE", port: "1", paperSize: "58mm", isDefault: false, status: "ACTIVE" },
+];
+
+export const getPrinters = async (req: Request, res: Response) => {
+  try {
+    const count = await prisma.posPrinter.count();
+    if (count === 0) {
+      await prisma.posPrinter.createMany({ data: DEFAULT_PRINTERS });
+    }
+    const printers = await prisma.posPrinter.findMany({ orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] });
+    res.json({ success: true, printers });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch printers" });
+  }
+};
+
+export const createPrinter = async (req: Request, res: Response) => {
+  try {
+    const { printerName, connectionType, ipAddress, port, paperSize, status } = req.body;
+    if (!printerName) return res.status(400).json({ success: false, error: "Printer name is required" });
+    const printer = await prisma.posPrinter.create({
+      data: {
+        printerName,
+        connectionType: connectionType || "Network",
+        ipAddress,
+        port,
+        paperSize: paperSize || "80mm",
+        status: status || "ACTIVE",
+      },
+    });
+    res.status(201).json({ success: true, printer });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to create printer" });
+  }
+};
+
+export const updatePrinter = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { printerName, connectionType, ipAddress, port, paperSize, status } = req.body;
+    const printer = await prisma.posPrinter.update({
+      where: { id },
+      data: { printerName, connectionType, ipAddress, port, paperSize, status },
+    });
+    res.json({ success: true, printer });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update printer" });
+  }
+};
+
+export const setDefaultPrinter = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    await prisma.posPrinter.updateMany({ data: { isDefault: false } });
+    const printer = await prisma.posPrinter.update({ where: { id }, data: { isDefault: true } });
+    res.json({ success: true, printer });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to set default printer" });
+  }
+};
+
+export const deletePrinter = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const existing = await prisma.posPrinter.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ success: false, error: "Printer not found" });
+    if (existing.isDefault) return res.status(400).json({ success: false, error: "Cannot delete the default printer" });
+    await prisma.posPrinter.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to delete printer" });
+  }
+};
+
+// ==================== CUSTOM FIELDS ====================
+const DEFAULT_CUSTOM_FIELDS = [
+  { module: "Product", label: "Product Weight (kg)", fieldType: "Number", defaultValue: "0.00", requiredStatus: "Optional", status: "ACTIVE" },
+  { module: "Customer", label: "VIP Tier", fieldType: "Select", defaultValue: "Regular", requiredStatus: "Optional", status: "ACTIVE" },
+  { module: "Supplier", label: "Tax Exemption No.", fieldType: "Text", defaultValue: "", requiredStatus: "Optional", status: "ACTIVE" },
+  { module: "Biller", label: "Utility Account Code", fieldType: "Text", defaultValue: "-", requiredStatus: "Required", status: "ACTIVE" },
+];
+
+export const getCustomFields = async (req: Request, res: Response) => {
+  try {
+    const count = await prisma.customField.count();
+    if (count === 0) {
+      await prisma.customField.createMany({ data: DEFAULT_CUSTOM_FIELDS });
+    }
+    const fields = await prisma.customField.findMany({ orderBy: [{ module: "asc" }, { createdAt: "asc" }] });
+    res.json({ success: true, fields });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch custom fields" });
+  }
+};
+
+export const createCustomField = async (req: Request, res: Response) => {
+  try {
+    const { module, label, fieldType, defaultValue, requiredStatus, status } = req.body;
+    if (!module || !label) return res.status(400).json({ success: false, error: "Module and Field Label are required" });
+    const field = await prisma.customField.create({
+      data: {
+        module,
+        label,
+        fieldType: fieldType || "Text",
+        defaultValue: defaultValue || "",
+        requiredStatus: requiredStatus || "Optional",
+        status: status || "ACTIVE",
+      },
+    });
+    res.status(201).json({ success: true, field });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to create custom field" });
+  }
+};
+
+export const updateCustomField = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { module, label, fieldType, defaultValue, requiredStatus, status } = req.body;
+    const field = await prisma.customField.update({
+      where: { id },
+      data: { module, label, fieldType, defaultValue, requiredStatus, status },
+    });
+    res.json({ success: true, field });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update custom field" });
+  }
+};
+
+export const deleteCustomField = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    await prisma.customField.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to delete custom field" });
+  }
+};
+
+

@@ -3049,4 +3049,211 @@ export async function updateInvoiceSettingsApi(payload: Partial<InvoiceSettingsT
   return data.settings;
 }
 
+// ==================== EMAIL SETTINGS ====================
+export interface EmailSettings {
+  id: string;
+  mailDriver: string;
+  mailHost: string;
+  mailPort: number;
+  mailUsername: string;
+  mailPassword?: string;
+  mailEncryption: string;
+  fromName: string;
+  fromEmail: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getEmailSettingsApi(): Promise<EmailSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/email`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch email settings");
+  return data.settings;
+}
+
+export async function updateEmailSettingsApi(payload: Partial<EmailSettings>): Promise<EmailSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/email`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update email settings");
+  return data.settings;
+}
+
+export async function sendTestEmailApi(testEmail: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/settings/email/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ testEmail }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to send test email");
+  return data;
+}
+
+// ==================== SMS SETTINGS ====================
+export interface SmsSettings {
+  id: string;
+  smsProvider: string;
+  apiKey: string;
+  apiSecret?: string;
+  senderId: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getSmsSettingsApi(): Promise<SmsSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/sms`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch SMS settings");
+  return data.settings;
+}
+
+export async function updateSmsSettingsApi(payload: Partial<SmsSettings>): Promise<SmsSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/sms`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update SMS settings");
+  return data.settings;
+}
+
+export async function sendTestSmsApi(testPhone: string): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/settings/sms/test`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ testPhone }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to send test SMS");
+  return data;
+}
+
+// ==================== POS PRINTERS ====================
+export interface PosPrinter {
+  id: string;
+  printerName: string;
+  connectionType: "Network" | "USB" | "Bluetooth" | string;
+  ipAddress?: string | null;
+  port?: string | null;
+  paperSize: "80mm" | "58mm" | "A4" | string;
+  isDefault: boolean;
+  status: "ACTIVE" | "INACTIVE" | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getPrintersApi(): Promise<PosPrinter[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/printers`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch printers");
+  return data.printers || [];
+}
+
+export async function createPrinterApi(payload: {
+  printerName: string;
+  connectionType: string;
+  ipAddress?: string;
+  port?: string;
+  paperSize?: string;
+  status?: string;
+}): Promise<PosPrinter> {
+  const res = await fetch(`${API_BASE_URL}/settings/printers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create printer");
+  return data.printer;
+}
+
+export async function updatePrinterApi(id: string, payload: Partial<PosPrinter>): Promise<PosPrinter> {
+  const res = await fetch(`${API_BASE_URL}/settings/printers/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update printer");
+  return data.printer;
+}
+
+export async function setDefaultPrinterApi(id: string): Promise<PosPrinter> {
+  const res = await fetch(`${API_BASE_URL}/settings/printers/${id}/set-default`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to set default printer");
+  return data.printer;
+}
+
+export async function deletePrinterApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/printers/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete printer");
+}
+
+// ==================== CUSTOM FIELDS ====================
+export interface CustomField {
+  id: string;
+  module: "Product" | "Customer" | "Supplier" | "Biller" | string;
+  label: string;
+  fieldType: "Text" | "Number" | "Select" | "Date" | "Boolean" | string;
+  defaultValue?: string | null;
+  requiredStatus: "Required" | "Optional" | "Disable" | string;
+  status: "ACTIVE" | "INACTIVE" | string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getCustomFieldsApi(): Promise<CustomField[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/custom-fields`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch custom fields");
+  return data.fields || [];
+}
+
+export async function createCustomFieldApi(payload: {
+  module: string;
+  label: string;
+  fieldType: string;
+  defaultValue?: string;
+  requiredStatus: string;
+  status?: string;
+}): Promise<CustomField> {
+  const res = await fetch(`${API_BASE_URL}/settings/custom-fields`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create custom field");
+  return data.field;
+}
+
+export async function updateCustomFieldApi(id: string, payload: Partial<CustomField>): Promise<CustomField> {
+  const res = await fetch(`${API_BASE_URL}/settings/custom-fields/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update custom field");
+  return data.field;
+}
+
+export async function deleteCustomFieldApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/custom-fields/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete custom field");
+}
+
+
 

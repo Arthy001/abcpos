@@ -1317,3 +1317,54 @@ model InvoiceSettings {
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 }
+
+model EmailSettings {
+  id             String   @id @default(uuid())
+  mailDriver     String   @default("SMTP") // "SMTP", "SendGrid", "Mailgun"
+  mailHost       String   @default("smtp.gmail.com")
+  mailPort       Int      @default(587)
+  mailUsername   String   @default("billing@abcpos.com")
+  mailPassword   String   @default("••••••••••••")
+  mailEncryption String   @default("TLS") // "TLS", "SSL"
+  fromName       String   @default("ABCPOS Retail")
+  fromEmail      String   @default("billing@abcpos.com")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model SmsSettings {
+  id          String   @id @default(uuid())
+  smsProvider String   @default("ThaiBulkSMS") // "ThaiBulkSMS", "Twilio", "Nexmo"
+  apiKey      String   @default("tb_live_key_94820193")
+  apiSecret   String   @default("••••••••••••")
+  senderId    String   @default("ABCPOS")
+  status      String   @default("ACTIVE")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PosPrinter {
+  id             String   @id @default(uuid())
+  printerName    String
+  connectionType String   @default("Network") // "Network", "USB", "Bluetooth"
+  ipAddress      String?  @default("192.168.1.200")
+  port           String?  @default("9100")
+  paperSize      String   @default("80mm") // "80mm", "58mm", "A4"
+  isDefault      Boolean  @default(false)
+  status         String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model CustomField {
+  id             String   @id @default(uuid())
+  module         String   // "Product", "Customer", "Supplier", "Biller"
+  label          String
+  fieldType      String   @default("Text") // "Text", "Number", "Select", "Date", "Boolean"
+  defaultValue   String?  @default("")
+  requiredStatus String   @default("Optional") // "Required", "Optional", "Disable"
+  status         String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
