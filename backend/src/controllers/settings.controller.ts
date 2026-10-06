@@ -168,8 +168,44 @@ export const updateNotificationSettings = async (req: Request, res: Response) =>
 };
 
 // ==================== CONNECTED APPS ====================
+const DEFAULT_GOOGLE_APPS = [
+  {
+    appName: "Google Calendar",
+    appCategory: "Productivity & Schedule",
+    appLogo: "calendar",
+    description: "Sync employee shifts, supplier delivery schedules, and promotional calendar events.",
+    status: "CONNECTED",
+    connectedAccount: "store.operations@abcpos.com",
+    connectedDate: "15 Jan 2026",
+  },
+  {
+    appName: "Google Drive",
+    appCategory: "Cloud Storage & Backup",
+    appLogo: "drive",
+    description: "Automated cloud backup for sales records, invoices, PDF receipts, and financial reports.",
+    status: "CONNECTED",
+    connectedAccount: "backup.cloud@abcpos.com",
+    connectedDate: "10 Jan 2026",
+  },
+  {
+    appName: "Gmail",
+    appCategory: "Email & Communication",
+    appLogo: "gmail",
+    description: "Send electronic receipts (E-Receipts), invoices, purchase orders, and notification alerts.",
+    status: "CONNECTED",
+    connectedAccount: "billing@abcpos.com",
+    connectedDate: "05 Jan 2026",
+  },
+];
+
 export const getConnectedApps = async (req: Request, res: Response) => {
   try {
+    const count = await prisma.connectedAppItem.count();
+    if (count === 0) {
+      await prisma.connectedAppItem.createMany({
+        data: DEFAULT_GOOGLE_APPS,
+      });
+    }
     const apps = await prisma.connectedAppItem.findMany({
       orderBy: { id: "asc" },
     });
@@ -187,7 +223,7 @@ export const toggleConnectedApp = async (req: Request, res: Response) => {
       where: { id },
       data: {
         status,
-        connectedAccount: status === "CONNECTED" ? (connectedAccount || "user@connected.com") : null,
+        connectedAccount: status === "CONNECTED" ? (connectedAccount || "admin@abcpos.com") : null,
         connectedDate: status === "CONNECTED" ? new Date().toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }) : null,
       },
     });

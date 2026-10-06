@@ -1948,6 +1948,9 @@ export async function fetchConnectedApps(): Promise<ConnectedAppItem[]> {
   return data.apps || [];
 }
 
+export const getConnectedAppsApi = fetchConnectedApps;
+export type { ConnectedAppItem };
+
 export async function toggleConnectedAppApi(id: string, status: "CONNECTED" | "DISCONNECTED", connectedAccount?: string): Promise<ConnectedAppItem> {
   const res = await fetch(`${API_BASE_URL}/settings/connected-apps/${id}`, {
     method: "PUT",
