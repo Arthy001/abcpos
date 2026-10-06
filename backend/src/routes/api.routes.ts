@@ -272,6 +272,34 @@ import {
   createCustomField,
   updateCustomField,
   deleteCustomField,
+  getLocalizationSettings,
+  updateLocalizationSettings,
+  getLanguages,
+  createLanguage,
+  updateLanguage,
+  setDefaultLanguage,
+  deleteLanguage,
+  getAppearanceSettings,
+  updateAppearanceSettings,
+  getPreferenceSettings,
+  updatePreferenceSettings,
+  getSystemSettings,
+  updateSystemSettings,
+  triggerSystemBackup,
+  getOtpSettings,
+  updateOtpSettings,
+  getSignatures,
+  createSignature,
+  updateSignature,
+  setDefaultSignature,
+  deleteSignature,
+  getSocialAuthSettings,
+  updateSocialAuthSettings,
+  getInvoiceTemplates,
+  createInvoiceTemplate,
+  updateInvoiceTemplate,
+  setDefaultInvoiceTemplate,
+  deleteInvoiceTemplate,
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
 import {
@@ -617,6 +645,43 @@ router.get("/settings/custom-fields", getCustomFields);
 router.post("/settings/custom-fields", createCustomField);
 router.put("/settings/custom-fields/:id", updateCustomField);
 router.delete("/settings/custom-fields/:id", deleteCustomField);
+
+router.get("/settings/localization", getLocalizationSettings);
+router.put("/settings/localization", updateLocalizationSettings);
+
+router.get("/settings/languages", getLanguages);
+router.post("/settings/languages", createLanguage);
+router.put("/settings/languages/:id", updateLanguage);
+router.patch("/settings/languages/:id/set-default", setDefaultLanguage);
+router.delete("/settings/languages/:id", deleteLanguage);
+
+router.get("/settings/appearance", getAppearanceSettings);
+router.put("/settings/appearance", updateAppearanceSettings);
+
+router.get("/settings/preference", getPreferenceSettings);
+router.put("/settings/preference", updatePreferenceSettings);
+
+router.get("/settings/system", getSystemSettings);
+router.put("/settings/system", updateSystemSettings);
+router.post("/settings/system/backup", triggerSystemBackup);
+
+router.get("/settings/otp", getOtpSettings);
+router.put("/settings/otp", updateOtpSettings);
+
+router.get("/settings/signatures", getSignatures);
+router.post("/settings/signatures", createSignature);
+router.put("/settings/signatures/:id", updateSignature);
+router.patch("/settings/signatures/:id/set-default", setDefaultSignature);
+router.delete("/settings/signatures/:id", deleteSignature);
+
+router.get("/settings/social-auth", getSocialAuthSettings);
+router.put("/settings/social-auth", updateSocialAuthSettings);
+
+router.get("/settings/invoice-templates", getInvoiceTemplates);
+router.post("/settings/invoice-templates", createInvoiceTemplate);
+router.put("/settings/invoice-templates/:id", updateInvoiceTemplate);
+router.patch("/settings/invoice-templates/:id/set-default", setDefaultInvoiceTemplate);
+router.delete("/settings/invoice-templates/:id", deleteInvoiceTemplate);
 
 // Audit Logs & Activity History
 router.get("/audit-logs", getAuditLogs);

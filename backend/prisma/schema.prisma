@@ -1368,3 +1368,131 @@ model CustomField {
   updatedAt      DateTime @updatedAt
 }
 
+model LocalizationSettings {
+  id                String   @id @default(uuid())
+  language          String   @default("English")
+  langSwitcher      Boolean  @default(true)
+  timezone          String   @default("UTC +07:00 (Bangkok)")
+  dateFormat        String   @default("DD/MM/YYYY")
+  timeFormat        String   @default("24 Hours")
+  financialYear     String   @default("January - December")
+  startingMonth     String   @default("January")
+  currencySymbol    String   @default("฿")
+  currencyPosition  String   @default("Before Amount")
+  decimalSeparator  String   @default(".")
+  thousandSeparator String   @default(",")
+  decimals          Int      @default(2)
+  country           String   @default("Thailand")
+  state             String   @default("Bangkok")
+  city              String   @default("Bangkok")
+  address           String   @default("")
+  zipCode           String   @default("10110")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+}
+
+model SystemLanguage {
+  id             String   @id @default(uuid())
+  name           String
+  code           String   @unique // "th", "en", "zh", etc.
+  flag           String?  @default("🇹🇭")
+  rtl            Boolean  @default(false)
+  isDefault      Boolean  @default(false)
+  totalKeys      Int      @default(150)
+  translatedKeys Int      @default(150)
+  status         String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model AppearanceSettings {
+  id            String   @id @default(uuid())
+  theme         String   @default("light") // "light", "dark", "auto"
+  accentColor   String   @default("#FE9F43")
+  expandSidebar Boolean  @default(true)
+  sidebarSize   String   @default("Small - 85px")
+  fontFamily    String   @default("Nunito")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model PreferenceSettings {
+  id                    String   @id @default(uuid())
+  maintenanceMode       Boolean  @default(false)
+  allowNegativeStock    Boolean  @default(false)
+  enableBarcodeScanner  Boolean  @default(true)
+  autoPrintReceipt      Boolean  @default(true)
+  enableSoundEffects    Boolean  @default(true)
+  enableCustomerDisplay Boolean  @default(false)
+  stockAlertThreshold   Int      @default(5)
+  orderPrefix           String   @default("ORD-")
+  enableDiscountPerItem Boolean  @default(true)
+  enableTaxCalculation  Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model SystemSettings {
+  id              String   @id @default(uuid())
+  appTitle        String   @default("ABCPOS Management System")
+  storageDriver   String   @default("Local") // "Local", "AWS S3", "Cloudflare R2"
+  maxUploadSizeMb Int      @default(10)
+  autoBackup      Boolean  @default(true)
+  backupFrequency String   @default("Daily") // "Daily", "Weekly", "Monthly"
+  lastBackupAt    DateTime?
+  debugMode       Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model OtpSettings {
+  id                    String   @id @default(uuid())
+  otpType               String   @default("SMS") // "SMS", "Email", "Both"
+  otpDigits             Int      @default(6)
+  otpExpiryMinutes      Int      @default(5)
+  maxAttempts           Int      @default(3)
+  resendCooldownSeconds Int      @default(60)
+  status                String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+model DigitalSignature {
+  id           String   @id @default(uuid())
+  title        String
+  signerName   String
+  signerRole   String   @default("Authorized Signatory")
+  signatureUrl String?
+  isDefault    Boolean  @default(false)
+  status       String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SocialAuthSettings {
+  id           String   @id @default(uuid())
+  provider     String   @unique // "Google", "Facebook", "Line"
+  clientId     String   @default("")
+  clientSecret String   @default("")
+  callbackUrl  String   @default("")
+  status       String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InvoiceTemplate {
+  id               String   @id @default(uuid())
+  name             String
+  templateType     String   @default("Thermal 80mm") // "Thermal 80mm", "Thermal 58mm", "A4 Slip", "VAT Full"
+  colorScheme      String   @default("#FE9F43")
+  showLogo         Boolean  @default(true)
+  showQrCode       Boolean  @default(true)
+  showBarcode      Boolean  @default(true)
+  showTaxBreakdown Boolean  @default(true)
+  isDefault        Boolean  @default(false)
+  status           String   @default("ACTIVE") // "ACTIVE", "INACTIVE"
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+

@@ -3255,5 +3255,408 @@ export async function deleteCustomFieldApi(id: string): Promise<void> {
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete custom field");
 }
 
+// ==================== LOCALIZATION SETTINGS ====================
+export interface LocalizationSettings {
+  id?: string;
+  language: string;
+  langSwitcher: boolean;
+  timezone: string;
+  dateFormat: string;
+  timeFormat: string;
+  financialYear: string;
+  startingMonth: string;
+  currencySymbol: string;
+  currencyPosition: string;
+  decimalSeparator: string;
+  thousandSeparator: string;
+  decimals: number;
+  country: string;
+  state: string;
+  city: string;
+  address: string;
+  zipCode: string;
+}
+
+export async function getLocalizationSettingsApi(): Promise<LocalizationSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/localization`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch localization settings");
+  return data.settings;
+}
+
+export async function updateLocalizationSettingsApi(payload: Partial<LocalizationSettings>): Promise<LocalizationSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/localization`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update localization settings");
+  return data.settings;
+}
+
+// ==================== SYSTEM LANGUAGES ====================
+export interface SystemLanguage {
+  id: string;
+  name: string;
+  code: string;
+  flag?: string | null;
+  rtl: boolean;
+  isDefault: boolean;
+  totalKeys: number;
+  translatedKeys: number;
+  status: "ACTIVE" | "INACTIVE" | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function getLanguagesApi(): Promise<SystemLanguage[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/languages`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch languages");
+  return data.languages || [];
+}
+
+export async function createLanguageApi(payload: {
+  name: string;
+  code: string;
+  flag?: string;
+  rtl?: boolean;
+  isDefault?: boolean;
+  status?: string;
+}): Promise<SystemLanguage> {
+  const res = await fetch(`${API_BASE_URL}/settings/languages`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create language");
+  return data.language;
+}
+
+export async function updateLanguageApi(id: string, payload: Partial<SystemLanguage>): Promise<SystemLanguage> {
+  const res = await fetch(`${API_BASE_URL}/settings/languages/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update language");
+  return data.language;
+}
+
+export async function setDefaultLanguageApi(id: string): Promise<SystemLanguage> {
+  const res = await fetch(`${API_BASE_URL}/settings/languages/${id}/set-default`, { method: "PATCH" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to set default language");
+  return data.language;
+}
+
+export async function deleteLanguageApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/languages/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete language");
+}
+
+// ==================== APPEARANCE SETTINGS ====================
+export interface AppearanceSettings {
+  id?: string;
+  theme: "light" | "dark" | "auto" | string;
+  accentColor: string;
+  expandSidebar: boolean;
+  sidebarSize: string;
+  fontFamily: string;
+}
+
+export async function getAppearanceSettingsApi(): Promise<AppearanceSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/appearance`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch appearance settings");
+  return data.appearance;
+}
+
+export async function updateAppearanceSettingsApi(payload: Partial<AppearanceSettings>): Promise<AppearanceSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/appearance`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update appearance settings");
+  return data.appearance;
+}
+
+// ==================== PREFERENCE SETTINGS ====================
+export interface PreferenceSettings {
+  id?: string;
+  maintenanceMode: boolean;
+  allowNegativeStock: boolean;
+  enableBarcodeScanner: boolean;
+  autoPrintReceipt: boolean;
+  enableSoundEffects: boolean;
+  enableCustomerDisplay: boolean;
+  stockAlertThreshold: number;
+  orderPrefix: string;
+  enableDiscountPerItem: boolean;
+  enableTaxCalculation: boolean;
+}
+
+export async function getPreferenceSettingsApi(): Promise<PreferenceSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/preference`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch preference settings");
+  return data.preference;
+}
+
+export async function updatePreferenceSettingsApi(payload: Partial<PreferenceSettings>): Promise<PreferenceSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/preference`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update preference settings");
+  return data.preference;
+}
+
+// ==================== SYSTEM SETTINGS ====================
+export interface SystemSettings {
+  id?: string;
+  appTitle: string;
+  storageDriver: string;
+  maxUploadSizeMb: number;
+  autoBackup: boolean;
+  backupFrequency: string;
+  lastBackupAt?: string | null;
+  debugMode: boolean;
+}
+
+export async function getSystemSettingsApi(): Promise<SystemSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/system`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch system settings");
+  return data.system;
+}
+
+export async function updateSystemSettingsApi(payload: Partial<SystemSettings>): Promise<SystemSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/system`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update system settings");
+  return data.system;
+}
+
+export async function triggerSystemBackupApi(): Promise<{
+  message: string;
+  backupFileName: string;
+  sizeMb: string;
+  backupAt: string;
+}> {
+  const res = await fetch(`${API_BASE_URL}/settings/system/backup`, { method: "POST" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create system backup");
+  return data;
+}
+
+// ==================== OTP SETTINGS ====================
+export interface OtpSettings {
+  id?: string;
+  otpType: "SMS" | "Email" | "Both" | string;
+  otpDigits: number;
+  otpExpiryMinutes: number;
+  maxAttempts: number;
+  resendCooldownSeconds: number;
+  status: "ACTIVE" | "INACTIVE" | string;
+}
+
+export async function getOtpSettingsApi(): Promise<OtpSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/otp`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch OTP settings");
+  return data.otp;
+}
+
+export async function updateOtpSettingsApi(payload: Partial<OtpSettings>): Promise<OtpSettings> {
+  const res = await fetch(`${API_BASE_URL}/settings/otp`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update OTP settings");
+  return data.otp;
+}
+
+// ==================== DIGITAL SIGNATURES ====================
+export interface DigitalSignature {
+  id: string;
+  title: string;
+  signerName: string;
+  signerRole: string;
+  signatureUrl?: string | null;
+  isDefault: boolean;
+  status: "ACTIVE" | "INACTIVE" | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function getSignaturesApi(): Promise<DigitalSignature[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/signatures`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch signatures");
+  return data.signatures || [];
+}
+
+export async function createSignatureApi(payload: {
+  title: string;
+  signerName: string;
+  signerRole?: string;
+  signatureUrl?: string;
+  isDefault?: boolean;
+  status?: string;
+}): Promise<DigitalSignature> {
+  const res = await fetch(`${API_BASE_URL}/settings/signatures`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create signature");
+  return data.signature;
+}
+
+export async function updateSignatureApi(id: string, payload: Partial<DigitalSignature>): Promise<DigitalSignature> {
+  const res = await fetch(`${API_BASE_URL}/settings/signatures/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update signature");
+  return data.signature;
+}
+
+export async function setDefaultSignatureApi(id: string): Promise<DigitalSignature> {
+  const res = await fetch(`${API_BASE_URL}/settings/signatures/${id}/set-default`, { method: "PATCH" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to set default signature");
+  return data.signature;
+}
+
+export async function deleteSignatureApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/signatures/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete signature");
+}
+
+// ==================== SOCIAL AUTH SETTINGS ====================
+export interface SocialAuthProvider {
+  id: string;
+  provider: "Google" | "Facebook" | "Line" | string;
+  clientId: string;
+  clientSecret: string;
+  callbackUrl: string;
+  status: "ACTIVE" | "INACTIVE" | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function getSocialAuthSettingsApi(): Promise<SocialAuthProvider[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/social-auth`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch social auth settings");
+  return data.providers || [];
+}
+
+export async function updateSocialAuthSettingsApi(payload: {
+  provider: string;
+  clientId: string;
+  clientSecret: string;
+  callbackUrl?: string;
+  status?: string;
+}): Promise<SocialAuthProvider> {
+  const res = await fetch(`${API_BASE_URL}/settings/social-auth`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update social auth settings");
+  return data.provider;
+}
+
+// ==================== INVOICE TEMPLATES ====================
+export interface InvoiceTemplate {
+  id: string;
+  name: string;
+  templateType: "Thermal 80mm" | "Thermal 58mm" | "A4 Slip" | "VAT Full" | string;
+  colorScheme: string;
+  showLogo: boolean;
+  showQrCode: boolean;
+  showBarcode: boolean;
+  showTaxBreakdown: boolean;
+  isDefault: boolean;
+  status: "ACTIVE" | "INACTIVE" | string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export async function getInvoiceTemplatesApi(): Promise<InvoiceTemplate[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-templates`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch invoice templates");
+  return data.templates || [];
+}
+
+export async function createInvoiceTemplateApi(payload: {
+  name: string;
+  templateType?: string;
+  colorScheme?: string;
+  showLogo?: boolean;
+  showQrCode?: boolean;
+  showBarcode?: boolean;
+  showTaxBreakdown?: boolean;
+  isDefault?: boolean;
+  status?: string;
+}): Promise<InvoiceTemplate> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-templates`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create invoice template");
+  return data.template;
+}
+
+export async function updateInvoiceTemplateApi(id: string, payload: Partial<InvoiceTemplate>): Promise<InvoiceTemplate> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-templates/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update invoice template");
+  return data.template;
+}
+
+export async function setDefaultInvoiceTemplateApi(id: string): Promise<InvoiceTemplate> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-templates/${id}/set-default`, { method: "PATCH" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to set default invoice template");
+  return data.template;
+}
+
+export async function deleteInvoiceTemplateApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-templates/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete invoice template");
+}
+
+
 
 
