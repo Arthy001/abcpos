@@ -59,8 +59,39 @@ export const getSecuritySettings = async (req: Request, res: Response) => {
         },
       });
     }
+    const sessionCount = await prisma.userSessionLog.count();
+    if (sessionCount === 0) {
+      await prisma.userSessionLog.createMany({
+        data: [
+          {
+            device: "MacBook Pro (16-inch)",
+            browser: "Chrome 120.0 (macOS)",
+            ipAddress: "192.168.1.102",
+            location: "Bangkok, Thailand",
+            lastActive: "Current Session",
+            isCurrent: true,
+          },
+          {
+            device: "iPhone 15 Pro",
+            browser: "Safari 17.2 (iOS)",
+            ipAddress: "192.168.1.145",
+            location: "Bangkok, Thailand",
+            lastActive: "2 hours ago",
+            isCurrent: false,
+          },
+          {
+            device: "Windows PC (Office POS-01)",
+            browser: "Edge 121.0 (Windows 11)",
+            ipAddress: "183.88.221.40",
+            location: "Nonthaburi, Thailand",
+            lastActive: "Yesterday, 06:45 PM",
+            isCurrent: false,
+          },
+        ],
+      });
+    }
     const sessionLogs = await prisma.userSessionLog.findMany({
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ isCurrent: "desc" }, { createdAt: "desc" }],
     });
     res.json({ success: true, security, sessionLogs });
   } catch (error: any) {

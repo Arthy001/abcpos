@@ -1899,6 +1899,9 @@ export async function fetchSecuritySettings(): Promise<{ security: UserSecurityS
   return { security: data.security, sessionLogs: data.sessionLogs || [] };
 }
 
+export const getSecuritySettingsApi = fetchSecuritySettings;
+export type { UserSecuritySettings, UserSessionLog };
+
 export async function updateSecuritySettingsApi(payload: Partial<UserSecuritySettings>): Promise<UserSecuritySettings> {
   const res = await fetch(`${API_BASE_URL}/settings/security`, {
     method: "PUT",
@@ -3039,4 +3042,5 @@ export async function updateInvoiceSettingsApi(payload: Partial<InvoiceSettingsT
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to update invoice settings");
   return data.settings;
 }
+
 
