@@ -484,3 +484,129 @@ export const togglePaymentGateway = async (req: Request, res: Response) => {
   }
 };
 
+// ==================== CURRENCIES ====================
+const DEFAULT_CURRENCIES = [
+  { name: "Thai Baht", code: "THB", symbol: "฿", exchangeRate: 1.0, isDefault: true, status: "ACTIVE" },
+  { name: "US Dollar", code: "USD", symbol: "$", exchangeRate: 35.5, isDefault: false, status: "ACTIVE" },
+  { name: "Euro", code: "EUR", symbol: "€", exchangeRate: 38.2, isDefault: false, status: "ACTIVE" },
+  { name: "British Pound", code: "GBP", symbol: "£", exchangeRate: 44.8, isDefault: false, status: "ACTIVE" },
+  { name: "Japanese Yen", code: "JPY", symbol: "¥", exchangeRate: 0.23, isDefault: false, status: "ACTIVE" },
+];
+
+export const getCurrencies = async (req: Request, res: Response) => {
+  try {
+    const count = await prisma.currency.count();
+    if (count === 0) {
+      await prisma.currency.createMany({ data: DEFAULT_CURRENCIES });
+    }
+    const currencies = await prisma.currency.findMany({ orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }] });
+    res.json({ success: true, currencies });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch currencies" });
+  }
+};
+
+export const createCurrency = async (req: Request, res: Response) => {
+  try {
+    const { name, code, symbol, exchangeRate, status } = req.body;
+    if (!name || !code || !symbol) {
+      return res.status(400).json({ success: false, error: "Name, code, and symbol are required" });
+    }
+    const currency = await prisma.currency.create({
+      data: { name, code: code.toUpperCase(), symbol, exchangeRate: parseFloat(exchangeRate) || 1.0, status: status || "ACTIVE" },
+    });
+    res.status(201).json({ success: true, currency });
+  } catch (error: any) {
+    if (error.code === "P2002") return res.status(400).json({ success: false, error: "Currency code already exists" });
+    res.status(500).json({ success: false, error: error.message || "Failed to create currency" });
+  }
+};
+
+export const updateCurrency = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const { name, code, symbol, exchangeRate, status } = req.body;
+    const currency = await prisma.currency.update({
+      where: { id },
+      data: { name, code: code?.toUpperCase(), symbol, exchangeRate: parseFloat(exchangeRate) || 1.0, status },
+    });
+    res.json({ success: true, currency });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update currency" });
+  }
+};
+
+export const setDefaultCurrency = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    // Clear all defaults first
+    await prisma.currency.updateMany({ data: { isDefault: false } });
+    const currency = await prisma.currency.update({ where: { id }, data: { isDefault: true } });
+    res.json({ success: true, currency });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to set default currency" });
+  }
+};
+
+export const deleteCurrency = async (req: Request, res: Response) => {
+  try {
+    const id = req.params.id as string;
+    const existing = await prisma.currency.findUnique({ where: { id } });
+    if (!existing) return res.status(404).json({ success: false, error: "Currency not found" });
+    if (existing.isDefault) return res.status(400).json({ success: false, error: "Cannot delete the default currency" });
+    await prisma.currency.delete({ where: { id } });
+    res.json({ success: true });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to delete currency" });
+  }
+};
+
+// ==================== INVOICE SETTINGS ====================
+export const getInvoiceSettings = async (req: Request, res: Response) => {
+  try {
+    let settings = await prisma.invoiceSettings.findFirst();
+    if (!settings) {
+      settings = await prisma.invoiceSettings.create({
+        data: {
+          invoicePrefix: "INV - ",
+          invoiceDueDays: 5,
+          roundOff: true,
+          roundOffType: "Round Off Up",
+          showCompanyDetails: true,
+          headerTerms: "",
+          footerTerms: "",
+        },
+      });
+    }
+    res.json({ success: true, settings });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch invoice settings" });
+  }
+};
+
+export const updateInvoiceSettings = async (req: Request, res: Response) => {
+  try {
+    const { invoicePrefix, invoiceDueDays, roundOff, roundOffType, showCompanyDetails, headerTerms, footerTerms, logoUrl } = req.body;
+    let existing = await prisma.invoiceSettings.findFirst();
+    if (!existing) {
+      existing = await prisma.invoiceSettings.create({ data: {} });
+    }
+    const updated = await prisma.invoiceSettings.update({
+      where: { id: existing.id },
+      data: {
+        invoicePrefix,
+        invoiceDueDays: invoiceDueDays !== undefined ? parseInt(invoiceDueDays) : undefined,
+        roundOff: roundOff !== undefined ? Boolean(roundOff) : undefined,
+        roundOffType,
+        showCompanyDetails: showCompanyDetails !== undefined ? Boolean(showCompanyDetails) : undefined,
+        headerTerms,
+        footerTerms,
+        logoUrl,
+      },
+    });
+    res.json({ success: true, settings: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update invoice settings" });
+  }
+};
+

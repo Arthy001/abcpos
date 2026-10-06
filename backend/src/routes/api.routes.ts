@@ -250,6 +250,13 @@ import {
   getPaymentGateways,
   updatePaymentGateway,
   togglePaymentGateway,
+  getCurrencies,
+  createCurrency,
+  updateCurrency,
+  setDefaultCurrency,
+  deleteCurrency,
+  getInvoiceSettings,
+  updateInvoiceSettings,
 } from "../controllers/settings.controller.js";
 import { getOrders, createOrder, getOrderById, voidOrder } from "../controllers/order.controller.js";
 import {
@@ -573,6 +580,13 @@ router.delete("/settings/tax-rates/:id", deleteTaxRate);
 router.get("/settings/payment-gateways", getPaymentGateways);
 router.put("/settings/payment-gateways/:id", updatePaymentGateway);
 router.patch("/settings/payment-gateways/:id/toggle", togglePaymentGateway);
+router.get("/settings/currencies", getCurrencies);
+router.post("/settings/currencies", createCurrency);
+router.put("/settings/currencies/:id", updateCurrency);
+router.patch("/settings/currencies/:id/set-default", setDefaultCurrency);
+router.delete("/settings/currencies/:id", deleteCurrency);
+router.get("/settings/invoice-settings", getInvoiceSettings);
+router.put("/settings/invoice-settings", updateInvoiceSettings);
 
 // Audit Logs & Activity History
 router.get("/audit-logs", getAuditLogs);

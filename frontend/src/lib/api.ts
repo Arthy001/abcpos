@@ -2937,3 +2937,106 @@ export async function changePasswordApi(data: {
   return await res.json();
 }
 
+// ==================== CURRENCIES ====================
+export interface Currency {
+  id: string;
+  name: string;
+  code: string;
+  symbol: string;
+  exchangeRate: number;
+  isDefault: boolean;
+  status: "ACTIVE" | "INACTIVE";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getCurrenciesApi(): Promise<Currency[]> {
+  const res = await fetch(`${API_BASE_URL}/settings/currencies`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch currencies");
+  return data.currencies;
+}
+
+export async function createCurrencyApi(payload: {
+  name: string;
+  code: string;
+  symbol: string;
+  exchangeRate: number;
+  status: string;
+}): Promise<Currency> {
+  const res = await fetch(`${API_BASE_URL}/settings/currencies`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create currency");
+  return data.currency;
+}
+
+export async function updateCurrencyApi(id: string, payload: {
+  name?: string;
+  code?: string;
+  symbol?: string;
+  exchangeRate?: number;
+  status?: string;
+}): Promise<Currency> {
+  const res = await fetch(`${API_BASE_URL}/settings/currencies/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update currency");
+  return data.currency;
+}
+
+export async function setDefaultCurrencyApi(id: string): Promise<Currency> {
+  const res = await fetch(`${API_BASE_URL}/settings/currencies/${id}/set-default`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to set default currency");
+  return data.currency;
+}
+
+export async function deleteCurrencyApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/settings/currencies/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete currency");
+}
+
+// ==================== INVOICE SETTINGS ====================
+export interface InvoiceSettingsType {
+  id: string;
+  invoicePrefix: string;
+  invoiceDueDays: number;
+  roundOff: boolean;
+  roundOffType: string;
+  showCompanyDetails: boolean;
+  headerTerms: string;
+  footerTerms: string;
+  logoUrl?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function getInvoiceSettingsApi(): Promise<InvoiceSettingsType> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-settings`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch invoice settings");
+  return data.settings;
+}
+
+export async function updateInvoiceSettingsApi(payload: Partial<InvoiceSettingsType>): Promise<InvoiceSettingsType> {
+  const res = await fetch(`${API_BASE_URL}/settings/invoice-settings`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update invoice settings");
+  return data.settings;
+}
+

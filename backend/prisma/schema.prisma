@@ -1291,3 +1291,29 @@ model PosShiftMovement {
   reason      String?  // e.g. "Add change coins", "Bank drop"
   createdTime DateTime @default(now())
 }
+
+model Currency {
+  id           String   @id @default(uuid())
+  name         String
+  code         String   @unique
+  symbol       String
+  exchangeRate Float    @default(1.0)
+  isDefault    Boolean  @default(false)
+  status       String   @default("ACTIVE") // ACTIVE, INACTIVE
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model InvoiceSettings {
+  id                 String   @id @default(uuid())
+  invoicePrefix      String   @default("INV - ")
+  invoiceDueDays     Int      @default(5)
+  roundOff           Boolean  @default(true)
+  roundOffType       String   @default("Round Off Up") // "Round Off Up", "Round Off Down", "Nearest Decimal"
+  showCompanyDetails Boolean  @default(true)
+  headerTerms        String   @default("")
+  footerTerms        String   @default("")
+  logoUrl            String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}
