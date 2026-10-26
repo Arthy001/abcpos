@@ -1459,10 +1459,12 @@ export async function fetchBestsellersReport(params?: {
   return data.items || [];
 }
 
-export async function fetchPurchaseReport(params?: { store?: string; product?: string; search?: string }): Promise<PurchaseReportItem[]> {
+export async function fetchPurchaseReport(params?: { store?: string; product?: string; search?: string; supplier?: string; status?: string }): Promise<PurchaseReportItem[]> {
   const query = new URLSearchParams();
   if (params?.store && params.store !== "All") query.set("store", params.store);
   if (params?.product && params.product !== "All") query.set("product", params.product);
+  if (params?.supplier && params.supplier !== "All") query.set("supplier", params.supplier);
+  if (params?.status && params.status !== "All") query.set("status", params.status);
   if (params?.search) query.set("search", params.search);
 
   const res = await fetch(`${API_BASE_URL}/reports/purchases?${query.toString()}`, { cache: "no-store" });
@@ -1472,12 +1474,13 @@ export async function fetchPurchaseReport(params?: { store?: string; product?: s
 }
 
 // ==================== INVENTORY REPORTS, STOCK HISTORY & SOLD STOCK ====================
-export async function fetchInventoryReport(params?: { store?: string; product?: string; category?: string; search?: string }): Promise<InventoryReportItem[]> {
+export async function fetchInventoryReport(params?: { store?: string; product?: string; category?: string; search?: string; stockStatus?: string }): Promise<InventoryReportItem[]> {
   const query = new URLSearchParams();
   if (params?.store && params.store !== "All") query.set("store", params.store);
   if (params?.product && params.product !== "All") query.set("product", params.product);
   if (params?.category && params.category !== "All") query.set("category", params.category);
   if (params?.search) query.set("search", params.search);
+  if (params?.stockStatus && params.stockStatus !== "All") query.set("stockStatus", params.stockStatus);
 
   const res = await fetch(`${API_BASE_URL}/reports/inventory?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];
@@ -1485,12 +1488,13 @@ export async function fetchInventoryReport(params?: { store?: string; product?: 
   return data.items || [];
 }
 
-export async function fetchStockHistoryReport(params?: { store?: string; product?: string; category?: string; search?: string }): Promise<StockHistoryItem[]> {
+export async function fetchStockHistoryReport(params?: { store?: string; product?: string; category?: string; search?: string; type?: string }): Promise<StockHistoryItem[]> {
   const query = new URLSearchParams();
   if (params?.store && params.store !== "All") query.set("store", params.store);
   if (params?.product && params.product !== "All") query.set("product", params.product);
   if (params?.category && params.category !== "All") query.set("category", params.category);
   if (params?.search) query.set("search", params.search);
+  if (params?.type && params.type !== "All") query.set("type", params.type);
 
   const res = await fetch(`${API_BASE_URL}/reports/stock-history?${query.toString()}`, { cache: "no-store" });
   if (!res.ok) return [];

@@ -190,28 +190,53 @@ export const getBestsellerReport = async (req: Request, res: Response) => {
 // GET /api/reports/purchases
 export const getPurchaseReport = async (req: Request, res: Response) => {
   try {
-    const { store, product, search } = req.query;
+    const { supplier, status, search } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") {
-      where.store = String(store);
+    const purchases = await prisma.purchase.findMany({
+      include: {
+        items: true,
+      },
+      orderBy: { date: "desc" },
+    });
+
+    let items = purchases.map((p) => ({
+      id: p.id,
+      reference: p.reference,
+      supplierId: p.supplierId || "-",
+      supplierName: p.supplierName || "ทั่วไป",
+      date: p.date,
+      status: p.status,
+      paymentStatus: p.paymentStatus,
+      total: p.total,
+      paid: p.paid,
+      due: p.due,
+      itemsCount: p.items.length,
+      productName: p.items.map((i: any) => i.productName).join(", ") || "-",
+      sku: p.items[0]?.sku || "-",
+      category: "จัดซื้อวัตถุดิบ/สินค้า",
+      qty: p.items.reduce((s: number, i: any) => s + i.quantity, 0),
+    }));
+
+    if (supplier && supplier !== "All") {
+      items = items.filter(
+        (p) =>
+          p.supplierName.toLowerCase().includes(String(supplier).toLowerCase()) ||
+          p.supplierId.toLowerCase().includes(String(supplier).toLowerCase())
+      );
     }
-    if (product && product !== "All") {
-      where.productName = { contains: String(product) };
+    if (status && status !== "All") {
+      items = items.filter((p) => p.status.toUpperCase() === String(status).toUpperCase());
     }
     if (search) {
-      where.OR = [
-        { reference: { contains: String(search) } },
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-        { category: { contains: String(search) } },
-      ];
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (p) =>
+          p.reference.toLowerCase().includes(q) ||
+          p.supplierName.toLowerCase().includes(q) ||
+          p.productName.toLowerCase().includes(q) ||
+          p.sku.toLowerCase().includes(q)
+      );
     }
-
-    const items = await prisma.purchaseReportItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
-    });
 
     res.json({
       success: true,
@@ -225,24 +250,74 @@ export const getPurchaseReport = async (req: Request, res: Response) => {
 // GET /api/reports/inventory
 export const getInventoryReport = async (req: Request, res: Response) => {
   try {
-    const { store, product, category, search } = req.query;
+    const { store, product, category, search, stockStatus } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") where.store = String(store);
-    if (product && product !== "All") where.productName = { contains: String(product) };
-    if (category && category !== "All") where.category = { contains: String(category) };
-    if (search) {
-      where.OR = [
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-        { category: { contains: String(search) } },
-      ];
+    const products = await prisma.product.findMany({
+      include: {
+        category: true,
+        unit: true,
+        store: true,
+      },
+      orderBy: { name: "asc" },
+    });
+
+    let items = products.map((p) => {
+      const unitName = p.unit?.name || "ชิ้น";
+      const catName = p.category?.name || "ทั่วไป";
+      const unitCost = p.costPrice || p.price || 0;
+      const stockVal = Math.round(p.stock * unitCost);
+
+      return {
+        id: p.id,
+        sku: p.sku,
+        productName: p.name,
+        productImage: p.image || null,
+        category: catName,
+        categoryId: p.categoryId,
+        unit: unitName,
+        instockQty: p.stock,
+        minStock: p.minStockAlert || 0,
+        stockValue: stockVal,
+        store: p.store?.name || "สำนักงานใหญ่",
+        date: p.updatedAt,
+      };
+    });
+
+    if (category && category !== "All") {
+      items = items.filter(
+        (it) =>
+          it.category.toLowerCase().includes(String(category).toLowerCase()) ||
+          it.categoryId === String(category)
+      );
     }
 
-    const items = await prisma.inventoryReportItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
-    });
+    if (product && product !== "All") {
+      items = items.filter(
+        (it) =>
+          it.productName.toLowerCase().includes(String(product).toLowerCase()) ||
+          it.sku.toLowerCase().includes(String(product).toLowerCase())
+      );
+    }
+
+    if (stockStatus && stockStatus !== "All") {
+      if (stockStatus === "low_stock") {
+        items = items.filter((it) => it.instockQty <= it.minStock && it.instockQty > 0);
+      } else if (stockStatus === "out_of_stock") {
+        items = items.filter((it) => it.instockQty <= 0);
+      } else if (stockStatus === "in_stock") {
+        items = items.filter((it) => it.instockQty > it.minStock);
+      }
+    }
+
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.sku.toLowerCase().includes(q) ||
+          it.productName.toLowerCase().includes(q) ||
+          it.category.toLowerCase().includes(q)
+      );
+    }
 
     res.json({
       success: true,
@@ -256,23 +331,67 @@ export const getInventoryReport = async (req: Request, res: Response) => {
 // GET /api/reports/stock-history
 export const getStockHistoryReport = async (req: Request, res: Response) => {
   try {
-    const { store, product, category, search } = req.query;
+    const { store, product, category, search, type } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") where.store = String(store);
-    if (product && product !== "All") where.productName = { contains: String(product) };
-    if (category && category !== "All") where.category = { contains: String(category) };
-    if (search) {
-      where.OR = [
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-      ];
+    const movements = await prisma.stockMovement.findMany({
+      include: {
+        product: {
+          include: { category: true, unit: true },
+        },
+        warehouse: true,
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    let items = movements.map((m) => ({
+      id: m.id,
+      sku: m.product.sku,
+      productName: m.product.name,
+      productImage: m.product.image || null,
+      category: m.product.category?.name || "ทั่วไป",
+      categoryId: m.product.categoryId,
+      reference: m.referenceNo || "-",
+      type: m.type,
+      quantity: m.quantity,
+      balanceAfter: m.balanceAfter,
+      unit: m.product.unit?.name || "ชิ้น",
+      warehouse: m.warehouse?.name || "คลังหลัก",
+      notes: m.notes || "-",
+      createdBy: m.createdBy || "Admin",
+      date: m.createdAt,
+    }));
+
+    if (type && type !== "All") {
+      items = items.filter((it) => it.type === String(type));
     }
 
-    const items = await prisma.stockHistoryItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
-    });
+    if (category && category !== "All") {
+      items = items.filter(
+        (it) =>
+          it.category.toLowerCase().includes(String(category).toLowerCase()) ||
+          it.categoryId === String(category)
+      );
+    }
+
+    if (product && product !== "All") {
+      items = items.filter(
+        (it) =>
+          it.productName.toLowerCase().includes(String(product).toLowerCase()) ||
+          it.sku.toLowerCase().includes(String(product).toLowerCase())
+      );
+    }
+
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.sku.toLowerCase().includes(q) ||
+          it.productName.toLowerCase().includes(q) ||
+          it.reference.toLowerCase().includes(q) ||
+          it.notes.toLowerCase().includes(q) ||
+          it.type.toLowerCase().includes(q)
+      );
+    }
 
     res.json({
       success: true,
@@ -288,21 +407,40 @@ export const getSoldStockReport = async (req: Request, res: Response) => {
   try {
     const { store, product, category, search } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") where.store = String(store);
-    if (product && product !== "All") where.productName = { contains: String(product) };
-    if (category && category !== "All") where.category = { contains: String(category) };
-    if (search) {
-      where.OR = [
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-      ];
-    }
-
-    const items = await prisma.soldStockItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
+    const saleMovements = await prisma.stockMovement.findMany({
+      where: { type: "SALE_ISSUE" },
+      include: {
+        product: { include: { category: true, unit: true } },
+        warehouse: true,
+      },
+      orderBy: { createdAt: "desc" },
     });
+
+    let items = saleMovements.map((m) => ({
+      id: m.id,
+      sku: m.product.sku,
+      productName: m.product.name,
+      productImage: m.product.image || null,
+      category: m.product.category?.name || "ทั่วไป",
+      reference: m.referenceNo || "-",
+      soldQty: Math.abs(m.quantity),
+      unit: m.product.unit?.name || "ชิ้น",
+      balanceAfter: m.balanceAfter,
+      unitCost: m.unitCost || m.product.costPrice || 0,
+      totalAmount: Math.abs(m.quantity) * (m.product.price || 0),
+      warehouse: m.warehouse?.name || "คลังหลัก",
+      date: m.createdAt,
+    }));
+
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.sku.toLowerCase().includes(q) ||
+          it.productName.toLowerCase().includes(q) ||
+          it.reference.toLowerCase().includes(q)
+      );
+    }
 
     res.json({
       success: true,
@@ -318,31 +456,48 @@ export const getInvoiceReport = async (req: Request, res: Response) => {
   try {
     const { customer, status, search } = req.query;
 
-    const where: any = {};
-    if (customer && customer !== "All") where.customer = { contains: String(customer) };
-    if (status && status !== "All") where.status = String(status).toUpperCase();
-    if (search) {
-      where.OR = [
-        { invoiceNo: { contains: String(search) } },
-        { customer: { contains: String(search) } },
-      ];
-    }
-
-    const items = await prisma.invoiceReportItem.findMany({
-      where,
-      orderBy: { invoiceNo: "asc" },
+    const salesOrders = await prisma.salesOrder.findMany({
+      include: { customer: true, items: true },
+      orderBy: { orderDate: "desc" },
     });
 
-    const summary = {
-      totalAmount: "$4,56,000",
-      totalPaid: "$2,56,42",
-      totalUnpaid: "$1,52,45",
-      overdue: "$2,56,12",
-    };
+    let items = salesOrders.map((so) => ({
+      id: so.id,
+      invoiceNo: so.orderNo,
+      customer: so.customer?.name || "ทั่วไป",
+      dueDate: so.dueDate || so.orderDate,
+      totalAmount: so.total,
+      paidAmount: so.paymentStatus === "PAID" ? so.total : 0,
+      dueAmount: so.paymentStatus === "PAID" ? 0 : so.total,
+      status: so.paymentStatus,
+      date: so.orderDate,
+    }));
+
+    if (customer && customer !== "All") {
+      items = items.filter((it) => it.customer.toLowerCase().includes(String(customer).toLowerCase()));
+    }
+    if (status && status !== "All") {
+      items = items.filter((it) => it.status.toUpperCase() === String(status).toUpperCase());
+    }
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) => it.invoiceNo.toLowerCase().includes(q) || it.customer.toLowerCase().includes(q)
+      );
+    }
+
+    const totalAmount = items.reduce((s, it) => s + it.totalAmount, 0);
+    const totalPaid = items.reduce((s, it) => s + it.paidAmount, 0);
+    const totalUnpaid = items.reduce((s, it) => s + it.dueAmount, 0);
 
     res.json({
       success: true,
-      summary,
+      summary: {
+        totalAmount: `฿${totalAmount.toLocaleString()}`,
+        totalPaid: `฿${totalPaid.toLocaleString()}`,
+        totalUnpaid: `฿${totalUnpaid.toLocaleString()}`,
+        overdue: `฿${totalUnpaid.toLocaleString()}`,
+      },
       items,
     });
   } catch (error: any) {
@@ -353,28 +508,47 @@ export const getInvoiceReport = async (req: Request, res: Response) => {
 // GET /api/reports/suppliers
 export const getSupplierReport = async (req: Request, res: Response) => {
   try {
-    const { supplier, status, paymentMethod, search } = req.query;
+    const { supplier, search } = req.query;
 
-    const where: any = {};
-    if (supplier && supplier !== "All") where.supplierName = { contains: String(supplier) };
-    if (status && status !== "All") where.status = String(status).toUpperCase();
-    if (paymentMethod && paymentMethod !== "All") where.paymentMethod = String(paymentMethod);
+    const [suppliers, purchases] = await Promise.all([
+      prisma.supplier.findMany({ orderBy: { name: "asc" } }),
+      prisma.purchase.findMany(),
+    ]);
+
+    let items = suppliers.map((s) => {
+      const suppPurchases = purchases.filter((p) => p.supplierId === s.id || p.supplierName === s.name);
+      const totalPurchases = suppPurchases.reduce((sum: number, p) => sum + p.total, 0);
+      const totalPaid = suppPurchases.reduce((sum: number, p) => sum + (p.paid || 0), 0);
+      const totalDue = suppPurchases.reduce((sum: number, p) => sum + (p.due || 0), 0);
+
+      return {
+        id: s.id,
+        supplierId: s.code || s.id.slice(0, 8),
+        supplierName: s.name,
+        email: s.email || "-",
+        phone: s.phone || "-",
+        purchasesCount: suppPurchases.length,
+        total: totalPurchases,
+        paid: totalPaid,
+        due: totalDue,
+      };
+    });
+
+    if (supplier && supplier !== "All") {
+      items = items.filter((it) => it.supplierName.toLowerCase().includes(String(supplier).toLowerCase()));
+    }
     if (search) {
-      where.OR = [
-        { reference: { contains: String(search) } },
-        { supplierId: { contains: String(search) } },
-        { supplierName: { contains: String(search) } },
-      ];
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) => it.supplierName.toLowerCase().includes(q) || it.supplierId.toLowerCase().includes(q)
+      );
     }
 
-    const items = await prisma.supplierReportItem.findMany({
-      where,
-      orderBy: { supplierId: "asc" },
-    });
+    const grandTotal = items.reduce((sum, it) => sum + it.total, 0);
 
     res.json({
       success: true,
-      total: "$33268.53",
+      total: `฿${grandTotal.toLocaleString()}`,
       items,
     });
   } catch (error: any) {
@@ -385,30 +559,50 @@ export const getSupplierReport = async (req: Request, res: Response) => {
 // GET /api/reports/suppliers/due
 export const getSupplierDueReport = async (req: Request, res: Response) => {
   try {
-    const { supplier, status, reference, search } = req.query;
+    const { supplier, search } = req.query;
 
-    const where: any = {};
-    if (supplier && supplier !== "All") where.supplierName = { contains: String(supplier) };
-    if (status && status !== "All") where.status = String(status).toUpperCase();
-    if (reference) where.reference = { contains: String(reference) };
+    const unpaidPurchases = await prisma.purchase.findMany({
+      where: {
+        paymentStatus: { in: ["UNPAID", "PARTIAL"] },
+        status: { not: "CANCELLED" },
+      },
+      orderBy: { date: "desc" },
+    });
+
+    let items = unpaidPurchases.map((p) => ({
+      id: p.id,
+      reference: p.reference,
+      supplierId: p.supplierId || "-",
+      supplierName: p.supplierName || "ซัพพลายเออร์ทั่วไป",
+      date: p.date,
+      totalAmount: p.total,
+      paid: p.paid || 0,
+      due: p.due || p.total,
+      status: p.paymentStatus,
+    }));
+
+    if (supplier && supplier !== "All") {
+      items = items.filter((it) => it.supplierName.toLowerCase().includes(String(supplier).toLowerCase()));
+    }
     if (search) {
-      where.OR = [
-        { reference: { contains: String(search) } },
-        { supplierId: { contains: String(search) } },
-        { supplierName: { contains: String(search) } },
-      ];
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.reference.toLowerCase().includes(q) ||
+          it.supplierName.toLowerCase().includes(q) ||
+          it.supplierId.toLowerCase().includes(q)
+      );
     }
 
-    const items = await prisma.supplierDueReportItem.findMany({
-      where,
-      orderBy: { supplierId: "asc" },
-    });
+    const totalAmount = items.reduce((s, it) => s + it.totalAmount, 0);
+    const paid = items.reduce((s, it) => s + it.paid, 0);
+    const due = items.reduce((s, it) => s + it.due, 0);
 
     res.json({
       success: true,
-      totalAmount: 33268,
-      paid: "$33268.53",
-      due: "$0.0",
+      totalAmount,
+      paid: `฿${paid.toLocaleString()}`,
+      due: `฿${due.toLocaleString()}`,
       items,
     });
   } catch (error: any) {
@@ -419,28 +613,47 @@ export const getSupplierDueReport = async (req: Request, res: Response) => {
 // GET /api/reports/customers
 export const getCustomerReport = async (req: Request, res: Response) => {
   try {
-    const { customer, paymentMethod, status, search } = req.query;
+    const { customer, search } = req.query;
 
-    const where: any = {};
-    if (customer && customer !== "All") where.customerName = { contains: String(customer) };
-    if (paymentMethod && paymentMethod !== "All") where.paymentMethod = String(paymentMethod);
-    if (status && status !== "All") where.status = String(status).toUpperCase();
+    const customers = await prisma.customer.findMany({
+      include: { salesOrders: true, orders: true },
+      orderBy: { name: "asc" },
+    });
+
+    let items = customers.map((c) => {
+      const soTotal = c.salesOrders.reduce((sum: number, so) => sum + so.total, 0);
+      const posTotal = c.orders.reduce((sum: number, o) => sum + o.total, 0);
+      const totalSpend = soTotal + posTotal;
+
+      return {
+        id: c.id,
+        customerCode: c.code || c.id.slice(0, 8),
+        customerName: c.name,
+        email: c.email || "-",
+        phone: c.phone || "-",
+        creditLimit: c.creditLimit,
+        creditRemaining: Math.max(0, c.creditLimit - c.currentCreditUsed),
+        currentCreditUsed: c.currentCreditUsed,
+        totalOrders: c.salesOrders.length + c.orders.length,
+        total: totalSpend,
+      };
+    });
+
+    if (customer && customer !== "All") {
+      items = items.filter((it) => it.customerName.toLowerCase().includes(String(customer).toLowerCase()));
+    }
     if (search) {
-      where.OR = [
-        { reference: { contains: String(search) } },
-        { customerCode: { contains: String(search) } },
-        { customerName: { contains: String(search) } },
-      ];
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) => it.customerName.toLowerCase().includes(q) || it.customerCode.toLowerCase().includes(q)
+      );
     }
 
-    const items = await prisma.customerReportItem.findMany({
-      where,
-      orderBy: { customerCode: "asc" },
-    });
+    const grandTotal = items.reduce((sum, it) => sum + it.total, 0);
 
     res.json({
       success: true,
-      total: "$33268.53",
+      total: `฿${grandTotal.toLocaleString()}`,
       items,
     });
   } catch (error: any) {
@@ -451,30 +664,56 @@ export const getCustomerReport = async (req: Request, res: Response) => {
 // GET /api/reports/customers/due
 export const getCustomerDueReport = async (req: Request, res: Response) => {
   try {
-    const { customer, paymentMethod, status, search } = req.query;
+    const { customer, search } = req.query;
 
-    const where: any = {};
-    if (customer && customer !== "All") where.customerName = { contains: String(customer) };
-    if (paymentMethod && paymentMethod !== "All") where.paymentMethod = String(paymentMethod);
-    if (status && status !== "All") where.status = String(status).toUpperCase();
+    const customersWithCredit = await prisma.customer.findMany({
+      where: { currentCreditUsed: { gt: 0 } },
+      include: {
+        salesOrders: {
+          where: { paymentStatus: { not: "PAID" }, status: { not: "CANCELLED" } },
+        },
+      },
+      orderBy: { currentCreditUsed: "desc" },
+    });
+
+    let items = customersWithCredit.map((c) => {
+      const latestOrder = c.salesOrders[0];
+      return {
+        id: c.id,
+        reference: latestOrder?.orderNo || `CR-${c.code || "01"}`,
+        customerCode: c.code || c.id.slice(0, 8),
+        customerName: c.name,
+        phone: c.phone || "-",
+        creditLimit: c.creditLimit,
+        creditTermDays: c.creditTermDays,
+        totalAmount: c.creditLimit,
+        paid: Math.max(0, c.creditLimit - c.currentCreditUsed),
+        due: c.currentCreditUsed,
+        status: c.creditLimit > 0 && c.currentCreditUsed > c.creditLimit ? "OVER_LIMIT" : "NORMAL",
+      };
+    });
+
+    if (customer && customer !== "All") {
+      items = items.filter((it) => it.customerName.toLowerCase().includes(String(customer).toLowerCase()));
+    }
     if (search) {
-      where.OR = [
-        { reference: { contains: String(search) } },
-        { customerCode: { contains: String(search) } },
-        { customerName: { contains: String(search) } },
-      ];
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.customerName.toLowerCase().includes(q) ||
+          it.customerCode.toLowerCase().includes(q) ||
+          it.reference.toLowerCase().includes(q)
+      );
     }
 
-    const items = await prisma.customerDueReportItem.findMany({
-      where,
-      orderBy: { customerCode: "asc" },
-    });
+    const totalDue = items.reduce((s, it) => s + it.due, 0);
+    const totalLimit = items.reduce((s, it) => s + it.creditLimit, 0);
 
     res.json({
       success: true,
-      totalAmount: 33268,
-      paid: "$33268.53",
-      due: "$0.0",
+      totalAmount: totalLimit,
+      paid: `฿${Math.max(0, totalLimit - totalDue).toLocaleString()}`,
+      due: `฿${totalDue.toLocaleString()}`,
       items,
     });
   } catch (error: any) {
@@ -487,22 +726,59 @@ export const getProductReport = async (req: Request, res: Response) => {
   try {
     const { store, category, brand, product, search } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") where.store = String(store);
-    if (category && category !== "All") where.category = { contains: String(category) };
-    if (brand && brand !== "All") where.brand = { contains: String(brand) };
-    if (product && product !== "All") where.productName = { contains: String(product) };
-    if (search) {
-      where.OR = [
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-      ];
-    }
-
-    const items = await prisma.productReportItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
+    const products = await prisma.product.findMany({
+      include: { category: true, brand: true, unit: true, store: true },
+      orderBy: { name: "asc" },
     });
+
+    let items = products.map((p) => ({
+      id: p.id,
+      sku: p.sku,
+      productName: p.name,
+      productImage: p.image || null,
+      category: p.category?.name || "ทั่วไป",
+      categoryId: p.categoryId,
+      brand: p.brand?.name || "ทั่วไป",
+      brandId: p.brandId,
+      unit: p.unit?.name || "ชิ้น",
+      price: p.price,
+      cost: p.costPrice || 0,
+      stock: p.stock,
+      minStock: p.minStockAlert || 0,
+      store: p.store?.name || "สำนักงานใหญ่",
+    }));
+
+    if (category && category !== "All") {
+      items = items.filter(
+        (it) =>
+          it.category.toLowerCase().includes(String(category).toLowerCase()) ||
+          it.categoryId === String(category)
+      );
+    }
+    if (brand && brand !== "All") {
+      items = items.filter(
+        (it) =>
+          it.brand.toLowerCase().includes(String(brand).toLowerCase()) ||
+          it.brandId === String(brand)
+      );
+    }
+    if (product && product !== "All") {
+      items = items.filter(
+        (it) =>
+          it.productName.toLowerCase().includes(String(product).toLowerCase()) ||
+          it.sku.toLowerCase().includes(String(product).toLowerCase())
+      );
+    }
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.sku.toLowerCase().includes(q) ||
+          it.productName.toLowerCase().includes(q) ||
+          it.category.toLowerCase().includes(q) ||
+          it.brand.toLowerCase().includes(q)
+      );
+    }
 
     res.json({
       success: true,
@@ -518,22 +794,36 @@ export const getProductExpiryReport = async (req: Request, res: Response) => {
   try {
     const { store, category, brand, product, search } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") where.store = String(store);
-    if (category && category !== "All") where.category = { contains: String(category) };
-    if (brand && brand !== "All") where.brand = { contains: String(brand) };
-    if (product && product !== "All") where.productName = { contains: String(product) };
-    if (search) {
-      where.OR = [
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-      ];
-    }
-
-    const items = await prisma.productExpiryReportItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
+    const products = await prisma.product.findMany({
+      where: {
+        expiredDate: { not: null },
+      },
+      include: { category: true, brand: true, unit: true },
+      orderBy: { expiredDate: "asc" },
     });
+
+    let items = products.map((p) => ({
+      id: p.id,
+      sku: p.sku,
+      productName: p.name,
+      productImage: p.image || null,
+      category: p.category?.name || "ทั่วไป",
+      brand: p.brand?.name || "ทั่วไป",
+      unit: p.unit?.name || "ชิ้น",
+      instockQty: p.stock,
+      expiryDate: p.expiredDate,
+      manufacturedDate: p.createdAt,
+    }));
+
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.sku.toLowerCase().includes(q) ||
+          it.productName.toLowerCase().includes(q) ||
+          it.category.toLowerCase().includes(q)
+      );
+    }
 
     res.json({
       success: true,
@@ -549,22 +839,50 @@ export const getProductQuantityAlertReport = async (req: Request, res: Response)
   try {
     const { store, category, brand, product, search } = req.query;
 
-    const where: any = {};
-    if (store && store !== "All") where.store = String(store);
-    if (category && category !== "All") where.category = { contains: String(category) };
-    if (brand && brand !== "All") where.brand = { contains: String(brand) };
-    if (product && product !== "All") where.productName = { contains: String(product) };
-    if (search) {
-      where.OR = [
-        { sku: { contains: String(search) } },
-        { productName: { contains: String(search) } },
-      ];
-    }
-
-    const items = await prisma.productQuantityAlertItem.findMany({
-      where,
-      orderBy: { sku: "asc" },
+    const products = await prisma.product.findMany({
+      include: { category: true, brand: true, unit: true },
+      orderBy: { stock: "asc" },
     });
+
+    // Filter products where stock <= minStockAlert
+    let alertProducts = products.filter(
+      (p) => p.stock <= (p.minStockAlert || 0) || p.stock === 0
+    );
+
+    let items = alertProducts.map((p) => ({
+      id: p.id,
+      sku: p.sku,
+      serialNo: p.barcode || p.sku,
+      productName: p.name,
+      productImage: p.image || null,
+      category: p.category?.name || "ทั่วไป",
+      categoryId: p.categoryId,
+      brand: p.brand?.name || "ทั่วไป",
+      unit: p.unit?.name || "ชิ้น",
+      currentStock: p.stock,
+      totalQuantity: p.stock,
+      minStockAlert: p.minStockAlert || 0,
+      alertQuantity: p.minStockAlert || 0,
+      shortage: Math.max(0, (p.minStockAlert || 0) - p.stock),
+      costPrice: p.costPrice || 0,
+    }));
+
+    if (category && category !== "All") {
+      items = items.filter(
+        (it) =>
+          it.category.toLowerCase().includes(String(category).toLowerCase()) ||
+          it.categoryId === String(category)
+      );
+    }
+    if (search) {
+      const q = String(search).toLowerCase();
+      items = items.filter(
+        (it) =>
+          it.sku.toLowerCase().includes(q) ||
+          it.productName.toLowerCase().includes(q) ||
+          it.category.toLowerCase().includes(q)
+      );
+    }
 
     res.json({
       success: true,

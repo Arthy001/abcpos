@@ -281,16 +281,24 @@ export interface SalesReportSummary {
 export interface PurchaseReportItem {
   id: string;
   reference: string;
-  sku: string;
-  dueDate: string;
+  sku?: string;
+  dueDate?: string;
   productName: string;
   productImage?: string | null;
-  category: string;
-  instockQty: number;
-  purchaseQty: number;
-  purchaseAmount: number;
+  category?: string;
+  instockQty?: number;
+  purchaseQty?: number;
+  purchaseAmount?: number;
   store?: string;
   date?: string;
+  supplierName?: string;
+  supplierId?: string;
+  status?: string;
+  paymentStatus?: string;
+  total?: number;
+  paid?: number;
+  due?: number;
+  itemsCount?: number;
 }
 
 export interface InventoryReportItem {
@@ -312,14 +320,22 @@ export interface StockHistoryItem {
   sku: string;
   productName: string;
   productImage?: string | null;
-  initialQuantity: number;
-  addedQuantity: number;
-  soldQuantity: number;
-  defectiveQuantity: number;
-  finalQuantity: number;
+  initialQuantity?: number;
+  addedQuantity?: number;
+  soldQuantity?: number;
+  defectiveQuantity?: number;
+  finalQuantity?: number;
   category?: string;
   store?: string;
   date?: string;
+  reference?: string;
+  type?: string;
+  quantity?: number;
+  balanceAfter?: number;
+  unit?: string;
+  warehouse?: string;
+  notes?: string;
+  createdBy?: string;
 }
 
 export interface SoldStockItem {
@@ -407,12 +423,17 @@ export interface ProductReportItem {
   productImage?: string | null;
   category: string;
   brand: string;
-  qty: number;
+  qty?: number;
   price: number;
-  totalOrdered: number;
-  revenue: number;
+  totalOrdered?: number;
+  revenue?: number;
   store?: string;
   date?: string;
+  unit?: string;
+  stock?: number;
+  instockQty?: number;
+  cost?: number;
+  minStock?: number;
 }
 
 export interface ProductExpiryReportItem {

@@ -1,44 +1,55 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { ProductQuantityAlertItem } from "@/types";
-import { fetchProductQuantityAlertReport } from "@/lib/api";
+import { ProductQuantityAlertItem, Category, Brand } from "@/types";
+import { fetchProductQuantityAlertReport, fetchCategories, fetchBrands } from "@/lib/api";
+import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   RotateCcw,
-  ChevronUp,
-  ChevronDown,
-  Calendar,
+  Search,
   Printer,
+  FileSpreadsheet,
+  AlertTriangle,
+  ChevronLeft,
+  ChevronRight,
+  Package,
+  TrendingDown,
+  ShieldAlert,
 } from "lucide-react";
 
 export default function ProductQuantityAlertPage() {
   const router = useRouter();
   const [items, setItems] = useState<ProductQuantityAlertItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [brands, setBrands] = useState<Brand[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [selectedStore, setSelectedStore] = useState<string>("All");
+
+  // Filters
+  const [search, setSearch] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [selectedBrand, setSelectedBrand] = useState<string>("All");
-  const [selectedProduct, setSelectedProduct] = useState<string>("All");
-  const [dateRange, setDateRange] = useState<string>("15/08/2026 - 21/08/2026");
+
+  // Pagination
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const data = await fetchProductQuantityAlertReport({
-        store: selectedStore,
-        category: selectedCategory,
-        brand: selectedBrand,
-        product: selectedProduct,
-      });
-      if (data && data.length > 0) {
-        setItems(data);
-      } else {
-        setItems([]);
-      }
+      const [reportData, catData, brandData] = await Promise.all([
+        fetchProductQuantityAlertReport({
+          category: selectedCategory !== "All" ? selectedCategory : undefined,
+          brand: selectedBrand !== "All" ? selectedBrand : undefined,
+          search: search.trim() || undefined,
+        }),
+        fetchCategories(),
+        fetchBrands(),
+      ]);
+      setItems(reportData || []);
+      setCategories(catData || []);
+      setBrands(brandData || []);
     } catch (e) {
       setItems([]);
     } finally {
@@ -48,345 +59,431 @@ export default function ProductQuantityAlertPage() {
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [selectedCategory, selectedBrand]);
 
-  const handleGenerateReport = () => {
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setCurrentPage(1);
     loadData();
   };
 
-  const displayList = items || [];
-  const totalEntries = displayList.length;
+  // KPI Calculations
+  const summary = useMemo(() => {
+    const totalAlertItems = items.length;
+    let outOfStockCount = 0;
+    let totalShortage = 0;
+
+    items.forEach((it) => {
+      if ((it.totalQuantity || 0) <= 0) {
+        outOfStockCount++;
+      }
+      const shortage = Math.max(0, (it.alertQuantity || 0) - (it.totalQuantity || 0));
+      totalShortage += shortage;
+    });
+
+    return {
+      totalAlertItems,
+      outOfStockCount,
+      totalShortage,
+    };
+  }, [items]);
+
+  // Client-side search filtering
+  const filteredList = useMemo(() => {
+    if (!search.trim()) return items;
+    const q = search.toLowerCase();
+    return items.filter(
+      (it) =>
+        it.productName.toLowerCase().includes(q) ||
+        it.sku.toLowerCase().includes(q) ||
+        (it.serialNo && it.serialNo.toLowerCase().includes(q)) ||
+        (it.category && it.category.toLowerCase().includes(q))
+    );
+  }, [items, search]);
+
+  const totalEntries = filteredList.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
-  const paginatedList = displayList.slice(
+  const paginatedList = filteredList.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
   );
 
   const handleExportCSV = () => {
-    const headers = ["SKU,Serial No,Product Name,Total Quantity,Alert Quantity"];
-    const rows = displayList.map(
-      (item) => `"${item.sku}","${item.serialNo}","${item.productName}","${item.totalQuantity}","${item.alertQuantity}"`
-    );
-    const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
+    if (filteredList.length === 0) return;
+    const headers = [
+      "SKU",
+      "Barcode/Serial",
+      "Product Name",
+      "Category",
+      "Current Stock",
+      "Min Stock Alert",
+      "Shortage Qty",
+      "Status",
+    ];
+
+    const rows = filteredList.map((item) => {
+      const stock = item.totalQuantity || 0;
+      const minStock = item.alertQuantity || 0;
+      const shortage = Math.max(0, minStock - stock);
+      const status = stock <= 0 ? "Out of Stock" : "Low Stock";
+
+      return [
+        `"${item.sku}"`,
+        `"${item.serialNo || "-"}"`,
+        `"${item.productName.replace(/"/g, '""')}"`,
+        `"${item.category || "-"}"`,
+        stock,
+        minStock,
+        shortage,
+        status,
+      ];
+    });
+
+    const csvContent =
+      "data:text/csv;charset=utf-8,\uFEFF" +
+      [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `product_quantity_alert_${new Date().toISOString().slice(0, 10)}.csv`);
+    link.setAttribute(
+      "download",
+      `product_quantity_alert_${new Date().toISOString().slice(0, 10)}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
+  const categoryOptions = useMemo(() => {
+    return categories.map((c) => ({ value: c.name, label: c.name }));
+  }, [categories]);
+
+  const brandOptions = useMemo(() => {
+    return brands.map((b) => ({ value: b.name, label: b.name }));
+  }, [brands]);
 
   return (
     <AppLayout>
-      <div className="space-y-4">
+      <div className="space-y-5 p-6 max-w-[1600px] mx-auto">
         {/* Top Tab Bar Navigation */}
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 pb-3">
           <button
             onClick={() => router.push("/reports/products")}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#E2E8F0] text-[#64748B] hover:bg-gray-200 transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-semibold bg-gray-100 text-gray-600 hover:bg-gray-200 transition-all cursor-pointer"
           >
-            Product Report
-          </button>
-          <button
-            onClick={() => router.push("/reports/products/expiry")}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#E2E8F0] text-[#64748B] hover:bg-gray-200 transition-all cursor-pointer"
-          >
-            Product Expiry Report
+            Product Report (รายงานสินค้าทั้งหมด)
           </button>
           <button
             onClick={() => router.push("/reports/products/quantity-alert")}
-            className="px-4 py-1.5 rounded-lg text-xs font-semibold bg-[#FE9F43] text-white shadow-xs transition-all cursor-pointer"
+            className="px-4 py-2 rounded-xl text-xs font-bold bg-[#FE9F43] text-white shadow-xs transition-all cursor-pointer"
           >
-            Product Quantity Alert
+            Quantity Alert (สินค้าถึงจุดเตือนสั่งซื้อ)
           </button>
         </div>
 
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-xl font-bold text-[#1E293B] tracking-tight">Product Quantity Alert</h1>
-            <p className="text-xs text-[#64748B] mt-0.5">View Reports of Products</p>
+            <h1 className="text-2xl font-bold text-gray-900 tracking-tight">
+              Product Quantity Alert (รายงานสินค้าและวัตถุดิบใกล้หมด)
+            </h1>
+            <p className="text-xs text-gray-500 mt-1">
+              รายการสินค้าและวัตถุดิบที่มีสต็อกคงเหลือต่ำกว่าหรือเท่ากับจุดเตือนสั่งซื้อ (Min Stock Alert)
+            </p>
           </div>
 
-          <div className="flex items-center space-x-2">
-            {/* Refresh */}
+          <div className="flex items-center space-x-2.5">
             <button
-              title="Refresh"
+              onClick={() => window.print()}
+              title="พิมพ์รายงาน PDF"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-xs"
+            >
+              <Printer className="w-3.5 h-3.5 text-gray-500" />
+              <span>Print</span>
+            </button>
+            <button
+              onClick={handleExportCSV}
+              title="ส่งออก CSV"
+              className="inline-flex items-center gap-1.5 px-3 py-2 bg-white border border-gray-300 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition shadow-xs"
+            >
+              <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
+              <span>Export CSV</span>
+            </button>
+            <button
+              title="รีเฟรชข้อมูล"
               onClick={loadData}
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
+              className="p-2 rounded-lg bg-white hover:bg-gray-50 text-gray-600 transition border border-gray-300 shadow-xs"
             >
               <RotateCcw className={`w-3.5 h-3.5 ${loading ? "animate-spin text-[#FE9F43]" : ""}`} />
-            </button>
-
-            {/* Collapse */}
-            <button
-              title="Collapse"
-              className="w-8 h-8 rounded-lg bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
-            >
-              <ChevronUp className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
 
-        {/* Filter Box */}
-        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs p-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-6 gap-3 items-end">
-            {/* Choose Date */}
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-xl border border-rose-200 bg-rose-50/20 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-rose-700 uppercase tracking-wider block">
+                รายการที่ต้องสั่งซื้อด่วน (Alert Items)
+              </span>
+              <p className="text-xl font-bold text-rose-700 mt-1">
+                {summary.totalAlertItems} <span className="text-xs font-normal text-rose-500">รายการ</span>
+              </p>
+            </div>
+            <div className="p-2.5 bg-rose-100 text-rose-600 rounded-xl">
+              <AlertTriangle className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-amber-200 bg-amber-50/20 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wider block">
+                สินค้าหมดสต็อก (Out of Stock)
+              </span>
+              <p className="text-xl font-bold text-amber-700 mt-1">
+                {summary.outOfStockCount} <span className="text-xs font-normal text-amber-500">รายการ</span>
+              </p>
+            </div>
+            <div className="p-2.5 bg-amber-100 text-amber-700 rounded-xl">
+              <ShieldAlert className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-blue-200 bg-blue-50/20 shadow-xs flex items-center justify-between">
+            <div>
+              <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wider block">
+                ปริมาณที่ขาดแคลนรวม (Shortage)
+              </span>
+              <p className="text-xl font-bold text-blue-800 mt-1">
+                {summary.totalShortage.toLocaleString()}{" "}
+                <span className="text-xs font-normal text-blue-500">หน่วย/กก.</span>
+              </p>
+            </div>
+            <div className="p-2.5 bg-blue-100 text-blue-600 rounded-xl">
+              <TrendingDown className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+
+        {/* Filter Box with SearchableSelect */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-4">
+          <form onSubmit={handleSearchSubmit} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end">
+            {/* Search */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#1E293B]">Choose Date</label>
-              <div className="relative flex items-center border border-[#E5E7EB] rounded-lg px-3 py-2 bg-white">
-                <Calendar className="w-4 h-4 text-[#9CA3AF] mr-2 shrink-0" />
+              <label className="text-xs font-semibold text-gray-700">ค้นหา (Search SKU / Name)</label>
+              <div className="relative flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white focus-within:ring-2 focus-within:ring-[#FE9F43] h-10">
+                <Search className="w-4 h-4 text-gray-400 mr-2 shrink-0" />
                 <input
                   type="text"
-                  value={dateRange}
-                  onChange={(e) => setDateRange(e.target.value)}
-                  className="w-full bg-transparent text-xs text-[#374151] focus:outline-none"
+                  placeholder="พิมพ์ชื่อสินค้า, บาร์โค้ด หรือ SKU..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="w-full bg-transparent text-xs text-gray-800 focus:outline-none"
                 />
               </div>
             </div>
 
-            {/* Store */}
+            {/* Category SearchableSelect */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#1E293B]">Store</label>
-              <div className="relative">
-                <select
-                  value={selectedStore}
-                  onChange={(e) => setSelectedStore(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="All">All</option>
-                  <option value="Store 1">Store 1</option>
-                  <option value="Store 2">Store 2</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] absolute right-3 top-3 pointer-events-none" />
-              </div>
+              <label className="text-xs font-semibold text-gray-700">หมวดหมู่ (Category)</label>
+              <SearchableSelect
+                options={categoryOptions}
+                value={selectedCategory}
+                onChange={(val) => {
+                  setSelectedCategory(val || "All");
+                  setCurrentPage(1);
+                }}
+                placeholder="เลือกหมวดหมู่สินค้า..."
+                showAllOption={true}
+                allOptionLabel="ทุกหมวดหมู่ (All Categories)"
+                showSelectOption={false}
+                size="md"
+              />
             </div>
 
-            {/* Category */}
+            {/* Brand SearchableSelect */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#1E293B]">Category</label>
-              <div className="relative">
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="All">All</option>
-                  <option value="Computers">Computers</option>
-                  <option value="Electronics">Electronics</option>
-                  <option value="Shoe">Shoe</option>
-                  <option value="Furniture">Furniture</option>
-                  <option value="Bags">Bags</option>
-                  <option value="Phone">Phone</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] absolute right-3 top-3 pointer-events-none" />
-              </div>
+              <label className="text-xs font-semibold text-gray-700">แบรนด์ / ยี่ห้อ (Brand)</label>
+              <SearchableSelect
+                options={brandOptions}
+                value={selectedBrand}
+                onChange={(val) => {
+                  setSelectedBrand(val || "All");
+                  setCurrentPage(1);
+                }}
+                placeholder="เลือกแบรนด์สินค้า..."
+                showAllOption={true}
+                allOptionLabel="ทุกแบรนด์ (All Brands)"
+                showSelectOption={false}
+                size="md"
+              />
             </div>
 
-            {/* Brand */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#1E293B]">Brand</label>
-              <div className="relative">
-                <select
-                  value={selectedBrand}
-                  onChange={(e) => setSelectedBrand(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="All">All</option>
-                  <option value="Lenovo">Lenovo</option>
-                  <option value="Beats">Beats</option>
-                  <option value="Nike">Nike</option>
-                  <option value="Apple">Apple</option>
-                  <option value="Amazon">Amazon</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] absolute right-3 top-3 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Product */}
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-[#1E293B]">Product</label>
-              <div className="relative">
-                <select
-                  value={selectedProduct}
-                  onChange={(e) => setSelectedProduct(e.target.value)}
-                  className="w-full appearance-none bg-white border border-[#E5E7EB] rounded-lg px-3 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
-                >
-                  <option value="All">All</option>
-                  <option value="Lenovo IdeaPad 3">Lenovo IdeaPad 3</option>
-                  <option value="Beats Pro">Beats Pro</option>
-                  <option value="Nike Jordan">Nike Jordan</option>
-                  <option value="Apple Series 5 Watch">Apple Series 5 Watch</option>
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-[#9CA3AF] absolute right-3 top-3 pointer-events-none" />
-              </div>
-            </div>
-
-            {/* Generate Report Button */}
-            <div>
+            {/* Action Buttons */}
+            <div className="flex gap-2">
               <button
-                onClick={handleGenerateReport}
-                className="w-full py-2 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs active:scale-98 transition-all cursor-pointer"
+                type="submit"
+                className="flex-1 h-10 bg-[#FE9F43] hover:bg-[#E88B32] text-white rounded-lg text-xs font-bold shadow-xs transition cursor-pointer"
               >
-                Generate Report
+                ค้นหา
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setSelectedCategory("All");
+                  setSelectedBrand("All");
+                  setCurrentPage(1);
+                }}
+                className="px-3 h-10 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium transition cursor-pointer"
+              >
+                ล้างตัวกรอง
               </button>
             </div>
-          </div>
+          </form>
         </div>
 
-        {/* Table Container */}
-        <div className="bg-white rounded-xl border border-[#E9ECEF] shadow-xs overflow-hidden p-5 space-y-4">
-          {/* Table Header & Export Buttons */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-[#F1F3F5]">
-            <h2 className="text-sm font-bold text-[#1E293B]">Product Quantity Alert</h2>
-
-            <div className="flex items-center space-x-2">
-              {/* PDF Export Button (Red) */}
-              <button
-                onClick={handlePrint}
-                title="Export PDF"
-                className="w-7 h-7 rounded bg-[#FF4D4F]/10 hover:bg-[#FF4D4F]/20 text-[#FF4D4F] flex items-center justify-center transition-colors border border-[#FF4D4F]/20 shadow-2xs"
-              >
-                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-9.5 8.5h-1v-2h1c.55 0 1 .45 1 1s-.45 1-1 1zm5.5 0c0 .55-.45 1-1 1h-2v-4h2c.55 0 1 .45 1 1v2zm-2.5-1h1v-1h-1v1z" />
-                </svg>
-              </button>
-
-              {/* Excel Export Button (Green) */}
-              <button
-                onClick={handleExportCSV}
-                title="Export Excel"
-                className="w-7 h-7 rounded bg-[#52C41A]/10 hover:bg-[#52C41A]/20 text-[#52C41A] flex items-center justify-center transition-colors border border-[#52C41A]/20 shadow-2xs"
-              >
-                <svg className="w-3.5 h-3.5 fill-current" viewBox="0 0 24 24">
-                  <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-2.5-4.5L7 17H4.5l3.5-5.5L4.8 6h2.5l2.2 4.2L11.7 6h2.5l-3.2 5.5 3.5 5.5H12z" />
-                </svg>
-              </button>
-
-              {/* Print */}
-              <button
-                onClick={handlePrint}
-                title="Print"
-                className="w-7 h-7 rounded bg-white hover:bg-gray-50 text-[#6B7280] flex items-center justify-center transition-colors border border-[#E5E7EB] shadow-2xs"
-              >
-                <Printer className="w-3.5 h-3.5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Table */}
-          <div className="overflow-x-auto -mx-4 sm:mx-0 px-4 sm:px-0">
-            <table className="w-full text-left text-xs min-w-[850px]">
-              <thead className="border-b border-[#F1F3F5] text-[#111827] bg-white">
+        {/* Table */}
+        <div className="bg-white rounded-xl border border-gray-200 shadow-xs overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs min-w-[850px] border-collapse">
+              <thead className="border-b border-gray-200 bg-gray-50 text-gray-700">
                 <tr>
-                  <th className="py-3 px-4 font-bold text-[#111827]">SKU</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Serial No</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Product Name</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Total Quantity</th>
-                  <th className="py-3 px-4 font-bold text-[#111827]">Alert Quantity</th>
+                  <th className="py-3 px-4 font-bold">SKU</th>
+                  <th className="py-3 px-4 font-bold">บาร์โค้ด</th>
+                  <th className="py-3 px-4 font-bold">ชื่อสินค้า / วัตถุดิบ</th>
+                  <th className="py-3 px-4 font-bold">หมวดหมู่</th>
+                  <th className="py-3 px-4 font-bold text-right">สต็อกปัจจุบัน</th>
+                  <th className="py-3 px-4 font-bold text-right">จุดเตือนสั่งซื้อ</th>
+                  <th className="py-3 px-4 font-bold text-right text-rose-600">ขาดแคลน</th>
+                  <th className="py-3 px-4 font-bold text-center">สถานะ</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#F8F9FA]">
-                {paginatedList.map((item) => {
-                  return (
-                    <tr key={item.id} className="hover:bg-[#F9FAFB] transition-colors">
-                      {/* SKU */}
-                      <td className="py-3.5 px-4 text-[#64748B] font-medium">{item.sku}</td>
+              <tbody className="divide-y divide-gray-100">
+                {loading ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-gray-500">
+                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-[#FE9F43] border-t-transparent mb-2" />
+                      <p>กำลังโหลดรายงานสินค้าใกล้หมด...</p>
+                    </td>
+                  </tr>
+                ) : paginatedList.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-gray-500">
+                      <Package className="w-10 h-10 text-emerald-500 mx-auto mb-2" />
+                      <p className="text-sm font-semibold text-gray-700">ไม่มีสินค้าที่ถึงจุดเตือนสั่งซื้อ</p>
+                      <p className="text-xs text-gray-400 mt-1">สต็อกสินค้าและวัตถุดิบทั้งหมดอยู่ในเกณฑ์ปกติ</p>
+                    </td>
+                  </tr>
+                ) : (
+                  paginatedList.map((item) => {
+                    const current = item.totalQuantity || 0;
+                    const alertQty = item.alertQuantity || 0;
+                    const shortage = Math.max(0, alertQty - current);
+                    const isOut = current <= 0;
 
-                      {/* Serial No */}
-                      <td className="py-3.5 px-4 text-[#64748B]">{item.serialNo}</td>
-
-                      {/* Product Name with Thumbnail */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center space-x-3">
-                          <img
-                            src={item.productImage || "/assets/images/product-01.jpg"}
-                            alt={item.productName}
-                            className="w-8 h-8 rounded-lg object-cover border border-gray-200"
-                          />
-                          <span className="font-medium text-[#1E293B]">{item.productName}</span>
-                        </div>
-                      </td>
-
-                      {/* Total Quantity */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">{item.totalQuantity}</td>
-
-                      {/* Alert Quantity */}
-                      <td className="py-3.5 px-4 text-[#EA5455] font-semibold">{item.alertQuantity}</td>
-                    </tr>
-                  );
-                })}
+                    return (
+                      <tr key={item.id} className="hover:bg-gray-50/80 transition-colors">
+                        <td className="py-3 px-4 font-mono font-medium text-gray-600">{item.sku}</td>
+                        <td className="py-3 px-4 font-mono text-gray-500">{item.serialNo || "-"}</td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center text-gray-400 font-bold shrink-0 overflow-hidden">
+                              {item.productImage ? (
+                                <img
+                                  src={item.productImage}
+                                  alt={item.productName}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : (
+                                <Package className="w-4 h-4 text-gray-400" />
+                              )}
+                            </div>
+                            <span className="font-semibold text-gray-900">{item.productName}</span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">
+                          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[11px]">
+                            {item.category || "-"}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-gray-900">
+                          {current.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-semibold text-gray-600">
+                          {alertQty.toLocaleString()}
+                        </td>
+                        <td className="py-3 px-4 text-right font-bold text-rose-600">
+                          {shortage > 0 ? (
+                            <span className="bg-rose-50 px-2 py-0.5 rounded border border-rose-200">
+                              -{shortage.toLocaleString()}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          {isOut ? (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700 border border-rose-200">
+                              สินค้าหมด (Out of Stock)
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700 border border-amber-200">
+                              ถึงจุดเตือน (Low Stock)
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
           </div>
 
           {/* Table Pagination Footer */}
-          <div className="flex flex-col sm:flex-row items-center justify-between px-1 pt-3 text-xs text-[#64748B] gap-3 border-t border-[#F1F3F5]">
-            <div className="flex items-center space-x-2">
-              <span>Row Per Page</span>
-              <div className="relative">
+          {!loading && filteredList.length > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 gap-3">
+              <div className="flex items-center space-x-2">
+                <span>แสดง</span>
                 <select
                   value={pageSize}
                   onChange={(e) => {
                     setPageSize(Number(e.target.value));
                     setCurrentPage(1);
                   }}
-                  className="appearance-none bg-white border border-[#E2E8F0] rounded pl-2.5 pr-6 py-1 text-xs text-[#334155] focus:outline-none cursor-pointer"
+                  className="bg-white border border-gray-300 rounded px-2 py-1 text-xs focus:outline-none"
                 >
-                  <option value={10}>10</option>
-                  <option value={25}>25</option>
-                  <option value={50}>50</option>
+                  <option value={10}>10 รายการ</option>
+                  <option value={25}>25 รายการ</option>
+                  <option value={50}>50 รายการ</option>
                 </select>
-                <ChevronDown className="w-3 h-3 text-[#94A3B8] absolute right-1.5 top-2 pointer-events-none" />
+                <span>
+                  จากทั้งหมด {totalEntries} รายการ (หน้า {currentPage} / {totalPages})
+                </span>
               </div>
-              <span>Entries</span>
-            </div>
 
-            <div className="flex items-center space-x-1.5">
-              <button
-                disabled={currentPage === 1}
-                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${
-                  currentPage === 1
-                    ? "text-[#CBD5E1] cursor-not-allowed"
-                    : "hover:bg-gray-100 text-[#64748B]"
-                }`}
-              >
-                &lt;
-              </button>
-
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+              <div className="flex items-center space-x-1.5">
                 <button
-                  key={pg}
-                  onClick={() => setCurrentPage(pg)}
-                  className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium transition-all ${
-                    currentPage === pg
-                      ? "bg-[#FE9F43] text-white font-bold shadow-xs"
-                      : "hover:bg-gray-100 text-[#64748B]"
-                  }`}
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  className="p-1.5 border border-gray-300 rounded bg-white disabled:opacity-40 hover:bg-gray-100 transition"
                 >
-                  {pg}
+                  <ChevronLeft className="w-3.5 h-3.5" />
                 </button>
-              ))}
-
-              <button
-                disabled={currentPage === totalPages}
-                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                className={`w-6 h-6 rounded flex items-center justify-center transition-colors ${
-                  currentPage === totalPages
-                    ? "text-[#CBD5E1] cursor-not-allowed"
-                    : "hover:bg-gray-100 text-[#64748B]"
-                }`}
-              >
-                &gt;
-              </button>
+                <button
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  className="p-1.5 border border-gray-300 rounded bg-white disabled:opacity-40 hover:bg-gray-100 transition"
+                >
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </AppLayout>
