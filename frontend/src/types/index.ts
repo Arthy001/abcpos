@@ -590,6 +590,11 @@ export interface Customer {
   country?: string | null;
   city?: string | null;
   address?: string | null;
+  taxId?: string | null;
+  branchNo?: string | null;
+  creditLimit?: number;
+  creditTermDays?: number;
+  currentCreditUsed?: number;
   points: number;
   status: "ACTIVE" | "INACTIVE";
   createdAt?: string;
@@ -1404,4 +1409,59 @@ export interface WorkOrder {
   scraps?: ProductionScrap[];
   createdAt?: string;
   updatedAt?: string;
+}
+
+
+// ==========================================
+// 🚚 B2B WHOLESALE & CREDIT MANAGEMENT INTERFACES
+// ==========================================
+
+export interface SalesOrderItem {
+  id?: string;
+  salesOrderId?: string;
+  productId?: string | null;
+  product?: Product | null;
+  productName: string;
+  sku?: string | null;
+  quantity: number;
+  unit: string;
+  unitPrice: number;
+  discount: number;
+  subtotal: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface SalesOrder {
+  id: string;
+  orderNo: string;
+  customerId: string;
+  customer?: Customer;
+  customerName: string;
+  orderDate: string;
+  deliveryDate?: string | null;
+  creditTermDays: number;
+  dueDate?: string | null;
+  subtotal: number;
+  tax: number;
+  discount: number;
+  shippingFee: number;
+  total: number;
+  status: "DRAFT" | "CONFIRMED" | "SHIPPED" | "COMPLETED" | "CANCELLED" | string;
+  paymentStatus: "UNPAID" | "PARTIAL" | "PAID" | string;
+  deliveryAddress?: string | null;
+  salesPerson?: string | null;
+  notes?: string | null;
+  items?: SalesOrderItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface CustomerCreditSummary {
+  creditLimit: number;
+  currentCreditUsed: number;
+  remainingCredit: number;
+  creditTermDays: number;
+  isOverLimit: boolean;
+  unpaidOrders?: SalesOrder[];
 }

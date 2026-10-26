@@ -621,25 +621,32 @@ model Product {
   workOrdersFinished WorkOrder[]       @relation("FinishedProductWO")
   workOrderMaterials WorkOrderMaterial[] @relation("RawMaterialWO")
   productionScraps ProductionScrap[]   @relation("ScrapRecycledProduct")
+  salesOrderItems  SalesOrderItem[]
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
 
 model Customer {
-  id          String   @id @default(uuid())
-  code        String?  @unique
-  name        String
-  phone       String?
-  email       String?
-  avatar      String?
-  country     String?
-  city        String?
-  address     String?
-  points      Int      @default(0)
-  status      String   @default("ACTIVE") // ACTIVE, INACTIVE
-  orders      Order[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id                String       @id @default(uuid())
+  code              String?      @unique
+  name              String
+  phone             String?
+  email             String?
+  avatar            String?
+  country           String?
+  city              String?
+  address           String?
+  taxId             String?
+  branchNo          String?      @default("00000")
+  creditLimit       Float        @default(0.0)
+  creditTermDays    Int          @default(0)
+  currentCreditUsed Float        @default(0.0)
+  points            Int          @default(0)
+  status            String       @default("ACTIVE") // ACTIVE, INACTIVE
+  orders            Order[]
+  salesOrders       SalesOrder[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
 }
 
 model Order {
@@ -1618,4 +1625,51 @@ model ProductionScrap {
   notes               String?
   createdAt           DateTime   @default(now())
   updatedAt           DateTime   @updatedAt
+}
+
+
+// ==========================================
+// 🚚 B2B WHOLESALE & CREDIT MANAGEMENT
+// ==========================================
+
+model SalesOrder {
+  id              String           @id @default(uuid())
+  orderNo         String           @unique
+  customerId      String
+  customer        Customer         @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  customerName    String
+  orderDate       DateTime         @default(now())
+  deliveryDate    DateTime?
+  creditTermDays  Int              @default(0)
+  dueDate         DateTime?
+  subtotal        Float            @default(0.0)
+  tax             Float            @default(0.0)
+  discount        Float            @default(0.0)
+  shippingFee     Float            @default(0.0)
+  total           Float            @default(0.0)
+  status          String           @default("CONFIRMED") // DRAFT, CONFIRMED, SHIPPED, COMPLETED, CANCELLED
+  paymentStatus   String           @default("UNPAID") // UNPAID, PARTIAL, PAID
+  deliveryAddress String?
+  salesPerson     String?          @default("Admin")
+  notes           String?
+  items           SalesOrderItem[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+}
+
+model SalesOrderItem {
+  id           String     @id @default(uuid())
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id], onDelete: Cascade)
+  productId    String?
+  product      Product?   @relation(fields: [productId], references: [id], onDelete: SetNull)
+  productName  String
+  sku          String?
+  quantity     Float      @default(1.0)
+  unit         String     @default("kg")
+  unitPrice    Float      @default(0.0)
+  discount     Float      @default(0.0)
+  subtotal     Float      @default(0.0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 }

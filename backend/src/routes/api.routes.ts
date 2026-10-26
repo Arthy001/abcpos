@@ -64,6 +64,14 @@ import {
   deleteProductionScrap,
 } from "../controllers/manufacturing.controller.js";
 import {
+  getSalesOrders,
+  getSalesOrderById,
+  createSalesOrder,
+  updateSalesOrderStatus,
+  deleteSalesOrder,
+  getCustomerCreditSummary,
+} from "../controllers/b2b.controller.js";
+import {
   getAuditLogs,
   restoreFromAuditLog,
   deleteAuditLog,
@@ -794,5 +802,15 @@ router.get("/manufacturing/scraps", getProductionScraps);
 router.post("/manufacturing/scraps", createProductionScrap);
 router.post("/manufacturing/scraps/:id/recycle", recycleProductionScrap);
 router.delete("/manufacturing/scraps/:id", deleteProductionScrap);
+
+// ==========================================
+// 🚚 B2B WHOLESALE & CREDIT MANAGEMENT
+// ==========================================
+router.get("/b2b/orders", getSalesOrders);
+router.get("/b2b/orders/:id", getSalesOrderById);
+router.post("/b2b/orders", createSalesOrder);
+router.patch("/b2b/orders/:id/status", updateSalesOrderStatus);
+router.delete("/b2b/orders/:id", deleteSalesOrder);
+router.get("/b2b/customers/:id/credit", getCustomerCreditSummary);
 
 export default router;

@@ -88,6 +88,9 @@ import {
   BomItem,
   WorkOrder,
   ProductionScrap,
+  SalesOrder,
+  SalesOrderItem,
+  CustomerCreditSummary,
 } from "@/types";
 
 export function getApiBaseUrl(): string {
@@ -3843,4 +3846,77 @@ export async function deleteProductionScrapApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/manufacturing/scraps/${id}`, { method: "DELETE" });
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete scrap");
+}
+
+
+// ==========================================
+// 🚚 B2B WHOLESALE & CREDIT MANAGEMENT API
+// ==========================================
+
+export async function getSalesOrdersApi(): Promise<SalesOrder[]> {
+  const res = await fetch(`${API_BASE_URL}/b2b/orders`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch sales orders");
+  return data.orders || [];
+}
+
+export async function getSalesOrderByIdApi(id: string): Promise<SalesOrder> {
+  const res = await fetch(`${API_BASE_URL}/b2b/orders/${id}`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch sales order details");
+  return data.order;
+}
+
+export async function createSalesOrderApi(payload: {
+  orderNo: string;
+  customerId: string;
+  deliveryDate?: string;
+  creditTermDays?: number;
+  items: any[];
+  discount?: number;
+  tax?: number;
+  shippingFee?: number;
+  deliveryAddress?: string;
+  salesPerson?: string;
+  notes?: string;
+}): Promise<{ salesOrder: SalesOrder; isOverLimit: boolean; availableCreditAfter: number }> {
+  const res = await fetch(`${API_BASE_URL}/b2b/orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create sales order");
+  return {
+    salesOrder: data.salesOrder,
+    isOverLimit: data.isOverLimit,
+    availableCreditAfter: data.availableCreditAfter,
+  };
+}
+
+export async function updateSalesOrderStatusApi(
+  id: string,
+  payload: { status?: string; paymentStatus?: string }
+): Promise<SalesOrder> {
+  const res = await fetch(`${API_BASE_URL}/b2b/orders/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update sales order status");
+  return data.salesOrder;
+}
+
+export async function deleteSalesOrderApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/b2b/orders/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete sales order");
+}
+
+export async function getCustomerCreditSummaryApi(customerId: string): Promise<CustomerCreditSummary> {
+  const res = await fetch(`${API_BASE_URL}/b2b/customers/${customerId}/credit`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch customer credit summary");
+  return data.credit;
 }

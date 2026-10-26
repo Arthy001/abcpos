@@ -208,8 +208,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
     {
       title: "B2B Wholesale",
       items: [
-        { name: "Quotations", href: "/quotations", icon: FileCheck },
-        { name: "B2B Customers", href: "/customers", icon: Users },
+        { name: "Sales Orders (ใบสั่งขาย)", href: "/b2b/orders", icon: Truck },
+        { name: "Quotations (ใบเสนอราคา)", href: "/quotations", icon: FileCheck },
+        { name: "B2B Customers (ลูกค้าค้าส่ง)", href: "/customers", icon: Users },
       ],
     },
     {
