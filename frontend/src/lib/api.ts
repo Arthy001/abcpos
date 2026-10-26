@@ -91,6 +91,10 @@ import {
   SalesOrder,
   SalesOrderItem,
   CustomerCreditSummary,
+  BillingNote,
+  BillingNoteItem,
+  ARAgingItem,
+  MRPRequirementItem,
 } from "@/types";
 
 export function getApiBaseUrl(): string {
@@ -3919,4 +3923,89 @@ export async function getCustomerCreditSummaryApi(customerId: string): Promise<C
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch customer credit summary");
   return data.credit;
+}
+
+
+// ==========================================
+// 📄 B2B BILLING NOTES & AR AGING APIS
+// ==========================================
+
+export async function getBillingNotesApi(): Promise<BillingNote[]> {
+  const res = await fetch(`${API_BASE_URL}/b2b/billing-notes`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch billing notes");
+  return data.billingNotes || [];
+}
+
+export async function getBillingNoteByIdApi(id: string): Promise<BillingNote> {
+  const res = await fetch(`${API_BASE_URL}/b2b/billing-notes/${id}`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch billing note details");
+  return data.billingNote;
+}
+
+export async function createBillingNoteApi(payload: {
+  billingNo: string;
+  customerId: string;
+  collectionDate?: string;
+  salesOrderIds: string[];
+  notes?: string;
+}): Promise<BillingNote> {
+  const res = await fetch(`${API_BASE_URL}/b2b/billing-notes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create billing note");
+  return data.billingNote;
+}
+
+export async function updateBillingNoteStatusApi(
+  id: string,
+  payload: { status: string; paidAmount?: number }
+): Promise<BillingNote> {
+  const res = await fetch(`${API_BASE_URL}/b2b/billing-notes/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update billing note status");
+  return data.billingNote;
+}
+
+export async function deleteBillingNoteApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/b2b/billing-notes/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete billing note");
+}
+
+export async function getARAgingReportApi(): Promise<ARAgingItem[]> {
+  const res = await fetch(`${API_BASE_URL}/b2b/ar-aging`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to generate AR aging report");
+  return data.agingReport || [];
+}
+
+// ==========================================
+// ⚙️ MRP REQUIREMENTS & AUTO PO APIS
+// ==========================================
+
+export async function getMRPRequirementsApi(): Promise<MRPRequirementItem[]> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/mrp-requirements`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch MRP requirements");
+  return data.requirements || [];
+}
+
+export async function autoGeneratePurchaseOrderFromMRPApi(items: any[]): Promise<any> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/mrp-auto-po`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to generate purchase order");
+  return data;
 }

@@ -70,6 +70,14 @@ import {
   updateSalesOrderStatus,
   deleteSalesOrder,
   getCustomerCreditSummary,
+  getBillingNotes,
+  getBillingNoteById,
+  createBillingNote,
+  updateBillingNoteStatus,
+  deleteBillingNote,
+  getARAgingReport,
+  getMRPRequirements,
+  autoGeneratePurchaseOrderFromMRP,
 } from "../controllers/b2b.controller.js";
 import {
   getAuditLogs,
@@ -812,5 +820,17 @@ router.post("/b2b/orders", createSalesOrder);
 router.patch("/b2b/orders/:id/status", updateSalesOrderStatus);
 router.delete("/b2b/orders/:id", deleteSalesOrder);
 router.get("/b2b/customers/:id/credit", getCustomerCreditSummary);
+
+// B2B Billing Notes & Statement of Account
+router.get("/b2b/billing-notes", getBillingNotes);
+router.get("/b2b/billing-notes/:id", getBillingNoteById);
+router.post("/b2b/billing-notes", createBillingNote);
+router.patch("/b2b/billing-notes/:id/status", updateBillingNoteStatus);
+router.delete("/b2b/billing-notes/:id", deleteBillingNote);
+router.get("/b2b/ar-aging", getARAgingReport);
+
+// MRP Requirements & Auto Procurement Engine
+router.get("/manufacturing/mrp-requirements", getMRPRequirements);
+router.post("/manufacturing/mrp-auto-po", autoGeneratePurchaseOrderFromMRP);
 
 export default router;

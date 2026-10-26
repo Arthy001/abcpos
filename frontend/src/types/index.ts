@@ -1465,3 +1465,70 @@ export interface CustomerCreditSummary {
   isOverLimit: boolean;
   unpaidOrders?: SalesOrder[];
 }
+
+
+// ==========================================
+// 📄 B2B BILLING NOTES & AR AGING INTERFACES
+// ==========================================
+
+export interface BillingNoteItem {
+  id?: string;
+  billingNoteId?: string;
+  salesOrderId?: string | null;
+  salesOrder?: SalesOrder | null;
+  orderNo: string;
+  orderDate: string;
+  dueDate?: string | null;
+  orderAmount: number;
+  notes?: string | null;
+}
+
+export interface BillingNote {
+  id: string;
+  billingNo: string;
+  customerId: string;
+  customer?: Customer;
+  billingDate: string;
+  collectionDate: string;
+  totalAmount: number;
+  paidAmount: number;
+  remainingAmount: number;
+  status: "ISSUED" | "COLLECTED" | "CANCELLED" | string;
+  notes?: string | null;
+  items?: BillingNoteItem[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ARAgingItem {
+  customerId: string;
+  customerName: string;
+  code?: string | null;
+  taxId?: string | null;
+  phone?: string | null;
+  creditLimit: number;
+  creditRemaining: number;
+  creditTermDays: number;
+  current: number;
+  days31_60: number;
+  days61_90: number;
+  over90: number;
+  totalOutstanding: number;
+  isOverLimit: boolean;
+  unpaidOrderCount: number;
+}
+
+export interface MRPRequirementItem {
+  productId: string;
+  productName: string;
+  sku: string;
+  currentStock: number;
+  plannedDemand: number;
+  minStockAlert: number;
+  shortageQty: number;
+  suggestedOrderQty: number;
+  unit: string;
+  unitCost: number;
+  estimatedTotalCost: number;
+  needsReorder: boolean;
+}

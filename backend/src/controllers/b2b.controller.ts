@@ -400,3 +400,401 @@ export const getCustomerCreditSummary = async (req: Request, res: Response) => {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch customer credit summary" });
   }
 };
+
+
+// ==========================================
+// 📄 B2B BILLING NOTES (ใบวางบิลรอบงวด) APIS
+// ==========================================
+
+export const getBillingNotes = async (req: Request, res: Response) => {
+  try {
+    const notes = await prisma.billingNote.findMany({
+      include: {
+        customer: {
+          select: { id: true, name: true, code: true, taxId: true, phone: true },
+        },
+        items: true,
+      },
+      orderBy: { billingDate: "desc" },
+    });
+    res.json({ success: true, billingNotes: notes });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch billing notes" });
+  }
+};
+
+export const getBillingNoteById = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const billingNote = await prisma.billingNote.findUnique({
+      where: { id },
+      include: {
+        customer: true,
+        items: {
+          include: { salesOrder: true },
+        },
+      },
+    });
+
+    if (!billingNote) {
+      return res.status(404).json({ success: false, error: "Billing note not found" });
+    }
+
+    res.json({ success: true, billingNote });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch billing note details" });
+  }
+};
+
+export const createBillingNote = async (req: Request, res: Response) => {
+  try {
+    const {
+      billingNo,
+      customerId,
+      collectionDate,
+      salesOrderIds = [],
+      notes,
+    } = req.body;
+
+    if (!billingNo || !customerId || salesOrderIds.length === 0) {
+      return res.status(400).json({ success: false, error: "Missing required billing note fields or orders" });
+    }
+
+    // Fetch the sales orders to include
+    const orders = await prisma.salesOrder.findMany({
+      where: { id: { in: salesOrderIds }, customerId },
+    });
+
+    if (orders.length === 0) {
+      return res.status(400).json({ success: false, error: "No matching sales orders found" });
+    }
+
+    const totalAmount = orders.reduce((sum, o) => sum + o.total, 0);
+
+    const itemsData = orders.map((o) => ({
+      salesOrderId: o.id,
+      orderNo: o.orderNo,
+      orderDate: o.orderDate,
+      dueDate: o.dueDate,
+      orderAmount: o.total,
+    }));
+
+    const billingNote = await prisma.billingNote.create({
+      data: {
+        billingNo,
+        customerId,
+        collectionDate: collectionDate ? new Date(collectionDate) : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        totalAmount,
+        paidAmount: 0.0,
+        remainingAmount: totalAmount,
+        status: "ISSUED",
+        notes,
+        items: {
+          create: itemsData,
+        },
+      },
+      include: {
+        customer: true,
+        items: true,
+      },
+    });
+
+    res.status(201).json({ success: true, billingNote });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to create billing note" });
+  }
+};
+
+export const updateBillingNoteStatus = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const { status, paidAmount } = req.body;
+
+    const existing = await prisma.billingNote.findUnique({
+      where: { id },
+      include: { items: true, customer: true },
+    });
+
+    if (!existing) {
+      return res.status(404).json({ success: false, error: "Billing note not found" });
+    }
+
+    // When marked as COLLECTED (ชำระเงินตามใบวางบิลแล้ว)
+    if (status === "COLLECTED" && existing.status !== "COLLECTED") {
+      const amountCollected = paidAmount !== undefined ? Number(paidAmount) : existing.totalAmount;
+
+      // Deduct customer's currentCreditUsed
+      await prisma.customer.update({
+        where: { id: existing.customerId },
+        data: { currentCreditUsed: { decrement: amountCollected } },
+      });
+
+      // Mark the corresponding sales orders as PAID
+      const soIds = existing.items.map((it) => it.salesOrderId).filter(Boolean) as string[];
+      if (soIds.length > 0) {
+        await prisma.salesOrder.updateMany({
+          where: { id: { in: soIds } },
+          data: { paymentStatus: "PAID" },
+        });
+      }
+
+      const updated = await prisma.billingNote.update({
+        where: { id },
+        data: {
+          status: "COLLECTED",
+          paidAmount: amountCollected,
+          remainingAmount: Math.max(0, existing.totalAmount - amountCollected),
+        },
+        include: { customer: true, items: true },
+      });
+
+      return res.json({ success: true, billingNote: updated });
+    }
+
+    const updated = await prisma.billingNote.update({
+      where: { id },
+      data: { status: status || existing.status },
+      include: { customer: true, items: true },
+    });
+
+    res.json({ success: true, billingNote: updated });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to update billing note status" });
+  }
+};
+
+export const deleteBillingNote = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    await prisma.billingNote.delete({ where: { id } });
+    res.json({ success: true, message: "Billing note deleted successfully" });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to delete billing note" });
+  }
+};
+
+// ==========================================
+// 📊 AR AGING REPORT (รายงานวิเคราะห์อายุลูกหนี้)
+// ==========================================
+
+export const getARAgingReport = async (req: Request, res: Response) => {
+  try {
+    await seedB2bSampleData();
+
+    const customers = await prisma.customer.findMany({
+      where: { currentCreditUsed: { gt: 0 } },
+      include: {
+        salesOrders: {
+          where: { paymentStatus: { not: "PAID" }, status: { not: "CANCELLED" } },
+        },
+      },
+    });
+
+    const now = new Date().getTime();
+
+    const report = customers.map((c) => {
+      let current = 0; // 0-30 days / not overdue
+      let days31_60 = 0; // 31-60 days (Overdue 1-30 days)
+      let days61_90 = 0; // 61-90 days (Overdue 31-60 days)
+      let over90 = 0; // > 90 days (Overdue > 60 days)
+
+      c.salesOrders.forEach((so) => {
+        const orderTime = new Date(so.orderDate).getTime();
+        const ageDays = Math.max(0, Math.floor((now - orderTime) / (1000 * 60 * 60 * 24)));
+
+        if (ageDays <= 30) {
+          current += so.total;
+        } else if (ageDays <= 60) {
+          days31_60 += so.total;
+        } else if (ageDays <= 90) {
+          days61_90 += so.total;
+        } else {
+          over90 += so.total;
+        }
+      });
+
+      const totalOutstanding = current + days31_60 + days61_90 + over90;
+      const creditRemaining = Math.max(0, c.creditLimit - totalOutstanding);
+      const isOverLimit = c.creditLimit > 0 && totalOutstanding > c.creditLimit;
+
+      return {
+        customerId: c.id,
+        customerName: c.name,
+        code: c.code,
+        taxId: c.taxId,
+        phone: c.phone,
+        creditLimit: c.creditLimit,
+        creditRemaining,
+        creditTermDays: c.creditTermDays,
+        current,
+        days31_60,
+        days61_90,
+        over90,
+        totalOutstanding,
+        isOverLimit,
+        unpaidOrderCount: c.salesOrders.length,
+      };
+    });
+
+    res.json({ success: true, agingReport: report });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to generate AR Aging Report" });
+  }
+};
+
+// ==========================================
+// ⚙️ MRP REQUIREMENTS & AUTO PO ENGINE
+// ==========================================
+
+export const getMRPRequirements = async (req: Request, res: Response) => {
+  try {
+    // 1. Scan active work orders for required materials
+    const activeWorkOrders = await prisma.workOrder.findMany({
+      where: { status: { in: ["CONFIRMED", "IN_PROGRESS"] } },
+      include: {
+        materials: {
+          include: { rawMaterial: true },
+        },
+      },
+    });
+
+    // 2. Aggregate demand per raw material
+    const materialDemand: Record<string, { product: any; plannedTotal: number }> = {};
+
+    activeWorkOrders.forEach((wo) => {
+      wo.materials.forEach((mat) => {
+        if (!mat.isDeducted && mat.rawMaterial) {
+          const pId = mat.rawMaterialId;
+          if (!materialDemand[pId]) {
+            materialDemand[pId] = { product: mat.rawMaterial, plannedTotal: 0 };
+          }
+          materialDemand[pId].plannedTotal += mat.plannedQty;
+        }
+      });
+    });
+
+    // 3. Scan products below minimum alert or raw materials
+    const allProducts = await prisma.product.findMany({
+      include: { category: true },
+    });
+    const lowStockProducts = allProducts.filter(
+      (p) => (p.minStockAlert != null && p.stock <= p.minStockAlert) || (p.category && p.category.name.includes("วัตถุดิบ"))
+    );
+
+    lowStockProducts.forEach((p) => {
+      if (!materialDemand[p.id]) {
+        materialDemand[p.id] = { product: p, plannedTotal: 0 };
+      }
+    });
+
+    // 4. Calculate shortages
+    const requirements = Object.keys(materialDemand).map((pId) => {
+      const item = materialDemand[pId];
+      const prod = item.product;
+      const currentStock = prod.stock;
+      const demand = Math.round(item.plannedTotal);
+      const minAlert = prod.minStockAlert || 0;
+
+      // Net shortage = (Current Stock - Demand) < minAlert
+      const expectedStockAfterDemand = currentStock - demand;
+      const shortageQty = Math.max(0, (minAlert + demand) - currentStock);
+      const suggestedOrderQty = shortageQty > 0 ? Math.ceil(shortageQty / 100) * 100 || shortageQty : 0;
+      const unitCost = prod.costPrice || 40.0;
+      const estimatedTotalCost = suggestedOrderQty * unitCost;
+
+      return {
+        productId: prod.id,
+        productName: prod.name,
+        sku: prod.sku,
+        currentStock,
+        plannedDemand: demand,
+        minStockAlert: minAlert,
+        shortageQty,
+        suggestedOrderQty,
+        unit: "kg",
+        unitCost,
+        estimatedTotalCost,
+        needsReorder: suggestedOrderQty > 0,
+      };
+    });
+
+    res.json({
+      success: true,
+      requirements: requirements.sort((a, b) => (b.needsReorder ? 1 : 0) - (a.needsReorder ? 1 : 0)),
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to calculate MRP requirements" });
+  }
+};
+
+export const autoGeneratePurchaseOrderFromMRP = async (req: Request, res: Response) => {
+  try {
+    const { items = [] } = req.body;
+
+    if (!items || items.length === 0) {
+      return res.status(400).json({ success: false, error: "No items specified for PO generation" });
+    }
+
+    // Find default supplier
+    let supplier = await prisma.supplier.findFirst();
+    if (!supplier) {
+      supplier = await prisma.supplier.create({
+        data: {
+          name: "บริษัท สยามโพลิเมอร์ คอร์ปอเรชั่น จำกัด (ผู้ผลิตเม็ดพลาสติก)",
+          code: "SUP-PLASTIC-01",
+          email: "sales@siampolymer.com",
+          phone: "02-111-2233",
+          address: "นิคมอุตสาหกรรมมาบตาพุด จ.ระยอง",
+        },
+      });
+    }
+
+    const codeNum = String(Date.now()).slice(-4);
+    const poReference = `PO-MRP-${codeNum}`;
+
+    let subtotal = 0;
+    const poItems = items.map((it: any) => {
+      const q = Math.max(1, Number(it.quantity) || 100);
+      const cost = Number(it.unitCost) || 40;
+      const lineTotal = q * cost;
+      subtotal += lineTotal;
+      return {
+        productId: it.productId,
+        productName: it.productName,
+        sku: it.sku,
+        quantity: q,
+        receivedQty: 0,
+        unitCost: cost,
+        subtotal: lineTotal,
+        total: lineTotal,
+      };
+    });
+
+    const purchase = await prisma.purchase.create({
+      data: {
+        reference: poReference,
+        supplierId: supplier.id,
+        supplierName: supplier.name,
+        date: new Date(),
+        status: "ORDERED",
+        paymentStatus: "UNPAID",
+        subtotal,
+        total: subtotal,
+        due: subtotal,
+        notes: `สร้างใบสั่งซื้ออัตโนมัติจากระบบคำนวณวัตถุดิบฝ่ายผลิต (MRP Auto Procurement Engine)`,
+        items: {
+          create: poItems,
+        },
+      },
+      include: { items: true },
+    });
+
+    res.status(201).json({
+      success: true,
+      purchase,
+      message: `Generated Purchase Order ${poReference} with ${poItems.length} items successfully`,
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to generate PO from MRP" });
+  }
+};

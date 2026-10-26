@@ -209,6 +209,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
       title: "B2B Wholesale",
       items: [
         { name: "Sales Orders (ใบสั่งขาย)", href: "/b2b/orders", icon: Truck },
+        { name: "Billing Notes (ใบวางบิล)", href: "/b2b/billing", icon: Receipt },
+        { name: "AR Aging (รายงานอายุหนี้)", href: "/b2b/ar-aging", icon: Clock },
         { name: "Quotations (ใบเสนอราคา)", href: "/quotations", icon: FileCheck },
         { name: "B2B Customers (ลูกค้าค้าส่ง)", href: "/customers", icon: Users },
       ],
@@ -217,6 +219,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
       title: "Manufacturing",
       items: [
         { name: "Work Orders (สั่งผลิต)", href: "/manufacturing/work-orders", icon: Factory },
+        { name: "MRP Planning (วางแผนวัตถุดิบ)", href: "/manufacturing/mrp-planning", icon: Boxes },
         { name: "Bill of Materials (BOM)", href: "/manufacturing/bom", icon: Layers },
         { name: "Scrap & Recycling (เศษกาก)", href: "/manufacturing/scrap", icon: RotateCcw },
       ],
