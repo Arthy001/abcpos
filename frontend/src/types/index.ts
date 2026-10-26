@@ -1286,3 +1286,122 @@ export interface GiftCard {
   createdAt?: string;
   updatedAt?: string;
 }
+
+
+// ==========================================
+// 🧩 SYSTEM MODULES & BUSINESS PRESETS
+// ==========================================
+
+export interface SystemModule {
+  id: string;
+  code: string;
+  name: string;
+  category: string;
+  description: string;
+  icon: string;
+  isEnabled: boolean;
+  isCore: boolean;
+  badge?: string | null;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export type BusinessPresetType = "RETAIL_SME" | "WHOLESALE_TRADING" | "MANUFACTURING_FACTORY";
+
+
+// ==========================================
+// 🏭 MANUFACTURING & LIGHT MRP INTERFACES
+// ==========================================
+
+export interface BomItem {
+  id?: string;
+  bomId?: string;
+  rawMaterialId: string;
+  rawMaterial?: Product;
+  quantity: number;
+  unit?: string;
+  wastePercent?: number;
+  unitCost?: number;
+  subtotal?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface BillOfMaterial {
+  id: string;
+  bomCode: string;
+  name: string;
+  finishedProductId: string;
+  finishedProduct?: Product;
+  outputQty: number;
+  unit: string;
+  totalCost: number;
+  laborCost: number;
+  overheadCost: number;
+  status: "ACTIVE" | "DRAFT" | "ARCHIVED" | string;
+  notes?: string | null;
+  items?: BomItem[];
+  _count?: {
+    workOrders?: number;
+  };
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WorkOrderMaterial {
+  id: string;
+  workOrderId?: string;
+  rawMaterialId: string;
+  rawMaterial?: Product;
+  plannedQty: number;
+  actualQty: number;
+  unit: string;
+  unitCost: number;
+  isDeducted: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductionScrap {
+  id: string;
+  scrapNo: string;
+  workOrderId?: string | null;
+  workOrder?: { id: string; orderNo: string; status: string } | null;
+  scrapType: "EDGE_TRIM" | "PURGE" | "REJECT_ROLL" | "STARTUP" | string;
+  materialName: string;
+  weightKg: number;
+  targetRawMaterialId?: string | null;
+  targetRawMaterial?: Product | null;
+  isRecycled: boolean;
+  recycledAt?: string | null;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface WorkOrder {
+  id: string;
+  orderNo: string;
+  bomId?: string | null;
+  bom?: BillOfMaterial | null;
+  finishedProductId: string;
+  finishedProduct?: Product;
+  targetQty: number;
+  producedQty: number;
+  scrapQty: number;
+  unit: string;
+  startDate?: string | null;
+  endDate?: string | null;
+  status: "DRAFT" | "CONFIRMED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED" | string;
+  operator?: string | null;
+  machineNo?: string | null;
+  warehouseId?: string | null;
+  warehouse?: Warehouse | null;
+  totalCost: number;
+  notes?: string | null;
+  materials?: WorkOrderMaterial[];
+  scraps?: ProductionScrap[];
+  createdAt?: string;
+  updatedAt?: string;
+}

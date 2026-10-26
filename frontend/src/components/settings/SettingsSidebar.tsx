@@ -36,6 +36,7 @@ export function SettingsSidebar() {
     pathname.startsWith("/settings/language");
 
   const isAppActive =
+    pathname.startsWith("/settings/modules") ||
     pathname.startsWith("/settings/invoice-settings") ||
     pathname.startsWith("/settings/invoice-templates") ||
     pathname.startsWith("/settings/printer") ||
@@ -89,6 +90,7 @@ export function SettingsSidebar() {
   const isLanguageActive = pathname === "/settings/language";
 
   // App items
+  const isModulesActive = pathname === "/settings/modules";
   const isInvoiceSettingsActive = pathname === "/settings/invoice-settings";
   const isInvoiceTemplatesActive = pathname === "/settings/invoice-templates";
   const isPrinterActive = pathname === "/settings/printer";
@@ -319,6 +321,21 @@ export function SettingsSidebar() {
 
           {appOpen && (
             <div className="pl-9 pr-2 py-1 space-y-1">
+              <Link
+                href="/settings/modules"
+                className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors ${
+                  isModulesActive
+                    ? "bg-[#FFF6EE] text-[#FE9F43] font-semibold"
+                    : "text-[#64748B] hover:text-[#1E293B] hover:bg-gray-50 font-normal"
+                }`}
+              >
+                <div className="flex items-center space-x-1.5">
+                  <span>App Modules</span>
+                  <span className="text-[9px] px-1.5 py-0.5 bg-emerald-50 text-emerald-600 font-semibold rounded-full border border-emerald-200">Scale</span>
+                </div>
+                {isModulesActive && <span className="w-1.5 h-1.5 rounded-full bg-[#FE9F43]"></span>}
+              </Link>
+
               <Link
                 href="/settings/invoice-settings"
                 className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-colors ${

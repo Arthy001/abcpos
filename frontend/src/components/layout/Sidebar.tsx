@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useModuleStore } from "@/store/useModuleStore";
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -58,6 +59,7 @@ import {
   LayoutGrid,
   Undo2,
   History,
+  Factory,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -89,6 +91,8 @@ const GROUP_MODULE_MAP: Record<string, string> = {
   "Inventory": "Products & Inventory",
   "Stock": "Stock Management",
   "Sales": "Sales & POS",
+  "B2B Wholesale": "Sales & POS",
+  "Manufacturing": "Manufacturing (MRP)",
   "Promo": "Promo & Discounts",
   "Purchases": "Purchases",
   "Finance & Accounts": "Finance & Accounts",
@@ -99,9 +103,18 @@ const GROUP_MODULE_MAP: Record<string, string> = {
   "Settings": "System Settings",
 };
 
+const GROUP_SYSTEM_MODULE_MAP: Record<string, string> = {
+  "Finance & Accounts": "FINANCE_ACCOUNTS",
+  "HRM": "HRM_PAYROLL",
+  "Promo": "PROMO_LOYALTY",
+  "B2B Wholesale": "B2B_WHOLESALE",
+  "Manufacturing": "MANUFACTURING_MRP",
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onClose }) => {
   const pathname = usePathname();
   const { hasModulePermission, isAdmin, canCreateProduct, fetchRolePermissions } = useAuthStore();
+  const { isModuleEnabled, fetchModules } = useModuleStore();
   const [mounted, setMounted] = useState<boolean>(false);
   const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({});
   const sidebarRef = useRef<HTMLElement>(null);
@@ -109,7 +122,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
   useEffect(() => {
     setMounted(true);
     fetchRolePermissions();
-  }, []);
+    fetchModules();
+  }, [fetchModules, fetchRolePermissions]);
 
   const toggleSubMenu = (menuName: string) => {
     setOpenSubMenus((prev) => {
@@ -189,6 +203,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
             { name: "POS 8", href: "/pos?terminal=8" },
           ],
         },
+      ],
+    },
+    {
+      title: "B2B Wholesale",
+      items: [
+        { name: "Quotations", href: "/quotations", icon: FileCheck },
+        { name: "B2B Customers", href: "/customers", icon: Users },
+      ],
+    },
+    {
+      title: "Manufacturing",
+      items: [
+        { name: "Work Orders (สั่งผลิต)", href: "/manufacturing/work-orders", icon: Factory },
+        { name: "Bill of Materials (BOM)", href: "/manufacturing/bom", icon: Layers },
+        { name: "Scrap & Recycling (เศษกาก)", href: "/manufacturing/scrap", icon: RotateCcw },
       ],
     },
     {
@@ -416,6 +445,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
           icon: Smartphone,
           hasSub: true,
           subItems: [
+            { name: "App Modules", href: "/settings/modules" },
             { name: "Invoice Settings", href: "/settings/invoice-settings" },
             { name: "Invoice Templates", href: "/settings/invoice-templates" },
             { name: "Printer", href: "/settings/printer" },
@@ -532,6 +562,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
     >
       <div className={`py-4 space-y-4 ${isOpen ? "px-3" : "px-1.5"}`}>
         {menuGroups.map((group, gIdx) => {
+          // Check if disabled by System Module (Odoo-style toggle)
+          const systemModuleCode = GROUP_SYSTEM_MODULE_MAP[group.title];
+          if (mounted && systemModuleCode && !isModuleEnabled(systemModuleCode)) {
+            return null;
+          }
+
           const moduleName = GROUP_MODULE_MAP[group.title];
           if (mounted && !isAdmin() && moduleName) {
             if (!hasModulePermission(moduleName, "view")) {

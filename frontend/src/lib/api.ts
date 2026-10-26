@@ -82,6 +82,12 @@ import {
   Discount,
   DiscountPlan,
   GiftCard,
+  SystemModule,
+  BusinessPresetType,
+  BillOfMaterial,
+  BomItem,
+  WorkOrder,
+  ProductionScrap,
 } from "@/types";
 
 export function getApiBaseUrl(): string {
@@ -3660,3 +3666,181 @@ export async function deleteInvoiceTemplateApi(id: string): Promise<void> {
 
 
 
+
+// ==========================================
+// 🧩 SYSTEM MODULES & BUSINESS PRESETS API
+// ==========================================
+
+export async function getSystemModulesApi(): Promise<SystemModule[]> {
+  const res = await fetch(`${API_BASE_URL}/modules`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch system modules");
+  return data.modules || [];
+}
+
+export async function toggleSystemModuleApi(code: string, isEnabled?: boolean): Promise<SystemModule> {
+  const res = await fetch(`${API_BASE_URL}/modules/${code}/toggle`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ isEnabled }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to toggle module");
+  return data.module;
+}
+
+export async function applyBusinessPresetApi(preset: BusinessPresetType): Promise<{ modules: SystemModule[]; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/modules/preset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ preset }),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to apply business preset");
+  return { modules: data.modules, message: data.message };
+}
+
+
+// ==========================================
+// 🏭 MANUFACTURING & LIGHT MRP (PLASTIC FACTORY) API
+// ==========================================
+
+// --- BOM APIs ---
+export async function getBOMsApi(): Promise<BillOfMaterial[]> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/boms`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch BOMs");
+  return data.boms || [];
+}
+
+export async function getBOMByIdApi(id: string): Promise<BillOfMaterial> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/boms/${id}`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch BOM details");
+  return data.bom;
+}
+
+export async function createBOMApi(payload: Partial<BillOfMaterial> & { items: any[] }): Promise<BillOfMaterial> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/boms`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create BOM");
+  return data.bom;
+}
+
+export async function updateBOMApi(id: string, payload: Partial<BillOfMaterial> & { items?: any[] }): Promise<BillOfMaterial> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/boms/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update BOM");
+  return data.bom;
+}
+
+export async function deleteBOMApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/boms/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete BOM");
+}
+
+// --- Work Order APIs ---
+export async function getWorkOrdersApi(): Promise<WorkOrder[]> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch work orders");
+  return data.workOrders || [];
+}
+
+export async function createWorkOrderApi(payload: {
+  orderNo: string;
+  bomId?: string;
+  finishedProductId: string;
+  targetQty: number;
+  unit?: string;
+  startDate?: string;
+  operator?: string;
+  machineNo?: string;
+  warehouseId?: string;
+  notes?: string;
+}): Promise<WorkOrder> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create work order");
+  return data.workOrder;
+}
+
+export async function updateWorkOrderStatusApi(
+  id: string,
+  payload: {
+    status: string;
+    producedQty?: number;
+    scrapQty?: number;
+    actualMaterials?: { id: string; actualQty: number }[];
+  }
+): Promise<WorkOrder> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders/${id}/status`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update work order status");
+  return data.workOrder;
+}
+
+export async function deleteWorkOrderApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete work order");
+}
+
+// --- Production Scrap APIs ---
+export async function getProductionScrapsApi(): Promise<ProductionScrap[]> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/scraps`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch scraps");
+  return data.scraps || [];
+}
+
+export async function createProductionScrapApi(payload: {
+  scrapNo: string;
+  workOrderId?: string;
+  scrapType?: string;
+  materialName: string;
+  weightKg: number;
+  targetRawMaterialId?: string;
+  notes?: string;
+}): Promise<ProductionScrap> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/scraps`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create scrap record");
+  return data.scrap;
+}
+
+export async function recycleProductionScrapApi(id: string): Promise<ProductionScrap> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/scraps/${id}/recycle`, {
+    method: "POST",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to recycle scrap");
+  return data.scrap;
+}
+
+export async function deleteProductionScrapApi(id: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/scraps/${id}`, { method: "DELETE" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete scrap");
+}

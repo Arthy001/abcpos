@@ -44,6 +44,26 @@ import {
   verifyGiftCard,
 } from "../controllers/promo.controller.js";
 import {
+  getSystemModules,
+  toggleSystemModule,
+  applyBusinessPreset,
+} from "../controllers/module.controller.js";
+import {
+  getBOMs,
+  getBOMById,
+  createBOM,
+  updateBOM,
+  deleteBOM,
+  getWorkOrders,
+  createWorkOrder,
+  updateWorkOrderStatus,
+  deleteWorkOrder,
+  getProductionScraps,
+  createProductionScrap,
+  recycleProductionScrap,
+  deleteProductionScrap,
+} from "../controllers/manufacturing.controller.js";
+import {
   getAuditLogs,
   restoreFromAuditLog,
   deleteAuditLog,
@@ -745,5 +765,34 @@ router.delete("/promo/gift-cards/:id", deleteGiftCard);
 router.post("/auth/login", login);
 router.get("/auth/me", getMe);
 router.post("/auth/change-password", changePassword);
+
+// ==========================================
+// 🧩 SYSTEM MODULES & BUSINESS PRESETS
+// ==========================================
+router.get("/modules", getSystemModules);
+router.patch("/modules/:code/toggle", toggleSystemModule);
+router.post("/modules/preset", applyBusinessPreset);
+
+// ==========================================
+// 🏭 MANUFACTURING & LIGHT MRP (PLASTIC FACTORY)
+// ==========================================
+// Bill of Materials (BOM)
+router.get("/manufacturing/boms", getBOMs);
+router.get("/manufacturing/boms/:id", getBOMById);
+router.post("/manufacturing/boms", createBOM);
+router.put("/manufacturing/boms/:id", updateBOM);
+router.delete("/manufacturing/boms/:id", deleteBOM);
+
+// Work Orders (คำสั่งผลิต)
+router.get("/manufacturing/work-orders", getWorkOrders);
+router.post("/manufacturing/work-orders", createWorkOrder);
+router.patch("/manufacturing/work-orders/:id/status", updateWorkOrderStatus);
+router.delete("/manufacturing/work-orders/:id", deleteWorkOrder);
+
+// Production Scraps & Recycling (เศษกาก & รีไซเคิล)
+router.get("/manufacturing/scraps", getProductionScraps);
+router.post("/manufacturing/scraps", createProductionScrap);
+router.post("/manufacturing/scraps/:id/recycle", recycleProductionScrap);
+router.delete("/manufacturing/scraps/:id", deleteProductionScrap);
 
 export default router;

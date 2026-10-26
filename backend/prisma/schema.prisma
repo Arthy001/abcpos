@@ -89,6 +89,7 @@ model Warehouse {
   productStocks ProductStock[]
   stockMovements StockMovement[]
   userWarehouses UserWarehouse[]
+  workOrders    WorkOrder[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 }
@@ -615,6 +616,11 @@ model Product {
   stocks           ProductStock[]
   movements        StockMovement[]
   orderItems       OrderItem[]
+  bomsAsFinished   BillOfMaterial[]    @relation("FinishedProductBOM")
+  bomItemsAsMaterial BomItem[]         @relation("RawMaterialBOM")
+  workOrdersFinished WorkOrder[]       @relation("FinishedProductWO")
+  workOrderMaterials WorkOrderMaterial[] @relation("RawMaterialWO")
+  productionScraps ProductionScrap[]   @relation("ScrapRecycledProduct")
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
@@ -1495,4 +1501,121 @@ model InvoiceTemplate {
   updatedAt        DateTime @updatedAt
 }
 
+// ==========================================
+// 🧩 SYSTEM APP MODULES (MODULAR TOGGLES)
+// ==========================================
 
+model SystemModule {
+  id          String   @id @default(uuid())
+  code        String   @unique // "CORE_POS", "CORE_INVENTORY", "FINANCE", "HRM_PAYROLL", "PROMO_LOYALTY", "B2B_SALES", "MANUFACTURING"
+  name        String
+  category    String   // "Core Retail", "Finance & Admin", "Advanced Operations", "Human Resources"
+  description String
+  icon        String   // "ShoppingBag", "Package", "DollarSign", "Users", "Tag", "Truck", "Factory"
+  isEnabled   Boolean  @default(true)
+  isCore      Boolean  @default(false) // Core modules cannot be disabled
+  badge       String?  // "Essential", "Popular", "Enterprise", "Add-on"
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+
+
+
+
+// ==========================================
+// 🏭 MANUFACTURING & LIGHT MRP (PLASTIC FACTORY)
+// ==========================================
+
+model BillOfMaterial {
+  id                String       @id @default(uuid())
+  bomCode           String       @unique
+  name              String
+  finishedProductId String
+  finishedProduct   Product      @relation("FinishedProductBOM", fields: [finishedProductId], references: [id], onDelete: Cascade)
+  outputQty         Float        @default(1.0)
+  unit              String       @default("kg")
+  totalCost         Float        @default(0.0)
+  laborCost         Float        @default(0.0)
+  overheadCost      Float        @default(0.0)
+  status            String       @default("ACTIVE") // ACTIVE, DRAFT, ARCHIVED
+  notes             String?
+  items             BomItem[]
+  workOrders        WorkOrder[]
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+}
+
+model BomItem {
+  id            String          @id @default(uuid())
+  bomId         String
+  bom           BillOfMaterial  @relation(fields: [bomId], references: [id], onDelete: Cascade)
+  rawMaterialId String
+  rawMaterial   Product         @relation("RawMaterialBOM", fields: [rawMaterialId], references: [id], onDelete: Cascade)
+  quantity      Float           @default(1.0)
+  unit          String          @default("kg")
+  wastePercent  Float           @default(0.0)
+  unitCost      Float           @default(0.0)
+  subtotal      Float           @default(0.0)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model WorkOrder {
+  id                String              @id @default(uuid())
+  orderNo           String              @unique
+  bomId             String?
+  bom               BillOfMaterial?     @relation(fields: [bomId], references: [id], onDelete: SetNull)
+  finishedProductId String
+  finishedProduct   Product             @relation("FinishedProductWO", fields: [finishedProductId], references: [id], onDelete: Cascade)
+  targetQty         Float               @default(100.0)
+  producedQty       Float               @default(0.0)
+  scrapQty          Float               @default(0.0)
+  unit              String              @default("kg")
+  startDate         DateTime?
+  endDate           DateTime?
+  status            String              @default("DRAFT") // DRAFT, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
+  operator          String?             @default("Admin")
+  machineNo         String?             @default("Extruder #1")
+  warehouseId       String?
+  warehouse         Warehouse?          @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  totalCost         Float               @default(0.0)
+  notes             String?
+  materials         WorkOrderMaterial[]
+  scraps            ProductionScrap[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+}
+
+model WorkOrderMaterial {
+  id            String    @id @default(uuid())
+  workOrderId   String
+  workOrder     WorkOrder @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  rawMaterialId String
+  rawMaterial   Product   @relation("RawMaterialWO", fields: [rawMaterialId], references: [id], onDelete: Cascade)
+  plannedQty    Float     @default(0.0)
+  actualQty     Float     @default(0.0)
+  unit          String    @default("kg")
+  unitCost      Float     @default(0.0)
+  isDeducted    Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+model ProductionScrap {
+  id                  String     @id @default(uuid())
+  scrapNo             String     @unique
+  workOrderId         String?
+  workOrder           WorkOrder? @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  scrapType           String     @default("EDGE_TRIM") // EDGE_TRIM, PURGE, REJECT_ROLL, STARTUP
+  materialName        String
+  weightKg            Float      @default(0.0)
+  targetRawMaterialId String?
+  targetRawMaterial   Product?   @relation("ScrapRecycledProduct", fields: [targetRawMaterialId], references: [id], onDelete: SetNull)
+  isRecycled          Boolean    @default(false)
+  recycledAt          DateTime?
+  notes               String?
+  createdAt           DateTime   @default(now())
+  updatedAt           DateTime   @updatedAt
+}
