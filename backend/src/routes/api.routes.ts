@@ -1,6 +1,12 @@
-import { Router } from "express";
+﻿import { Router } from "express";
+import {
+  getSystemIncidents,
+  getSystemIncidentByCode,
+  markIncidentResolved,
+} from "../controllers/incident.controller.js";
 import {
   login,
+  logout,
   getMe,
   changePassword,
 } from "../controllers/auth.controller.js";
@@ -779,6 +785,7 @@ router.delete("/promo/gift-cards/:id", deleteGiftCard);
 // 🔐 AUTHENTICATION ENDPOINTS
 // ==========================================
 router.post("/auth/login", login);
+router.post("/auth/logout", logout);
 router.get("/auth/me", getMe);
 router.post("/auth/change-password", changePassword);
 
@@ -832,5 +839,12 @@ router.get("/b2b/ar-aging", getARAgingReport);
 // MRP Requirements & Auto Procurement Engine
 router.get("/manufacturing/mrp-requirements", getMRPRequirements);
 router.post("/manufacturing/mrp-auto-po", autoGeneratePurchaseOrderFromMRP);
+
+// ==========================================
+// 🛡️ SYSTEM INCIDENT TRACKING ENDPOINTS
+// ==========================================
+router.get("/incidents", getSystemIncidents);
+router.get("/incidents/:code", getSystemIncidentByCode);
+router.patch("/incidents/:id/resolve", markIncidentResolved);
 
 export default router;

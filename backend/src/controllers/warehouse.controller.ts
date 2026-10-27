@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { logActivity } from "../services/audit.service.js";
 
@@ -122,6 +122,14 @@ export const createWarehouse = async (req: Request, res: Response) => {
       });
     }
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "WAREHOUSE",
+      entityId: warehouse.id,
+      entityName: warehouse.name,
+      user: "Admin",
+      data: warehouse,
+    });
     res.status(201).json({ success: true, data: warehouse });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create warehouse" });
@@ -147,6 +155,14 @@ export const updateWarehouse = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "WAREHOUSE",
+      entityId: warehouse.id,
+      entityName: warehouse.name,
+      user: "Admin",
+      data: warehouse,
+    });
     res.json({ success: true, data: warehouse });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to update warehouse" });

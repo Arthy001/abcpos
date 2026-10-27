@@ -34,6 +34,15 @@ import {
   Clock,
   User,
   Code,
+  LogIn,
+  LogOut,
+  ShieldAlert,
+  KeyRound,
+  Laptop,
+  Globe,
+  ShoppingCart,
+  Truck,
+  Users,
 } from "lucide-react";
 
 export default function ActivityLogsPage() {
@@ -181,6 +190,16 @@ export default function ActivityLogsPage() {
 
   const getEntityIcon = (type: string) => {
     switch (type) {
+      case "AUTH_SESSION":
+        return <KeyRound className="w-3.5 h-3.5 text-indigo-500" />;
+      case "CUSTOMER":
+        return <Users className="w-3.5 h-3.5 text-blue-500" />;
+      case "SUPPLIER":
+        return <Truck className="w-3.5 h-3.5 text-emerald-500" />;
+      case "SALE":
+        return <ShoppingCart className="w-3.5 h-3.5 text-violet-500" />;
+      case "PURCHASE":
+        return <Package className="w-3.5 h-3.5 text-amber-500" />;
       case "CATEGORY":
       case "SUBCATEGORY":
         return <Layers className="w-3.5 h-3.5" />;
@@ -204,6 +223,27 @@ export default function ActivityLogsPage() {
 
   const getActionBadge = (action: string) => {
     switch (action) {
+      case "LOGIN":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+            <LogIn className="w-3 h-3 mr-1" />
+            LOGIN
+          </span>
+        );
+      case "LOGOUT":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+            <LogOut className="w-3 h-3 mr-1" />
+            LOGOUT
+          </span>
+        );
+      case "LOGIN_FAILED":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            <ShieldAlert className="w-3 h-3 mr-1" />
+            LOGIN FAILED
+          </span>
+        );
       case "DELETE":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-100">
@@ -227,10 +267,15 @@ export default function ActivityLogsPage() {
           </span>
         );
       case "UPDATE":
-      default:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-100">
             UPDATED
+          </span>
+        );
+      default:
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-gray-50 text-gray-700 border border-gray-200">
+            {action}
           </span>
         );
     }
@@ -336,17 +381,20 @@ export default function ActivityLogsPage() {
 
             <div className="flex items-center space-x-2">
               {/* Action Filter */}
-              <div className="w-36">
+              <div className="w-40">
                 <SearchableSelect
                   size="sm"
                   searchable={false}
                   showAllOption
                   allOptionLabel="Action: All"
                   options={[
-                    { value: "DELETE", label: "Deleted" },
-                    { value: "RESTORE", label: "Restored" },
+                    { value: "LOGIN", label: "Login" },
+                    { value: "LOGOUT", label: "Logout" },
+                    { value: "LOGIN_FAILED", label: "Login Failed" },
                     { value: "CREATE", label: "Created" },
                     { value: "UPDATE", label: "Updated" },
+                    { value: "DELETE", label: "Deleted" },
+                    { value: "RESTORE", label: "Restored" },
                   ]}
                   value={actionFilter}
                   onChange={(val) => {
@@ -357,22 +405,27 @@ export default function ActivityLogsPage() {
               </div>
 
               {/* Entity Type Filter */}
-              <div className="w-40">
+              <div className="w-44">
                 <SearchableSelect
                   size="sm"
                   searchable={false}
                   showAllOption
                   allOptionLabel="Entity: All"
                   options={[
+                    { value: "AUTH_SESSION", label: "Auth Session" },
+                    { value: "PRODUCT", label: "Product" },
                     { value: "CATEGORY", label: "Category" },
                     { value: "SUBCATEGORY", label: "Sub Category" },
                     { value: "BRAND", label: "Brand" },
                     { value: "UNIT", label: "Unit" },
+                    { value: "CUSTOMER", label: "Customer" },
+                    { value: "SUPPLIER", label: "Supplier" },
+                    { value: "PURCHASE", label: "Purchase" },
+                    { value: "SALE", label: "Sale" },
                     { value: "WAREHOUSE", label: "Warehouse" },
                     { value: "STORE", label: "Store" },
                     { value: "WARRANTY", label: "Warranty" },
                     { value: "VARIANT", label: "Variant" },
-                    { value: "PRODUCT", label: "Product" },
                   ]}
                   value={entityFilter}
                   onChange={(val) => {
@@ -587,7 +640,7 @@ export default function ActivityLogsPage() {
                 <div className="p-3 bg-gray-50 rounded-xl space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Action:</span>
-                    <span className="font-bold">{viewLog.action}</span>
+                    <div>{getActionBadge(viewLog.action)}</div>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-500">Entity:</span>
@@ -606,6 +659,52 @@ export default function ActivityLogsPage() {
                     <span className="font-mono text-gray-700">{formatDate(viewLog.createdAt)}</span>
                   </div>
                 </div>
+
+                {/* Friendly Auth Activity Information */}
+                {(() => {
+                  try {
+                    const parsed = JSON.parse(viewLog.data || "{}");
+                    if (viewLog.entityType === "AUTH_SESSION" || ["LOGIN", "LOGOUT", "LOGIN_FAILED"].includes(viewLog.action)) {
+                      return (
+                        <div className="p-3 bg-indigo-50/60 border border-indigo-100 rounded-xl space-y-2">
+                          <div className="text-[11px] font-bold text-indigo-900 flex items-center">
+                            <KeyRound className="w-3.5 h-3.5 mr-1 text-indigo-600" />
+                            Authentication & Client Details
+                          </div>
+                          <div className="space-y-1 text-[11px]">
+                            {parsed.ip && (
+                              <div className="flex justify-between">
+                                <span className="text-gray-500 flex items-center">
+                                  <Globe className="w-3 h-3 mr-1 text-gray-400" /> IP Address:
+                                </span>
+                                <span className="font-mono font-semibold text-indigo-800">{parsed.ip}</span>
+                              </div>
+                            )}
+                            {parsed.userAgent && (
+                              <div className="flex flex-col pt-1 border-t border-indigo-100/60">
+                                <span className="text-gray-500 flex items-center">
+                                  <Laptop className="w-3 h-3 mr-1 text-gray-400" /> Device / Browser:
+                                </span>
+                                <span className="font-mono text-[10px] text-gray-700 break-all mt-0.5 bg-white/70 p-1.5 rounded border border-indigo-100">
+                                  {parsed.userAgent}
+                                </span>
+                              </div>
+                            )}
+                            {parsed.reason && (
+                              <div className="flex justify-between pt-1 border-t border-indigo-100/60">
+                                <span className="text-rose-600 font-bold flex items-center">
+                                  <ShieldAlert className="w-3 h-3 mr-1" /> Failure Reason:
+                                </span>
+                                <span className="font-bold text-rose-700">{parsed.reason}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                  } catch {}
+                  return null;
+                })()}
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-bold text-gray-700 flex items-center">

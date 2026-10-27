@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
 import { recordStockMovement, ensureProductStockRecords } from "../services/stock.service.js";
 import { logActivity } from "../services/audit.service.js";
@@ -207,6 +207,13 @@ export const createProduct = async (req: Request, res: Response) => {
       await ensureProductStockRecords(product.id);
     }
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "PRODUCT",
+      entityId: product.id,
+      entityName: product.name,
+      data: { name: product.name, sku: product.sku, price: product.price, costPrice: product.costPrice, stock: product.stock },
+    });
     res.status(201).json({ success: true, data: product });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -304,6 +311,22 @@ export const updateProduct = async (req: Request, res: Response) => {
         notes: `Product stock manually updated from ${existingProduct.stock} to ${stock}`,
       });
     }
+
+    await logActivity({
+      action: "UPDATE",
+      entityType: "PRODUCT",
+      entityId: product.id,
+      entityName: product.name,
+      user: "Admin",
+      data: {
+        name: product.name,
+        sku: product.sku,
+        price: product.price,
+        costPrice: product.costPrice,
+        stock: product.stock,
+        status: product.status,
+      },
+    });
 
     res.json({ success: true, data: product });
   } catch (error: any) {

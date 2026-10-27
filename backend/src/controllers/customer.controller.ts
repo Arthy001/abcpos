@@ -1,3 +1,4 @@
+﻿import { logActivity } from "../services/audit.service.js";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 
@@ -49,6 +50,13 @@ export const getCustomerById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Customer not found" });
     }
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "CUSTOMER",
+      entityId: customer.id,
+      entityName: customer.name,
+      data: customer,
+    });
     res.json({ success: true, data: customer });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch customer" });
@@ -86,6 +94,13 @@ export const createCustomer = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "CUSTOMER",
+      entityId: customer.id,
+      entityName: customer.name,
+      data: customer,
+    });
     res.status(201).json({ success: true, data: customer });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create customer" });
@@ -114,6 +129,13 @@ export const updateCustomer = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "CUSTOMER",
+      entityId: customer.id,
+      entityName: customer.name,
+      data: customer,
+    });
     res.json({ success: true, data: customer });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to update customer" });
@@ -124,6 +146,16 @@ export const updateCustomer = async (req: Request, res: Response) => {
 export const deleteCustomer = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const existing = await prisma.customer.findUnique({ where: { id } });
+    if (existing) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "CUSTOMER",
+        entityId: existing.id,
+        entityName: existing.name,
+        data: existing,
+      });
+    }
     await prisma.customer.delete({ where: { id } });
     res.json({ success: true, message: "Customer deleted successfully" });
   } catch (error: any) {

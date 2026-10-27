@@ -1,7 +1,7 @@
 import { prisma } from "../lib/prisma.js";
 
 export interface LogActivityParams {
-  action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE";
+  action: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "LOGIN" | "LOGOUT" | "LOGIN_FAILED";
   entityType:
     | "CATEGORY"
     | "SUBCATEGORY"
@@ -11,7 +11,15 @@ export interface LogActivityParams {
     | "STORE"
     | "WARRANTY"
     | "VARIANT"
-    | "PRODUCT";
+    | "PRODUCT"
+    | "CUSTOMER"
+    | "SUPPLIER"
+    | "PURCHASE"
+    | "SALE"
+    | "EXPENSE"
+    | "INCOME"
+    | "AUTH_SESSION"
+    | "USER";
   entityId: string;
   entityName: string;
   user?: string;

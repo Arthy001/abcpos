@@ -1711,3 +1711,99 @@ model BillingNoteItem {
   notes         String?
   createdAt     DateTime     @default(now())
 }
+// ==========================================
+// 📑 ACCOUNTING & TAX EXTENSIONS (SME ERP)
+// ==========================================
+
+model WithholdingTax {
+  id              String   @id @default(uuid())
+  whtNumber       String   @unique // e.g. WHT-202610-001
+  formType        String   @default("PND53") // PND3 (บุคคลธรรมดา), PND53 (นิติบุคคล)
+  date            DateTime @default(now())
+  
+  // Payer (ผู้จ่ายเงิน / บริษัทเรา)
+  payerName       String   @default("ABC POS Retail Co., Ltd.")
+  payerTaxId      String   @default("010556209999")
+  payerAddress    String   @default("88/9 Sukhumvit Road, Khlong Toei, Bangkok 10110")
+  
+  // Payee (ผู้รับเงิน / ผู้ถูกหัก ณ ที่จ่าย)
+  payeeType       String   @default("COMPANY") // INDIVIDUAL, COMPANY
+  payeeName       String
+  payeeTaxId      String?  // 13-digit ID
+  payeeBranch     String?  @default("00000") // 00000 = Head Office
+  payeeAddress    String?
+  
+  // Tax Details
+  incomeType      String   @default("SERVICE") // SERVICE (ค่าบริการ 3%), RENT (ค่าเช่า 5%), TRANSPORT (ค่าขนส่ง 1%), AD (โฆษณา 2%)
+  description     String   // รายละเอียด เช่น ค่าจ้างทำของ, ค่าเช่าอาคาร
+  baseAmount      Float    @default(0.0) // ฐานภาษี
+  taxRate         Float    @default(3.0) // 1, 2, 3, 5%
+  taxAmount       Float    @default(0.0) // ภาษีที่หัก
+  netPaid         Float    @default(0.0) // ยอดจ่ายสุทธิ (baseAmount - taxAmount)
+  
+  paymentMethod   String   @default("TRANSFER") // CASH, TRANSFER, CHEQUE
+  status          String   @default("ISSUED") // ISSUED, CANCELLED
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model TaxInvoice {
+  id              String   @id @default(uuid())
+  invoiceNumber   String   @unique // e.g. TAX-202610-0001
+  saleReference   String?  // References Sale.reference or SalesOrder.orderNumber
+  date            DateTime @default(now())
+  
+  // Customer Tax Profile
+  customerName    String
+  taxId           String   // 13-digit Tax ID
+  branch          String   @default("00000") // 00000 (สำนักงานใหญ่) or สาขาที่...
+  address         String
+  phone           String?
+  
+  // Monetary
+  subtotal        Float    @default(0.0) // มูลค่าสินค้าก่อนภาษี
+  vatRate         Float    @default(7.0) // 7%
+  vatAmount       Float    @default(0.0) // ภาษีมูลค่าเพิ่ม
+  grandTotal      Float    @default(0.0) // ยอดรวมสุทธิ
+  
+  paymentMethod   String   @default("TRANSFER") // CASH, TRANSFER, CREDIT_CARD
+  status          String   @default("ISSUED") // ISSUED, CANCELLED
+  issuedBy        String?  @default("Admin")
+  notes           String?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// ==========================================
+// 🛡️ SYSTEM INCIDENT & ERROR LOGS (ENTERPRISE)
+// ==========================================
+
+model SystemIncidentLog {
+  id           String   @id @default(uuid())
+  incidentCode String   @unique // e.g. INC-202610-8421
+  timestamp    DateTime @default(now())
+  
+  // Client Context
+  endpoint     String   // e.g. /api/units
+  method       String   // POST, PUT, DELETE, GET
+  userIp       String?
+  userName     String?  @default("Admin/User")
+  locale       String   @default("th") // th, en
+  
+  // Technical Diagnostics
+  statusCode   Int      @default(400)
+  errorType    String   // DUPLICATE, FOREIGN_KEY, NOT_FOUND, VALIDATION, INTERNAL
+  prismaCode   String?  // P2002, P2003, P2025
+  targetField  String?  // e.g. shortName, barcode, sku
+  messageTh    String   // ภาษาไทย
+  messageEn    String   // English
+  payload      String?  // JSON Request Body
+  stackTrace   String?  // Full Error Stack Trace
+  
+  resolved     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}

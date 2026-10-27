@@ -1,3 +1,4 @@
+import { logActivity } from "../services/audit.service.js";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 
@@ -252,6 +253,17 @@ export const createUser = async (req: Request, res: Response) => {
       },
     });
 
+    if (createdUser) {
+      await logActivity({
+        action: "CREATE",
+        entityType: "USER",
+        entityId: createdUser.id,
+        entityName: createdUser.name,
+        user: "Admin",
+        data: { name: createdUser.name, email: createdUser.email, role: createdUser.role },
+      });
+    }
+
     res.status(201).json({ success: true, data: createdUser });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create user" });
@@ -309,6 +321,17 @@ export const updateUser = async (req: Request, res: Response) => {
       },
     });
 
+    if (updatedUser) {
+      await logActivity({
+        action: "UPDATE",
+        entityType: "USER",
+        entityId: updatedUser.id,
+        entityName: updatedUser.name,
+        user: "Admin",
+        data: { name: updatedUser.name, email: updatedUser.email, role: updatedUser.role, status: updatedUser.status },
+      });
+    }
+
     res.json({ success: true, data: updatedUser });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to update user" });
@@ -318,6 +341,18 @@ export const updateUser = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const userToDel = await prisma.systemUser.findUnique({ where: { id } });
+    if (userToDel) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "USER",
+        entityId: userToDel.id,
+        entityName: userToDel.name,
+        user: "Admin",
+        data: { name: userToDel.name, email: userToDel.email, role: userToDel.role },
+      });
+    }
+
     await prisma.systemUser.delete({ where: { id } });
     res.json({ success: true, message: "User deleted successfully" });
   } catch (error: any) {

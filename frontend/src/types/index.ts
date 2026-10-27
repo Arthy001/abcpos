@@ -935,7 +935,7 @@ export interface TrialBalanceData {
 
 export interface AuditLogItem {
   id: string;
-  action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE" | "RESTORED";
+  action: "DELETE" | "UPDATE" | "CREATE" | "RESTORE" | "RESTORED" | "LOGIN" | "LOGOUT" | "LOGIN_FAILED" | string;
   entityType:
     | "CATEGORY"
     | "SUBCATEGORY"
@@ -945,7 +945,7 @@ export interface AuditLogItem {
     | "STORE"
     | "WARRANTY"
     | "VARIANT"
-    | "PRODUCT";
+    | "PRODUCT" | "AUTH_SESSION" | "CUSTOMER" | "SUPPLIER" | "PURCHASE" | "SALE" | string;
   entityId: string;
   entityName: string;
   user?: string | null;
@@ -1552,4 +1552,128 @@ export interface MRPRequirementItem {
   unitCost: number;
   estimatedTotalCost: number;
   needsReorder: boolean;
+}
+
+// ==========================================
+// 📑 ACCOUNTING & TAX TYPES
+// ==========================================
+
+export interface WithholdingTax {
+  id: string;
+  whtNumber: string;
+  formType: "PND3" | "PND53" | string;
+  date: string;
+  payerName: string;
+  payerTaxId: string;
+  payerAddress: string;
+  payeeType: "INDIVIDUAL" | "COMPANY" | string;
+  payeeName: string;
+  payeeTaxId?: string;
+  payeeBranch?: string;
+  payeeAddress?: string;
+  incomeType: "SERVICE" | "RENT" | "TRANSPORT" | "AD" | string;
+  description: string;
+  baseAmount: number;
+  taxRate: number;
+  taxAmount: number;
+  netPaid: number;
+  paymentMethod: string;
+  status: "ISSUED" | "CANCELLED" | string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface TaxInvoice {
+  id: string;
+  invoiceNumber: string;
+  saleReference?: string;
+  date: string;
+  customerName: string;
+  taxId: string;
+  branch: string;
+  address: string;
+  phone?: string;
+  subtotal: number;
+  vatRate: number;
+  vatAmount: number;
+  grandTotal: number;
+  paymentMethod: string;
+  status: "ISSUED" | "CANCELLED" | string;
+  issuedBy?: string;
+  notes?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface AccountantExportData {
+  period: string;
+  company: {
+    name: string;
+    taxId: string;
+    branch: string;
+  };
+  summary: {
+    totalSalesRevenue: number;
+    totalOutputVat: number;
+    totalPurchaseCost: number;
+    totalInputVat: number;
+    netVatPayable: number;
+    totalWhtBase: number;
+    totalWhtDeducted: number;
+    totalInventoryValue: number;
+    totalBankBalance: number;
+    accountsReceivable: number;
+    accountsPayable: number;
+  };
+  salesVatItems: Array<{
+    date: string;
+    reference: string;
+    customer: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+  }>;
+  purchaseVatItems: Array<{
+    date: string;
+    reference: string;
+    supplier: string;
+    subtotal: number;
+    tax: number;
+    total: number;
+  }>;
+  withholdingTaxItems: WithholdingTax[];
+  inventoryValuation: Array<{
+    code: string;
+    name: string;
+    category: string;
+    stock: number;
+    unitCost: number;
+    totalValue: number;
+  }>;
+}
+// ==========================================
+// 🛡️ SYSTEM INCIDENT TYPES
+// ==========================================
+
+export interface SystemIncident {
+  id: string;
+  incidentCode: string;
+  timestamp: string;
+  endpoint: string;
+  method: string;
+  userIp?: string;
+  userName?: string;
+  locale: "th" | "en";
+  statusCode: number;
+  errorType: "DUPLICATE" | "FOREIGN_KEY" | "NOT_FOUND" | "VALIDATION" | "INTERNAL" | string;
+  prismaCode?: string;
+  targetField?: string;
+  messageTh: string;
+  messageEn: string;
+  payload?: string;
+  stackTrace?: string;
+  resolved: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }

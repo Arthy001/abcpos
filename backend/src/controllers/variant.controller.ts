@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
+import { logActivity } from "../services/audit.service.js";
 import { prisma } from "../lib/prisma.js";
 
 // GET /api/variant-attributes
@@ -45,6 +46,14 @@ export const createVariantAttribute = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "VARIANT",
+      entityId: variant.id,
+      entityName: variant.name,
+      user: "Admin",
+      data: variant,
+    });
     res.status(201).json(variant);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to create variant attribute" });
@@ -66,13 +75,20 @@ export const updateVariantAttribute = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "VARIANT",
+      entityId: variant.id,
+      entityName: variant.name,
+      user: "Admin",
+      data: variant,
+    });
     res.json(variant);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to update variant attribute" });
   }
 };
 
-import { logActivity } from "../services/audit.service.js";
 
 // DELETE /api/variant-attributes/:id
 export const deleteVariantAttribute = async (req: Request, res: Response) => {

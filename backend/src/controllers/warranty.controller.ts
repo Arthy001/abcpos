@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
+import { logActivity } from "../services/audit.service.js";
 import { prisma } from "../lib/prisma.js";
 
 // GET /api/warranties
@@ -46,6 +47,14 @@ export const createWarranty = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "WARRANTY",
+      entityId: warranty.id,
+      entityName: warranty.name,
+      user: "Admin",
+      data: warranty,
+    });
     res.status(201).json(warranty);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to create warranty" });
@@ -68,13 +77,20 @@ export const updateWarranty = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "WARRANTY",
+      entityId: warranty.id,
+      entityName: warranty.name,
+      user: "Admin",
+      data: warranty,
+    });
     res.json(warranty);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to update warranty" });
   }
 };
 
-import { logActivity } from "../services/audit.service.js";
 
 // DELETE /api/warranties/:id
 export const deleteWarranty = async (req: Request, res: Response) => {

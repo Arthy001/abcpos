@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma.js";
+import { logActivity } from "../services/audit.service.js";
 
 // ==================== CATEGORIES ====================
 
@@ -46,6 +47,16 @@ export const createCategory = async (req: Request, res: Response) => {
         status,
       },
     });
+
+    await logActivity({
+      action: "CREATE",
+      entityType: "CATEGORY",
+      entityId: category.id,
+      entityName: category.name,
+      user: "Admin",
+      data: category,
+    });
+
     res.status(201).json({ success: true, data: category });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -66,13 +77,21 @@ export const updateCategory = async (req: Request, res: Response) => {
         status,
       },
     });
+
+    await logActivity({
+      action: "UPDATE",
+      entityType: "CATEGORY",
+      entityId: category.id,
+      entityName: category.name,
+      user: "Admin",
+      data: category,
+    });
+
     res.json({ success: true, data: category });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
-
-import { logActivity } from "../services/audit.service.js";
 
 export const deleteCategory = async (req: Request, res: Response) => {
   try {
@@ -148,6 +167,16 @@ export const createSubCategory = async (req: Request, res: Response) => {
         category: true,
       },
     });
+
+    await logActivity({
+      action: "CREATE",
+      entityType: "SUBCATEGORY",
+      entityId: subCategory.id,
+      entityName: subCategory.name,
+      user: "Admin",
+      data: subCategory,
+    });
+
     res.status(201).json({ success: true, data: subCategory });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -174,6 +203,16 @@ export const updateSubCategory = async (req: Request, res: Response) => {
         category: true,
       },
     });
+
+    await logActivity({
+      action: "UPDATE",
+      entityType: "SUBCATEGORY",
+      entityId: subCategory.id,
+      entityName: subCategory.name,
+      user: "Admin",
+      data: subCategory,
+    });
+
     res.json({ success: true, data: subCategory });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -46,7 +46,7 @@ export default function UnitsPage() {
     type: "add_success" | "edit_success" | "delete_success" | "error";
     title: string;
     message: string;
-    itemName?: string;
+    itemName?: string; incidentCode?: string;
   }>({
     isOpen: false,
     type: "add_success",
@@ -156,6 +156,7 @@ export default function UnitsPage() {
         type: "error",
         title: "Operation Failed",
         message: err.message || "Failed to save unit. Please try again.",
+        incidentCode: err.incidentCode,
       });
     } finally {
       setIsSubmitting(false);
@@ -696,6 +697,18 @@ export default function UnitsPage() {
               <div className="space-y-1.5">
                 <h3 className="text-base font-bold text-gray-900">{feedbackModal.title}</h3>
                 <p className="text-xs text-gray-500 leading-relaxed">{feedbackModal.message}</p>
+                  {feedbackModal.incidentCode && (
+                    <div className="mt-2 p-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 flex items-center justify-between text-[11px] font-mono">
+                      <span className="text-gray-500">Ref: <strong className="text-rose-600 dark:text-rose-400">{feedbackModal.incidentCode}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => navigator.clipboard.writeText(feedbackModal.incidentCode || "")}
+                        className="text-xs text-blue-600 hover:underline flex items-center gap-1"
+                      >
+                        Copy
+                      </button>
+                    </div>
+                  )}
               </div>
 
               {/* Buttons */}

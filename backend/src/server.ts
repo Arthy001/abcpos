@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import apiRoutes from "./routes/api.routes.js";
+import { globalErrorHandler } from "./middlewares/error.middleware.js";
 
 dotenv.config();
 
@@ -23,6 +24,9 @@ app.get("/", (req, res) => {
     docs: "/api/health",
   });
 });
+
+// Global Error Handler Middleware (Catches all unhandled errors & logs incidents)
+app.use(globalErrorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 ABC POS Backend Server running on http://localhost:${PORT}`);

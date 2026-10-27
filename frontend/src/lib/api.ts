@@ -1,4 +1,4 @@
-import {
+﻿import {
   Brand,
   Category,
   DashboardStats,
@@ -95,6 +95,10 @@ import {
   BillingNoteItem,
   ARAgingItem,
   MRPRequirementItem,
+  WithholdingTax,
+  TaxInvoice,
+  AccountantExportData,
+  SystemIncident,
 } from "@/types";
 
 export function getApiBaseUrl(): string {
@@ -688,8 +692,9 @@ export async function createUnitApi(payload: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(payload),
   });
-  if (!res.ok) throw new Error("Failed to create unit");
-  return await res.json();
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to create unit");
+  return data;
 }
 
 export async function updateUnitApi(id: string, payload: Partial<Unit>): Promise<Unit> {
@@ -4012,4 +4017,129 @@ export async function autoGeneratePurchaseOrderFromMRPApi(items: any[]): Promise
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to generate purchase order");
   return data;
+}
+
+
+// ==========================================
+// 📑 ACCOUNTING, TAX & EXPORT API CLIENT
+// ==========================================
+
+export const fetchWithholdingTaxes = async (params?: Record<string, any>): Promise<WithholdingTax[]> => {
+  const query = params ? new URLSearchParams(params).toString() : "";
+  const res = await fetch(`${API_BASE_URL}/accounting/withholding-taxes${query ? `?${query}` : ""}`);
+  const data = await res.json();
+  return data.data || [];
+};
+
+export const createWithholdingTaxApi = async (body: Partial<WithholdingTax>): Promise<WithholdingTax> => {
+  const res = await fetch(`${API_BASE_URL}/accounting/withholding-taxes`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to create Withholding Tax record");
+  return data.data;
+};
+
+export const updateWithholdingTaxApi = async (id: string, body: Partial<WithholdingTax>): Promise<WithholdingTax> => {
+  const res = await fetch(`${API_BASE_URL}/accounting/withholding-taxes/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update Withholding Tax record");
+  return data.data;
+};
+
+export const deleteWithholdingTaxApi = async (id: string): Promise<void> => {
+  const res = await fetch(`${API_BASE_URL}/accounting/withholding-taxes/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to delete Withholding Tax record");
+  }
+};
+
+export const fetchTaxInvoices = async (params?: Record<string, any>): Promise<TaxInvoice[]> => {
+  const query = params ? new URLSearchParams(params).toString() : "";
+  const res = await fetch(`${API_BASE_URL}/accounting/tax-invoices${query ? `?${query}` : ""}`);
+  const data = await res.json();
+  return data.data || [];
+};
+
+export const createTaxInvoiceApi = async (body: Partial<TaxInvoice>): Promise<TaxInvoice> => {
+  const res = await fetch(`${API_BASE_URL}/accounting/tax-invoices`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to create Tax Invoice");
+  return data.data;
+};
+
+export const updateTaxInvoiceApi = async (id: string, body: Partial<TaxInvoice>): Promise<TaxInvoice> => {
+  const res = await fetch(`${API_BASE_URL}/accounting/tax-invoices/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to update Tax Invoice");
+  return data.data;
+};
+
+export const deleteTaxInvoiceApi = async (id: string): Promise<void> => {
+  const res = await fetch(`${API_BASE_URL}/accounting/tax-invoices/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const data = await res.json();
+    throw new Error(data.error || "Failed to delete Tax Invoice");
+  }
+};
+
+export const fetchAccountantExportPackage = async (period?: string): Promise<AccountantExportData> => {
+  const query = period ? `?period=${period}` : "";
+  const res = await fetch(`${API_BASE_URL}/accounting/export-package${query}`);
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || "Failed to fetch export package");
+  return data.data;
+};
+
+
+// ==========================================
+// 🛡️ INCIDENT LOGS API CLIENT
+// ==========================================
+
+export async function fetchSystemIncidents(params?: {
+  search?: string;
+  errorType?: string;
+  resolved?: string;
+  page?: number;
+  limit?: number;
+}): Promise<{ data: SystemIncident[]; pagination: { total: number; page: number; limit: number; totalPages: number } }> {
+  const query = params ? new URLSearchParams(params as any).toString() : "";
+  const res = await fetch(`${API_BASE_URL}/incidents${query ? `?${query}` : ""}`);
+  if (!res.ok) throw new Error("Failed to fetch system incident logs");
+  return await res.json();
+}
+
+export async function fetchSystemIncidentByCode(code: string): Promise<SystemIncident> {
+  const res = await fetch(`${API_BASE_URL}/incidents/${code}`);
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Incident not found");
+  return data.data;
+}
+
+export async function markIncidentResolvedApi(id: string): Promise<SystemIncident> {
+  const res = await fetch(`${API_BASE_URL}/incidents/${id}/resolve`, {
+    method: "PATCH",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to resolve incident");
+  return data.data;
 }

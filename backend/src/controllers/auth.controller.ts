@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import crypto from "crypto";
+import { logActivity } from "../services/audit.service.js";
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || "abcpos-secure-jwt-secret-key-2026";
@@ -31,6 +32,9 @@ export function verifyToken(token: string): any {
 }
 
 export const login = async (req: Request, res: Response) => {
+  const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
+  const userAgent = req.headers["user-agent"] || "Unknown Device";
+
   try {
     const { email, password } = req.body;
     if (!email) {
@@ -51,13 +55,41 @@ export const login = async (req: Request, res: Response) => {
       },
     });
 
+    // 1. Audit Log: Login Failed (User not found)
     if (!user) {
+      await logActivity({
+        action: "LOGIN_FAILED",
+        entityType: "AUTH_SESSION",
+        entityId: "UNKNOWN",
+        entityName: String(email),
+        user: String(email),
+        data: {
+          attemptEmail: email,
+          ip: clientIp,
+          userAgent,
+          reason: "User not found",
+        },
+      });
       return res.status(401).json({ error: "User not found" });
     }
 
+    // 2. Audit Log: Login Failed (Wrong password)
     if (user.password) {
       const hashed = hashPassword(password || "");
       if (user.password !== hashed && user.password !== password && password !== "123456") {
+        await logActivity({
+          action: "LOGIN_FAILED",
+          entityType: "AUTH_SESSION",
+          entityId: user.id,
+          entityName: user.name,
+          user: user.name,
+          data: {
+            email: user.email,
+            ip: clientIp,
+            userAgent,
+            reason: "Invalid password attempt",
+          },
+        });
         return res.status(401).json({ error: "Invalid password" });
       }
     }
@@ -71,6 +103,22 @@ export const login = async (req: Request, res: Response) => {
       email: user.email,
       name: user.name,
       role: user.role,
+    });
+
+    // 3. Audit Log: Login Success
+    await logActivity({
+      action: "LOGIN",
+      entityType: "AUTH_SESSION",
+      entityId: user.id,
+      entityName: user.name,
+      user: user.name,
+      data: {
+        email: user.email,
+        role: user.role,
+        ip: clientIp,
+        userAgent,
+        loginTime: new Date().toISOString(),
+      },
     });
 
     res.json({
@@ -89,6 +137,44 @@ export const login = async (req: Request, res: Response) => {
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Login failed" });
+  }
+};
+
+export const logout = async (req: Request, res: Response) => {
+  try {
+    const clientIp = req.ip || req.socket.remoteAddress || "127.0.0.1";
+    const userAgent = req.headers["user-agent"] || "Unknown Device";
+    const authHeader = req.headers.authorization;
+
+    let userName = "User";
+    let userId = "UNKNOWN";
+
+    if (authHeader && authHeader.startsWith("Bearer ")) {
+      const token = authHeader.split(" ")[1];
+      const payload = verifyToken(token);
+      if (payload) {
+        userName = payload.name || payload.email || "User";
+        userId = payload.id || "UNKNOWN";
+      }
+    }
+
+    // 4. Audit Log: Logout
+    await logActivity({
+      action: "LOGOUT",
+      entityType: "AUTH_SESSION",
+      entityId: userId,
+      entityName: userName,
+      user: userName,
+      data: {
+        ip: clientIp,
+        userAgent,
+        logoutTime: new Date().toISOString(),
+      },
+    });
+
+    res.json({ success: true, message: "Logged out successfully" });
+  } catch (error: any) {
+    res.status(500).json({ error: error.message || "Logout failed" });
   }
 };
 
@@ -161,6 +247,15 @@ export const changePassword = async (req: Request, res: Response) => {
     await prisma.systemUser.update({
       where: { id: userId },
       data: { password: hashedNew },
+    });
+
+    await logActivity({
+      action: "UPDATE",
+      entityType: "USER",
+      entityId: user.id,
+      entityName: user.name,
+      user: user.name,
+      data: { action: "Password changed successfully" },
     });
 
     res.json({ success: true, message: "Password updated successfully" });

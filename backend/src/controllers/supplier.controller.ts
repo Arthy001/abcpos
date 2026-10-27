@@ -1,3 +1,4 @@
+﻿import { logActivity } from "../services/audit.service.js";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 
@@ -43,6 +44,13 @@ export const getSupplierById = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, message: "Supplier not found" });
     }
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "SUPPLIER",
+      entityId: supplier.id,
+      entityName: supplier.name,
+      data: supplier,
+    });
     res.json({ success: true, data: supplier });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to fetch supplier" });
@@ -78,6 +86,13 @@ export const createSupplier = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "SUPPLIER",
+      entityId: supplier.id,
+      entityName: supplier.name,
+      data: supplier,
+    });
     res.status(201).json({ success: true, data: supplier });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create supplier" });
@@ -104,6 +119,13 @@ export const updateSupplier = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "SUPPLIER",
+      entityId: supplier.id,
+      entityName: supplier.name,
+      data: supplier,
+    });
     res.json({ success: true, data: supplier });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to update supplier" });
@@ -114,6 +136,16 @@ export const updateSupplier = async (req: Request, res: Response) => {
 export const deleteSupplier = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
+    const existing = await prisma.supplier.findUnique({ where: { id } });
+    if (existing) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "SUPPLIER",
+        entityId: existing.id,
+        entityName: existing.name,
+        data: existing,
+      });
+    }
     await prisma.supplier.delete({ where: { id } });
     res.json({ success: true, message: "Supplier deleted successfully" });
   } catch (error: any) {

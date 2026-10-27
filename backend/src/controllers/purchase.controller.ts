@@ -1,3 +1,4 @@
+﻿import { logActivity } from "../services/audit.service.js";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { recordStockMovement } from "../services/stock.service.js";
@@ -144,6 +145,14 @@ export const createPurchase = async (req: Request, res: Response) => {
       }
     }
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "PURCHASE",
+      entityId: purchase.id,
+      entityName: purchase.reference,
+      user: "Admin",
+      data: { reference: purchase.reference, supplier: purchase.supplierName, total: purchase.total, status: purchase.status },
+    });
     res.status(201).json(purchase);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to create purchase" });
@@ -239,6 +248,20 @@ export const updatePurchase = async (req: Request, res: Response) => {
       }
     }
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "PURCHASE",
+      entityId: purchase.id,
+      entityName: purchase.reference,
+      user: "Admin",
+      data: {
+        reference: purchase.reference,
+        supplier: purchase.supplierName,
+        total: purchase.total,
+        status: purchase.status,
+      },
+    });
+
     res.json(purchase);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to update purchase" });
@@ -252,6 +275,16 @@ export const deletePurchase = async (req: Request, res: Response) => {
       where: { id },
       include: { items: true },
     });
+    if (existing) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "PURCHASE",
+        entityId: existing.id,
+        entityName: existing.reference,
+        user: "Admin",
+        data: { reference: existing.reference, supplier: existing.supplierName, total: existing.total },
+      });
+    }
 
     if (existing) {
       // Revert stock if it was received

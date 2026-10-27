@@ -1,4 +1,4 @@
-import { create } from "zustand";
+﻿import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface AuthUser {
@@ -136,7 +136,12 @@ export const useAuthStore = create<AuthState>()(
 
       setUser: (user: AuthUser) => set({ user }),
 
-      logout: () => set({ user: DEFAULT_USER }),
+      logout: () => {
+        try {
+          fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
+        } catch (_) {}
+        set({ user: DEFAULT_USER });
+      },
 
       isAdmin: () => {
         const { user } = get();

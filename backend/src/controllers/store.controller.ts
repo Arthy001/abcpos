@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { logActivity } from "../services/audit.service.js";
 
@@ -88,6 +88,14 @@ export const createStore = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "STORE",
+      entityId: store.id,
+      entityName: store.name,
+      user: "Admin",
+      data: store,
+    });
     res.status(201).json({ success: true, data: store });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create store" });
@@ -113,6 +121,14 @@ export const updateStore = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "STORE",
+      entityId: store.id,
+      entityName: store.name,
+      user: "Admin",
+      data: store,
+    });
     res.json({ success: true, data: store });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to update store" });

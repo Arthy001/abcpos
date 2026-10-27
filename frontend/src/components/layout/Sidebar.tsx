@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -11,6 +11,7 @@ import {
   Package,
   PlusCircle,
   AlertOctagon,
+  AlertTriangle,
   TrendingDown,
   Layers,
   Tag,
@@ -278,6 +279,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
         { name: "Trial Balance", href: "/finance/trial-balance", icon: Scale },
         { name: "Cash Flow", href: "/finance/cash-flow", icon: Wallet },
         { name: "Account Statement", href: "/finance/account-statement", icon: FileSpreadsheet },
+          { name: "Withholding Tax (หัก ณ ที่จ่าย)", href: "/finance/withholding-tax", icon: Receipt },
+          { name: "Tax Invoices (ใบกำกับภาษี)", href: "/finance/tax-invoices", icon: FileCheck },
+          { name: "Accountant Hub (ส่งบัญชี)", href: "/finance/accountant-hub", icon: FileSpreadsheet },
       ],
     },
     {
@@ -410,6 +414,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
         { name: "Roles & Permissions", href: "/roles-permissions", icon: ShieldCheck },
         { name: "Delete Account Request", href: "/delete-account-requests", icon: UserX },
         { name: "Activity Logs", href: "/activity-logs", icon: History },
+          { name: "Incident Logs (ตรวจ Error)", href: "/activity-logs/incidents", icon: AlertTriangle },
       ],
     },
     {

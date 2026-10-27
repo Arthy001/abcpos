@@ -1,3 +1,4 @@
+﻿import { logActivity } from "../services/audit.service.js";
 import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 import { recordStockMovement } from "../services/stock.service.js";
@@ -544,6 +545,21 @@ export const createSale = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "SALE",
+      entityId: newSale.id,
+      entityName: newSale.reference,
+      user: billerName || "Admin",
+      data: {
+        reference: newSale.reference,
+        customer: newSale.customerName,
+        grandTotal: newSale.grandTotal,
+        paymentStatus: newSale.paymentStatus,
+        status: newSale.status,
+      },
+    });
+
     res.status(201).json(newSale);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to create sale" });
@@ -602,6 +618,21 @@ export const updateSale = async (req: Request, res: Response): Promise<void> => 
       });
     }
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "SALE",
+      entityId: updated.id,
+      entityName: updated.reference,
+      user: updated.billerName || "Admin",
+      data: {
+        reference: updated.reference,
+        customer: updated.customerName,
+        grandTotal: updated.grandTotal,
+        paymentStatus: updated.paymentStatus,
+        status: updated.status,
+      },
+    });
+
     res.json(updated);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to update sale" });
@@ -611,6 +642,17 @@ export const updateSale = async (req: Request, res: Response): Promise<void> => 
 export const deleteSale = async (req: Request, res: Response): Promise<void> => {
   try {
     const id = String(req.params.id);
+    const existing = await prisma.sale.findUnique({ where: { id } });
+    if (existing) {
+      await logActivity({
+        action: "DELETE",
+        entityType: "SALE",
+        entityId: existing.id,
+        entityName: existing.reference,
+        user: "Admin",
+        data: { reference: existing.reference, customer: existing.customerName, grandTotal: existing.grandTotal },
+      });
+    }
     await prisma.sale.delete({
       where: { id },
     });

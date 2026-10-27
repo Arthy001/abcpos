@@ -1,4 +1,5 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
+import { logActivity } from "../services/audit.service.js";
 import { prisma } from "../lib/prisma.js";
 
 // GET /api/brands
@@ -50,6 +51,15 @@ export const createBrand = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "BRAND",
+      entityId: brand.id,
+      entityName: brand.name,
+      user: "Admin",
+      data: brand,
+    });
+
     res.status(201).json(brand);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to create brand" });
@@ -72,13 +82,21 @@ export const updateBrand = async (req: Request, res: Response) => {
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "BRAND",
+      entityId: brand.id,
+      entityName: brand.name,
+      user: "Admin",
+      data: brand,
+    });
+
     res.json(brand);
   } catch (error: any) {
     res.status(500).json({ error: error.message || "Failed to update brand" });
   }
 };
 
-import { logActivity } from "../services/audit.service.js";
 
 // DELETE /api/brands/:id
 export const deleteBrand = async (req: Request, res: Response) => {

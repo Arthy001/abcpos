@@ -1,5 +1,6 @@
-import { Request, Response } from "express";
+﻿import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
+import { logActivity } from "../services/audit.service.js";
 
 // GET /api/units
 export const getUnits = async (req: Request, res: Response) => {
@@ -42,17 +43,45 @@ export const createUnit = async (req: Request, res: Response) => {
       return res.status(400).json({ error: "Unit Name and Short Name are required" });
     }
 
+    const trimmedShortName = String(shortName).trim();
+    const trimmedName = String(name).trim();
+
+    // 1. Pre-validation: ตรวจสอบข้อมูลซ้ำล่วงหน้า
+    const existing = await prisma.unit.findUnique({
+      where: { shortName: trimmedShortName },
+    });
+
+    if (existing) {
+      return res.status(400).json({
+        error: `Unit short name "${trimmedShortName}" already exists (currently used by: "${existing.name}"). Please choose a different short name.`,
+      });
+    }
+
     const unit = await prisma.unit.create({
       data: {
-        name,
-        shortName,
+        name: trimmedName,
+        shortName: trimmedShortName,
         status: status || "ACTIVE",
       },
     });
 
+    await logActivity({
+      action: "CREATE",
+      entityType: "UNIT",
+      entityId: unit.id,
+      entityName: unit.name,
+      data: { name: unit.name, shortName: unit.shortName, status: unit.status },
+    });
+
     res.status(201).json(unit);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to create unit" });
+    // 2. Prisma P2002 Unique Constraint Fallback
+    if ((error as any).code === "P2002") {
+      return res.status(400).json({
+        error: `Unit short name "${req.body.shortName}" already exists. Please choose a different short name.`,
+      });
+    }
+    res.status(500).json({ error: "Failed to save unit. Please try again." });
   }
 };
 
@@ -62,22 +91,46 @@ export const updateUnit = async (req: Request, res: Response) => {
     const id = String(req.params.id);
     const { name, shortName, status } = req.body;
 
+    if (shortName) {
+      const trimmedShortName = String(shortName).trim();
+      const existing = await prisma.unit.findUnique({
+        where: { shortName: trimmedShortName },
+      });
+
+      if (existing && existing.id !== id) {
+        return res.status(400).json({
+          error: `Unit short name "${trimmedShortName}" already exists (used by: "${existing.name}"). Please choose a different short name.`,
+        });
+      }
+    }
+
     const unit = await prisma.unit.update({
       where: { id },
       data: {
-        ...(name && { name }),
-        ...(shortName && { shortName }),
+        ...(name && { name: String(name).trim() }),
+        ...(shortName && { shortName: String(shortName).trim() }),
         ...(status && { status }),
       },
     });
 
+    await logActivity({
+      action: "UPDATE",
+      entityType: "UNIT",
+      entityId: unit.id,
+      entityName: unit.name,
+      data: { name: unit.name, shortName: unit.shortName, status: unit.status },
+    });
+
     res.json(unit);
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to update unit" });
+    if ((error as any).code === "P2002") {
+      return res.status(400).json({
+        error: `Unit short name "${req.body.shortName}" already exists. Please choose a different short name.`,
+      });
+    }
+    res.status(500).json({ error: "Failed to update unit. Please try again." });
   }
 };
-
-import { logActivity } from "../services/audit.service.js";
 
 // DELETE /api/units/:id
 export const deleteUnit = async (req: Request, res: Response) => {
@@ -88,15 +141,18 @@ export const deleteUnit = async (req: Request, res: Response) => {
       await logActivity({
         action: "DELETE",
         entityType: "UNIT",
-        entityId: unit.id,
+        entityId: id,
         entityName: unit.name,
-        user: "Admin",
-        data: unit,
+        data: { name: unit.name, shortName: unit.shortName },
       });
     }
-    await prisma.unit.delete({ where: { id } });
-    res.json({ success: true, message: "Unit deleted successfully" });
+
+    await prisma.unit.delete({
+      where: { id },
+    });
+
+    res.json({ message: "Unit deleted successfully" });
   } catch (error: any) {
-    res.status(500).json({ error: error.message || "Failed to delete unit" });
+    res.status(500).json({ error: "Cannot delete this unit because products are still associated with it." });
   }
 };
