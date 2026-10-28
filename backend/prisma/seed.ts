@@ -3,1124 +3,1645 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log("Seeding database...");
+  console.log("🚀 Starting fresh database seed for Plastic Bag Manufacturing Business (with 7-Month Historical Analytics)...");
 
-  // Clean old records
-  await prisma.orderItem.deleteMany();
-  await prisma.order.deleteMany();
-  await prisma.product.deleteMany();
-  await prisma.subCategory.deleteMany();
-  await prisma.category.deleteMany();
-  await prisma.brand.deleteMany();
-  await prisma.unit.deleteMany();
-  await prisma.warranty.deleteMany();
-  await prisma.variantAttribute.deleteMany();
+  // 1. Company Settings
+  console.log("Setting up Company Settings...");
+  await prisma.companySettings.deleteMany();
+  await prisma.companySettings.create({
+    data: {
+      companyName: "บริษัท สยามโพลีแพ็ค แมนูแฟคเจอริ่ง จำกัด (Siam Polypack Manufacturing Co., Ltd.)",
+      email: "contact@siampolypack.com",
+      phone: "+66 2 890 1234",
+      fax: "+66 2 890 1235",
+      website: "https://www.siampolypack.com",
+      address: "88/18 หมู่ 4 ถ.พระราม 2 ต.คอกกระบือ อ.เมือง",
+      city: "สมุทรสาคร",
+      state: "สมุทรสาคร",
+      country: "Thailand",
+      postalCode: "74000",
+      taxId: "0105562098888",
+    },
+  });
+
+  // 2. Roles & System Users
+  console.log("Creating Roles & System Users...");
+  await prisma.userWarehouse.deleteMany();
+  await prisma.systemUser.deleteMany();
+  await prisma.role.deleteMany();
+
+  const roles = [
+    { name: "Admin", description: "ผู้ดูแลระบบสูงสุด สิทธิ์การเข้าถึงทุกฟังก์ชัน" },
+    { name: "Plant Manager", description: "ผู้จัดการโรงงาน ดูแลการผลิต คลังสินค้า และสูตรการผลิต" },
+    { name: "Production Supervisor", description: "หัวหน้าฝ่ายผลิต คุมเครื่องเป่าฟิล์มและเครื่องตัดซีล" },
+    { name: "Warehouse Supervisor", description: "ผู้ดูแลคลังสินค้า การรับเข้า-เบิกจ่าย และตรวจนับสต็อก" },
+    { name: "Sales & Cashier", description: "เจ้าหน้าที่ฝ่ายขายและออกใบเสร็จรับเงิน/POS" },
+  ];
+
+  for (const r of roles) {
+    await prisma.role.create({
+      data: {
+        name: r.name,
+        description: r.description,
+        status: "ACTIVE",
+        createdDate: "01 Jan 2026",
+      },
+    });
+  }
+
+  // 3. Warehouses & Stores
+  console.log("Creating Warehouses & Stores...");
   await prisma.warehouse.deleteMany();
   await prisma.store.deleteMany();
-  await prisma.customer.deleteMany();
-  await prisma.supplier.deleteMany();
-  await prisma.biller.deleteMany();
-  await prisma.shift.deleteMany();
-  await prisma.department.deleteMany();
-  await prisma.designation.deleteMany();
-  await prisma.employee.deleteMany();
-  await prisma.attendance.deleteMany();
-  await prisma.leaveType.deleteMany();
-  await prisma.leave.deleteMany();
-  await prisma.holiday.deleteMany();
-  await prisma.payroll.deleteMany();
-  await prisma.salesReportItem.deleteMany();
-  await prisma.purchaseReportItem.deleteMany();
-  await prisma.inventoryReportItem.deleteMany();
-  await prisma.stockHistoryItem.deleteMany();
-  await prisma.soldStockItem.deleteMany();
-  await prisma.invoiceReportItem.deleteMany();
-  await prisma.supplierReportItem.deleteMany();
-  await prisma.supplierDueReportItem.deleteMany();
-  await prisma.customerReportItem.deleteMany();
-  await prisma.customerDueReportItem.deleteMany();
-  await prisma.productReportItem.deleteMany();
-  await prisma.productExpiryReportItem.deleteMany();
-  await prisma.productQuantityAlertItem.deleteMany();
-  await prisma.expenseReportItem.deleteMany();
-  await prisma.incomeReportItem.deleteMany();
-  await prisma.purchaseTaxReportItem.deleteMany();
-  await prisma.salesTaxReportItem.deleteMany();
-  await prisma.profitLossReportItem.deleteMany();
-  await prisma.annualReportItem.deleteMany();
-  await prisma.userProfileSettings.deleteMany();
-  await prisma.userSecuritySettings.deleteMany();
-  await prisma.userSessionLog.deleteMany();
-  await prisma.userNotificationSettings.deleteMany();
-  await prisma.connectedAppItem.deleteMany();
 
-  // 1. Create Brands
-  const brandsData = [
-    { name: "Lenovo", slug: "lenovo", status: "ACTIVE" },
-    { name: "Beats", slug: "beats", status: "ACTIVE" },
-    { name: "Nike", slug: "nike", status: "ACTIVE" },
-    { name: "Apple", slug: "apple", status: "ACTIVE" },
-    { name: "Amazon", slug: "amazon", status: "ACTIVE" },
-    { name: "Woodmart", slug: "woodmart", status: "ACTIVE" },
-    { name: "Dior", slug: "dior", status: "ACTIVE" },
-    { name: "Lava", slug: "lava", status: "ACTIVE" },
-    { name: "Nilkamal", slug: "nilkamal", status: "ACTIVE" },
-    { name: "The North Face", slug: "the-north-face", status: "ACTIVE" },
+  const warehousesData = [
+    {
+      name: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      code: "RM-01",
+      phone: "+66 2 890 1240",
+      contactPerson: "สมคิด คุมเม็ด",
+      address: "อาคาร 1 โรงงานสมุทรสาคร เก็บเม็ดพลาสติก HDPE, LDPE, PP, สารเติมแต่ง",
+      status: "ACTIVE",
+    },
+    {
+      name: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
+      code: "FG-01",
+      phone: "+66 2 890 1241",
+      contactPerson: "สมเกียรติ สต็อกแมน",
+      address: "อาคาร 2 โรงงานสมุทรสาคร เก็บถุงหูหิ้ว, ถุงร้อน, ถุงเย็น รอส่งมอบ",
+      status: "ACTIVE",
+    },
+    {
+      name: "คลังสินค้าสำเร็จรูป 2 (FG-02)",
+      code: "FG-02",
+      phone: "+66 2 890 1242",
+      contactPerson: "วิเชียร โลจิสติกส์",
+      address: "อาคาร 3 โรงงานสมุทรสาคร เก็บถุงขยะ, ฟิล์มยืด, สินค้าสั่งผลิต",
+      status: "ACTIVE",
+    },
+    {
+      name: "คลังเศษพลาสติกรีไซเคิล (RC-01)",
+      code: "RC-01",
+      phone: "+66 2 890 1243",
+      contactPerson: "บุญส่ง บดพลาสติก",
+      address: "ลานบดรีไซเคิล อาคาร 4 เก็บเศษฟิล์มจากการตัดซีลเพื่อนำกลับมาหลอมใหม่",
+      status: "ACTIVE",
+    },
   ];
 
-  for (const b of brandsData) {
-    await prisma.brand.create({ data: b });
+  const whMap: Record<string, string> = {};
+  for (const w of warehousesData) {
+    const created = await prisma.warehouse.create({ data: w });
+    whMap[w.name] = created.id;
   }
 
-  // 2. Create Units
+  const storesData = [
+    {
+      name: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+      code: "STO-RAMA2",
+      userName: "สมเกียรติ สโตร์แมน",
+      phone: "+66 2 890 1250",
+      email: "store-rama2@siampolypack.com",
+      address: "88/18 ถ.พระราม 2 ต.คอกกระบือ อ.เมือง จ.สมุทรสาคร",
+      status: "ACTIVE",
+    },
+    {
+      name: "สาขา ตลาดไท ศูนย์รวมบรรจุภัณฑ์",
+      code: "STO-TALAADTHAI",
+      userName: "วิชัย ตลาดไท",
+      phone: "+66 2 529 8890",
+      email: "store-talaadthai@siampolypack.com",
+      address: "โซนพลาซ่าตลาดไท ต.คลองสอง อ.คลองหลวง จ.ปทุมธานี",
+      status: "ACTIVE",
+    },
+    {
+      name: "สาขา ตลาดสี่มุมเมือง",
+      code: "STO-SIMUMMUANG",
+      userName: "กานดา สี่มุมเมือง",
+      phone: "+66 2 995 7766",
+      email: "store-simummuang@siampolypack.com",
+      address: "ตลาดสี่มุมเมือง อาคารบรรจุภัณฑ์ ต.คูคต อ.ลำลูกกา จ.ปทุมธานี",
+      status: "ACTIVE",
+    },
+  ];
+
+  const storeMap: Record<string, string> = {};
+  for (const s of storesData) {
+    const created = await prisma.store.create({ data: s });
+    storeMap[s.name] = created.id;
+  }
+
+  // System Users
+  const usersData = [
+    {
+      name: "สมชาย ชัยชนะ (Plant Director)",
+      phone: "+66 81 234 5678",
+      email: "admin@siampolypack.com",
+      role: "Admin",
+      warehouseName: "All Warehouses",
+      storeName: "All Stores",
+      avatar: "/assets/images/avatar-01.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "วิชัย เป่าฟิล์ม (Lead Extruder)",
+      phone: "+66 89 876 5432",
+      email: "wichai@siampolypack.com",
+      role: "Production Supervisor",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+      avatar: "/assets/images/customer12.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "กานดา การค้า (Sales Manager)",
+      phone: "+66 86 555 1234",
+      email: "kanda@siampolypack.com",
+      role: "Sales & Cashier",
+      warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
+      storeName: "สาขา ตลาดไท ศูนย์รวมบรรจุภัณฑ์",
+      avatar: "/assets/images/customer14.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "สมเกียรติ สต็อกแมน (Store Keeper)",
+      phone: "+66 84 333 9988",
+      email: "somkiat@siampolypack.com",
+      role: "Warehouse Supervisor",
+      warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
+      storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+      avatar: "/assets/images/customer15.jpg",
+      status: "ACTIVE",
+    },
+  ];
+
+  for (const u of usersData) {
+    const user = await prisma.systemUser.create({ data: u });
+    const firstWhId = Object.values(whMap)[0];
+    if (firstWhId) {
+      await prisma.userWarehouse.create({
+        data: { userId: user.id, warehouseId: firstWhId },
+      });
+    }
+  }
+
+  // 4. Units
+  console.log("Creating Units...");
+  await prisma.unit.deleteMany();
   const unitsData = [
-    { name: "Kilograms", shortName: "kg", status: "ACTIVE" },
-    { name: "Liters", shortName: "L", status: "ACTIVE" },
-    { name: "Dozen", shortName: "dz", status: "ACTIVE" },
-    { name: "Pieces", shortName: "pcs", status: "ACTIVE" },
-    { name: "Boxes", shortName: "bx", status: "ACTIVE" },
-    { name: "Tons", shortName: "t", status: "ACTIVE" },
-    { name: "Grams", shortName: "g", status: "ACTIVE" },
-    { name: "Meters", shortName: "m", status: "ACTIVE" },
-    { name: "Centimeters", shortName: "cm", status: "ACTIVE" },
+    { name: "Kilograms (กิโลกรัม)", shortName: "kg", status: "ACTIVE" },
+    { name: "Metric Tons (เมตริกตัน)", shortName: "t", status: "ACTIVE" },
+    { name: "Sacks 25kg (กระสอบ 25 กก.)", shortName: "sack", status: "ACTIVE" },
+    { name: "Packs (แพ็ค / ห่อ)", shortName: "pk", status: "ACTIVE" },
+    { name: "Bundles (มัด / แหนบ)", shortName: "bdl", status: "ACTIVE" },
+    { name: "Rolls (ม้วนฟิล์ม)", shortName: "rl", status: "ACTIVE" },
+    { name: "Cartons (กล่อง / ลัง)", shortName: "ctn", status: "ACTIVE" },
+    { name: "Pieces (ใบ / ชิ้น)", shortName: "pcs", status: "ACTIVE" },
   ];
 
+  const unitMap: Record<string, string> = {};
   for (const u of unitsData) {
-    await prisma.unit.create({ data: u });
+    const created = await prisma.unit.create({ data: u });
+    unitMap[u.shortName] = created.id;
   }
 
-  // 3. Create Warranties matching Screenshot
-  const warrantiesData = [
-    { name: "Replacement Warranty", description: "Covers replacement of faulty items", duration: "2 Year", status: "ACTIVE" },
-    { name: "On-Site Warranty", description: "Product repairs done at the customer's location", duration: "1 Year", status: "ACTIVE" },
-    { name: "Accidental Protection Plan", description: "Coverage for accidental damage", duration: "6 Months", status: "ACTIVE" },
-    { name: "Labor-Only Warranty", description: "Covers only labor costs, not parts", duration: "6 Months", status: "ACTIVE" },
-    { name: "No-Cost Repairs", description: "No charge for repairs during warranty period", duration: "3 Months", status: "ACTIVE" },
-    { name: "Accidental Damage", description: "Coverage for unexpected damage", duration: "6 Months", status: "ACTIVE" },
-    { name: "Wear & Tear Warranty", description: "Covers specific product aging issues", duration: "1 Year", status: "ACTIVE" },
-    { name: "Money-Back Guarantee", description: "Refund within a specified period", duration: "3 Months", status: "ACTIVE" },
-    { name: "Water Damage Warranty", description: "Coverage for water-related issues", duration: "6 Months", status: "ACTIVE" },
-    { name: "Power Surge Protection", description: "Covers damage from power surges", duration: "6 Months", status: "ACTIVE" },
+  // 5. Brands
+  console.log("Creating Brands...");
+  await prisma.brand.deleteMany();
+  const brandsData = [
+    { name: "SCGC (เอสซีจี เคมิคอลส์)", slug: "scgc", status: "ACTIVE" },
+    { name: "PTT GC (พีทีที โกลบอล เคมิคอล)", slug: "ptt-gc", status: "ACTIVE" },
+    { name: "IRPC (ไออาร์พีซี)", slug: "irpc", status: "ACTIVE" },
+    { name: "TPI Polene (ทีพีไอ โพลีน)", slug: "tpi-polene", status: "ACTIVE" },
+    { name: "BASF (บีเอเอสเอฟ)", slug: "basf", status: "ACTIVE" },
+    { name: "KingBag (ตรา ราชาถุง)", slug: "kingbag", status: "ACTIVE" },
+    { name: "EcoPoly (ตรา อีโค่โพลี)", slug: "ecopoly", status: "ACTIVE" },
+    { name: "SiamStretch (สยามสเตรทช์)", slug: "siamstretch", status: "ACTIVE" },
+    { name: "PolyTech (โพลีเทค)", slug: "polytech", status: "ACTIVE" },
+    { name: "Thai Color Masterbatch", slug: "thai-color", status: "ACTIVE" },
   ];
 
+  const brandMap: Record<string, string> = {};
+  for (const b of brandsData) {
+    const created = await prisma.brand.create({ data: b });
+    brandMap[b.name] = created.id;
+  }
+
+  // 6. Warranties
+  console.log("Creating Warranties...");
+  await prisma.warranty.deleteMany();
+  const warrantiesData = [
+    { name: "รับประกันคุณภาพมาตรฐาน มอก.", description: "รับรองเม็ดพลาสติกบริสุทธิ์และเนื้อฟิล์มเหนียวตาม มอก.", duration: "1 Year", status: "ACTIVE" },
+    { name: "รับประกันรอยซีลไม่รั่วซึม", description: "รับประกันก้นถุงซีลแน่น ไม่แตกฉีกขาดเมื่อบรรจุตามน้ำหนักที่กำหนด", duration: "6 Months", status: "ACTIVE" },
+    { name: "Food Grade Safety Guarantee", description: "รับรองความปลอดภัยสัมผัสอาหารโดยตรง ปลอดสารก่อมะเร็ง BPA Free", duration: "1 Year", status: "ACTIVE" },
+    { name: "เปลี่ยนคืนกรณีซีลแตกชำรุด", description: "เคลมเปลี่ยนแพ็คใหม่ทันทีหากพบตำหนิจากกระบวนการผลิตภายใน 30 วัน", duration: "30 Days", status: "ACTIVE" },
+  ];
   for (const w of warrantiesData) {
     await prisma.warranty.create({ data: w });
   }
 
-  // 4. Create Variant Attributes matching Screenshot
-  const variantsData = [
-    { name: "Size", values: "XS, S, M, L, XL", status: "ACTIVE" },
-    { name: "Color", values: "Red, Blue, Green", status: "ACTIVE" },
-    { name: "Capacity", values: "Small, Medium, Large", status: "ACTIVE" },
-    { name: "Material", values: "Cotton, Leather, Synthetic", status: "ACTIVE" },
-    { name: "Weight", values: "Light, Heavy", status: "ACTIVE" },
-    { name: "Style", values: "Casual, Formal, Sporty", status: "ACTIVE" },
-    { name: "Pattern", values: "Solid, Striped, Printed", status: "ACTIVE" },
-    { name: "Memory", values: "8 GB, 16 GB, 32 GB", status: "ACTIVE" },
-    { name: "Storage", values: "128 GB, 256 GB, 512 GB, 1 TB", status: "ACTIVE" },
-    { name: "Length", values: "Short, Regular, Long", status: "ACTIVE" },
+  // 7. Variant Attributes
+  console.log("Creating Variant Attributes...");
+  await prisma.variantAttribute.deleteMany();
+  const attributesData = [
+    { name: "Size (ขนาดถุงหูหิ้ว)", values: "6x14 นิ้ว, 8x16 นิ้ว, 9x18 นิ้ว, 12x20 นิ้ว", status: "ACTIVE" },
+    { name: "Size (ขนาดถุงร้อนใส PP)", values: "4.5x7 นิ้ว, 5x8 นิ้ว, 6x9 นิ้ว, 7x11 นิ้ว, 8x12 นิ้ว", status: "ACTIVE" },
+    { name: "Size (ขนาดถุงขยะดำ)", values: "18x20 นิ้ว, 24x28 นิ้ว, 28x36 นิ้ว, 30x40 นิ้ว, 36x45 นิ้ว", status: "ACTIVE" },
+    { name: "Size (ขนาดถุงซิปล็อค)", values: "6x8 ซม., 10x15 ซม., 15x23 ซม., 20x30 ซม.", status: "ACTIVE" },
+    { name: "Thickness (ความหนาฟิล์มยืด)", values: "15 ไมครอน, 17 ไมครอน, 20 ไมครอน", status: "ACTIVE" },
+    { name: "Color (สีถุงและเม็ด)", values: "ขาวขุ่น (Natural), ใส (Clear), ดำ (Black), แดง (Red), เขียว (Green), เหลือง (Yellow), น้ำเงิน (Blue)", status: "ACTIVE" },
   ];
-
-  for (const v of variantsData) {
-    await prisma.variantAttribute.create({ data: v });
+  for (const a of attributesData) {
+    await prisma.variantAttribute.create({ data: a });
   }
 
-  // 5. Create Warehouses matching Screenshot
-  const warehousesData = [
-    { name: "Lavish Warehouse", contactPerson: "Chad Taylor", contactAvatar: "/assets/images/customer11.jpg", phone: "+12498345785", totalProducts: 10, stock: 600, qty: 80, createdAt: new Date("2024-12-24"), status: "ACTIVE" },
-    { name: "Quaint Warehouse", contactPerson: "Jenny Ellis", contactAvatar: "/assets/images/customer12.jpg", phone: "+13178964582", totalProducts: 15, stock: 300, qty: 85, createdAt: new Date("2024-12-10"), status: "ACTIVE" },
-    { name: "Traditional Warehouse", contactPerson: "Leon Baxter", contactAvatar: "/assets/images/customer13.jpg", phone: "+12796183487", totalProducts: 12, stock: 400, qty: 70, createdAt: new Date("2024-11-27"), status: "ACTIVE" },
-    { name: "Cool Warehouse", contactPerson: "Karen Flores", contactAvatar: "/assets/images/customer14.jpg", phone: "+17538647943", totalProducts: 20, stock: 320, qty: 65, createdAt: new Date("2024-11-18"), status: "ACTIVE" },
-    { name: "Overflow Warehouse", contactPerson: "Michael Dawson", contactAvatar: "/assets/images/customer15.jpg", phone: "+13798132475", totalProducts: 8, stock: 170, qty: 80, createdAt: new Date("2024-11-06"), status: "ACTIVE" },
-    { name: "Nova Storage Hub", contactPerson: "Karen Galvan", contactAvatar: "/assets/images/customer16.jpg", phone: "+17596341894", totalProducts: 13, stock: 220, qty: 75, createdAt: new Date("2024-10-25"), status: "ACTIVE" },
-    { name: "Retail Supply Hub", contactPerson: "Thomas Ward", contactAvatar: "/assets/images/customer17.jpg", phone: "+12973548678", totalProducts: 17, stock: 310, qty: 60, createdAt: new Date("2024-10-14"), status: "ACTIVE" },
-    { name: "EdgeWare Solutions", contactPerson: "Aliza Duncan", contactAvatar: "/assets/images/customer18.jpg", phone: "+13147858357", totalProducts: 22, stock: 450, qty: 50, createdAt: new Date("2024-10-03"), status: "ACTIVE" },
-    { name: "North Zone Warehouse", contactPerson: "James Higham", contactAvatar: "/assets/images/avatar-01.jpg", phone: "+11978348626", totalProducts: 24, stock: 270, qty: 70, createdAt: new Date("2024-09-20"), status: "ACTIVE" },
-    { name: "Fulfillment Hub", contactPerson: "Jada Robinson", contactAvatar: "/assets/images/avatar-02.jpg", phone: "+12678934561", totalProducts: 14, stock: 300, qty: 45, createdAt: new Date("2024-09-10"), status: "ACTIVE" },
+  // 8. Categories & SubCategories
+  console.log("Creating Categories & SubCategories...");
+  await prisma.subCategory.deleteMany();
+  await prisma.category.deleteMany();
+
+  const categories = [
+    {
+      name: "วัตถุดิบเม็ดพลาสติก (Plastic Resins)",
+      slug: "plastic-resins",
+      description: "เม็ดพลาสติกบริสุทธิ์และรีไซเคิล สำหรับงานเป่าฟิล์มและหล่อขึ้นรูป",
+      subCategories: [
+        { name: "เม็ดพลาสติก HDPE (ฟิล์มเหนียวกรอบ)", slug: "sub-hdpe", code: "SUB-HDPE" },
+        { name: "เม็ดพลาสติก LDPE (ฟิล์มนิ่มยืดหยุ่น)", slug: "sub-ldpe", code: "SUB-LDPE" },
+        { name: "เม็ดพลาสติก PP (ฟิล์มใสทนความร้อน)", slug: "sub-pp", code: "SUB-PP" },
+        { name: "เม็ดพลาสติกรีไซเคิล PCR/PIR", slug: "sub-pcr", code: "SUB-PCR" },
+        { name: "เม็ดพลาสติกชีวภาพย่อยสลายได้ (Bio Resin)", slug: "sub-bio-resin", code: "SUB-BIO-RESIN" },
+      ],
+    },
+    {
+      name: "เม็ดสีและสารเติมแต่ง (Masterbatch & Additives)",
+      slug: "masterbatch-additives",
+      description: "เม็ดแม่สีผสมพลาสติก สารกันลื่น และสารย่อยสลายทางชีวภาพ",
+      subCategories: [
+        { name: "เม็ดแม่สีขาว / ดำ / สีต่างๆ (Color Masterbatch)", slug: "sub-color-mb", code: "SUB-COLOR-MB" },
+        { name: "สารกันลื่นและกันฟิล์มติด (Slip Agent)", slug: "sub-slip", code: "SUB-SLIP" },
+        { name: "สารกันรังสี UV (UV Stabilizer)", slug: "sub-uv", code: "SUB-UV" },
+        { name: "สารช่วยย่อยสลายชีวภาพ (Bio Additives)", slug: "sub-bio", code: "SUB-BIO" },
+      ],
+    },
+    {
+      name: "ถุงหูหิ้วและถุงช้อปปิ้ง (T-Shirt & Shopping Bags)",
+      slug: "t-shirt-shopping-bags",
+      description: "ถุงหูหิ้ว HDPE คุณภาพสูง สำหรับร้านค้า ซูเปอร์มาร์เก็ต และห้างสรรพสินค้า",
+      subCategories: [
+        { name: "ถุงหูหิ้วขาวขุ่น HDPE เกรด A", slug: "sub-tshirt-white", code: "SUB-TSHIRT-WHITE" },
+        { name: "ถุงหูหิ้วสีและพิมพ์ลาย", slug: "sub-tshirt-print", code: "SUB-TSHIRT-PRINT" },
+        { name: "ถุงหูเจาะแฟชั่น PE", slug: "sub-die-cut", code: "SUB-DIE-CUT" },
+        { name: "ถุงช้อปปิ้งย่อยสลายได้ 100% (Compostable)", slug: "sub-compostable-bag", code: "SUB-COMPOST" },
+      ],
+    },
+    {
+      name: "ถุงบรรจุภัณฑ์อาหาร (Food Packaging Bags)",
+      slug: "food-packaging-bags",
+      description: "ถุงร้อนใส ถุงเย็นแช่แข็ง และถุงซิปล็อค เกรดปลอดภัยสัมผัสอาหาร",
+      subCategories: [
+        { name: "ถุงร้อนใส PP (ถุงแกง)", slug: "sub-hotbag-pp", code: "SUB-HOTBAG-PP" },
+        { name: "ถุงเย็นใส LDPE (ถุงแช่แข็ง)", slug: "sub-coldbag-ld", code: "SUB-COLDBAG-LD" },
+        { name: "ถุงซิปล็อคใส LDPE Food Grade", slug: "sub-zipper", code: "SUB-ZIPPER" },
+        { name: "ซองซีลสูญญากาศ Nylon/PE", slug: "sub-vacuum", code: "SUB-VACUUM" },
+      ],
+    },
+    {
+      name: "ถุงขยะและถุงอุตสาหกรรม (Trash & Heavy Bags)",
+      slug: "trash-heavy-bags",
+      description: "ถุงขยะดำมาตรฐาน ถุงขยะติดเชื้อโรงพยาบาล และถุงบรรจุสินค้าหนัก",
+      subCategories: [
+        { name: "ถุงขยะดำรีไซเคิลมาตรฐาน", slug: "sub-trash-black", code: "SUB-TRASH-BLACK" },
+        { name: "ถุงขยะติดเชื้อสีแดง (Hospital)", slug: "sub-trash-red", code: "SUB-TRASH-RED" },
+        { name: "ถุงขยะแยกประเภทสี (เขียว/เหลือง/น้ำเงิน)", slug: "sub-trash-color", code: "SUB-TRASH-COLOR" },
+        { name: "ถุงเพาะชำการเกษตรและงานหนัก", slug: "sub-nursery-heavy", code: "SUB-NURSERY" },
+      ],
+    },
+    {
+      name: "ม้วนฟิล์มและฟิล์มยืด (Stretch & Roll Films)",
+      slug: "stretch-roll-films",
+      description: "ฟิล์มยืดพันพาเลทอุตสาหกรรม และฟิล์มหดหุ้มสินค้า",
+      subCategories: [
+        { name: "ฟิล์มยืดพันพาเลท (Pallet Stretch Film)", slug: "sub-stretch-pallet", code: "SUB-STRETCH-PALLET" },
+        { name: "ฟิล์มหดหุ้มสินค้า (POF Shrink Film)", slug: "sub-shrink-film", code: "SUB-SHRINK" },
+      ],
+    },
   ];
-  for (const wh of warehousesData) {
-    await prisma.warehouse.create({ data: wh });
+
+  const catMap: Record<string, string> = {};
+  for (const c of categories) {
+    const createdCat = await prisma.category.create({
+      data: {
+        name: c.name,
+        slug: c.slug,
+        description: c.description,
+        status: "ACTIVE",
+      },
+    });
+    catMap[c.slug] = createdCat.id;
+
+    for (const sub of c.subCategories) {
+      await prisma.subCategory.create({
+        data: {
+          name: sub.name,
+          slug: sub.slug,
+          code: sub.code,
+          categoryId: createdCat.id,
+          description: `${sub.name} ในหมวด ${c.name}`,
+          status: "ACTIVE",
+        },
+      });
+    }
   }
 
-  // 5.1 Create Stores matching Screenshot
-  const storesData = [
-    { name: "Electro Mart", userName: "johnsmith", email: "electromart@example.com", phone: "+12498345785", status: "ACTIVE" },
-    { name: "Quantum Gadgets", userName: "janedoe", email: "quantum@example.com", phone: "+13178964582", status: "ACTIVE" },
-    { name: "Prime Bazaar", userName: "sarahlee", email: "primebazaar@example.com", phone: "+12796183487", status: "ACTIVE" },
-    { name: "Gadget World", userName: "alexbrown", email: "gadgetworld@example.com", phone: "+17538647943", status: "ACTIVE" },
-    { name: "Volt Vault", userName: "jesswhite", email: "voltvault@example.com", phone: "+13798132475", status: "ACTIVE" },
-    { name: "Elite Retail", userName: "emilydavis", email: "eliteretail@example.com", phone: "+17596341894", status: "ACTIVE" },
-    { name: "Prime Mart", userName: "tomharris", email: "primemart@example.com", phone: "+12973548678", status: "ACTIVE" },
-    { name: "NeoTech Store", userName: "sarahjohnson", email: "neotech@example.com", phone: "+13147858357", status: "ACTIVE" },
-    { name: "Urban Mart", userName: "laurawilson", email: "urbanmart@example.com", phone: "+11978348626", status: "ACTIVE" },
-    { name: "Travel Mart", userName: "robertwhite", email: "travelmart@example.com", phone: "+12678934561", status: "ACTIVE" },
-  ];
-  for (const st of storesData) {
-    await prisma.store.create({ data: st });
-  }
-
-  // 5.2 Create Suppliers matching Screenshot
+  // 9. Suppliers
+  console.log("Creating Suppliers...");
+  await prisma.supplier.deleteMany();
   const suppliersData = [
-    { code: "SU001", name: "Apex Computers", image: "/assets/images/product-01.jpg", email: "apexcomputers@example.com", phone: "+15964712634", country: "Germany", status: "ACTIVE" },
-    { code: "SU002", name: "Beats Headphones", image: "/assets/images/product-03.jpg", email: "beatsheadphone@example.com", phone: "+16372895190", country: "Japan", status: "ACTIVE" },
-    { code: "SU003", name: "Dazzle Shoes", image: "/assets/images/product-04.jpg", email: "dazzleshoes@example.com", phone: "+17589201739", country: "USA", status: "ACTIVE" },
-    { code: "SU004", name: "Best Accessories", image: "/assets/images/product-05.jpg", email: "bestaccessories@example.com", phone: "+18934092467", country: "Austria", status: "ACTIVE" },
-    { code: "SU005", name: "A-Z Store", image: "/assets/images/product-06.jpg", email: "a2zstore@example.com", phone: "+12568749035", country: "Turkey", status: "ACTIVE" },
-    { code: "SU006", name: "Hatimi Hardwares", image: "/assets/images/product-07.jpg", email: "hatimihardware@example.com", phone: "+19054674627", country: "Mexico", status: "ACTIVE" },
-    { code: "SU007", name: "Aesthetic Bags", image: "/assets/images/product-08.jpg", email: "aestheticbags@example.com", phone: "+18943670365", country: "France", status: "ACTIVE" },
-    { code: "SU008", name: "Alpha Mobiles", image: "/assets/images/product-09.jpg", email: "alphamobiles@example.com", phone: "+16473894103", country: "Greece", status: "ACTIVE" },
-    { code: "SU009", name: "Sigma Chairs", image: "/assets/images/product-10.jpg", email: "sigmachair@example.com", phone: "+17590274536", country: "Italy", status: "ACTIVE" },
-    { code: "SU010", name: "Zenith Bags", image: "/assets/images/product-11.jpg", email: "zenithbags@example.com", phone: "+12564098473", country: "China", status: "ACTIVE" },
+    {
+      name: "บริษัท เอสซีจี เคมิคอลส์ จำกัด (มหาชน)",
+      code: "SUP-SCGC",
+      email: "order@scgchemicals.com",
+      phone: "+66 2 586 1111",
+      address: "1 ถ.ปูนซิเมนต์ไทย แขวงบางซื่อ เขตบางซื่อ กรุงเทพฯ 10800",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท พีทีที โกลบอล เคมิคอล จำกัด (มหาชน)",
+      code: "SUP-PTTGC",
+      email: "polymersales@pttgcgroup.com",
+      phone: "+66 2 265 8400",
+      address: "555/1 ศูนย์เอนเนอร์ยี่คอมเพล็กซ์ อาคาร A ถ.วิภาวดีรังสิต จตุจักร กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท ไออาร์พีซี จำกัด (มหาชน)",
+      code: "SUP-IRPC",
+      email: "contact@irpc.co.th",
+      phone: "+66 2 765 7000",
+      address: "555/2 ศูนย์เอนเนอร์ยี่คอมเพล็กซ์ อาคาร B ชั้น 6 จตุจักร กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท ไทยคัลเลอร์มาสเตอร์แบทช์ จำกัด",
+      code: "SUP-THAICOLOR",
+      email: "sales@thaicolormb.com",
+      phone: "+66 2 709 3322",
+      address: "นิคมอุตสาหกรรมบางปู ซอย 11 ต.บางปูใหม่ อ.เมือง จ.สมุทรปราการ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท บีเอเอสเอฟ (ไทย) จำกัด",
+      code: "SUP-BASF",
+      email: "info-thailand@basf.com",
+      phone: "+66 2 624 1999",
+      address: "อาคารเอ็มโพเรี่ยม ทาวเวอร์ ชั้น 23 ถ.สุขุมวิท คลองเตย กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
   ];
+
+  const suppMap: Record<string, string> = {};
   for (const sup of suppliersData) {
-    await prisma.supplier.create({ data: sup });
+    const created = await prisma.supplier.create({ data: sup });
+    suppMap[sup.code] = created.id;
   }
 
-  // 5.3 Create Billers matching Screenshot
-  const billersData = [
-    { code: "BI001", name: "Shaun Farley", avatar: "/assets/images/customer11.jpg", companyName: "GreenTech Industries", email: "shaun@example.com", phone: "+18647961254", country: "USA", status: "ACTIVE" },
-    { code: "BI002", name: "Jenny Ellis", avatar: "/assets/images/customer12.jpg", companyName: "BlueSky Logistics", email: "jenny@example.com", phone: "+13197521863", country: "Germany", status: "ACTIVE" },
-    { code: "BI003", name: "Leon Baxter", avatar: "/assets/images/customer13.jpg", companyName: "EcoFarm Organics", email: "leon@example.com", phone: "+18496275831", country: "Japan", status: "ACTIVE" },
-    { code: "BI004", name: "Karen Flores", avatar: "/assets/images/customer14.jpg", companyName: "SmartTech Solutions", email: "karen@example.com", phone: "+18731498524", country: "Austria", status: "ACTIVE" },
-    { code: "BI005", name: "Michael Dawson", avatar: "/assets/images/customer15.jpg", companyName: "Fresh Supplies", email: "michael@example.com", phone: "+12876928738", country: "Turkey", status: "ACTIVE" },
-    { code: "BI006", name: "Karen Galvan", avatar: "/assets/images/customer16.jpg", companyName: "BrightSource Lighting", email: "karen@example.com", phone: "+17534896148", country: "Mexico", status: "ACTIVE" },
-    { code: "BI007", name: "Thomas Ward", avatar: "/assets/images/customer17.jpg", companyName: "GlobalTech Industries", email: "thomas@example.com", phone: "+16482479624", country: "France", status: "ACTIVE" },
-    { code: "BI008", name: "Aliza Duncan", avatar: "/assets/images/customer18.jpg", companyName: "HealthWell Pharma", email: "aliza@example.com", phone: "+13175964827", country: "Greece", status: "ACTIVE" },
-    { code: "BI009", name: "James Higham", avatar: "/assets/images/avatar-01.jpg", companyName: "HomeStyle Furnishings", email: "james@example.com", phone: "+13875196482", country: "Italy", status: "ACTIVE" },
-    { code: "BI010", name: "Jada Robinson", avatar: "/assets/images/avatar-02.jpg", companyName: "EcoLogistics Partners", email: "robinson@example.com", phone: "+17586143284", country: "China", status: "ACTIVE" },
-  ];
-  for (const bil of billersData) {
-    await prisma.biller.create({ data: bil });
-  }
-
-  // 6. Create Categories
-  const catComputers = await prisma.category.create({
-    data: { name: "Computers", slug: "computers", description: "Laptops, Desktops and Accessories", status: "ACTIVE" },
-  });
-
-  const catElectronics = await prisma.category.create({
-    data: { name: "Electronics", slug: "electronics", description: "Electronic devices and audio", status: "ACTIVE" },
-  });
-
-  const catShoe = await prisma.category.create({
-    data: { name: "Shoe", slug: "shoe", description: "Sneakers and Formal shoes", status: "ACTIVE" },
-  });
-
-  const catBags = await prisma.category.create({
-    data: { name: "Bags", slug: "bags", description: "Handbags, Travel backpacks", status: "ACTIVE" },
-  });
-
-  const catPhone = await prisma.category.create({
-    data: { name: "Phone", slug: "phone", description: "Smartphones and tablets", status: "ACTIVE" },
-  });
-
-  const catFurniture = await prisma.category.create({
-    data: { name: "Furniture", slug: "furniture", description: "Home and office furniture", status: "ACTIVE" },
-  });
-
-  // 7. Create Sub Categories
-  const subCategories = [
-    { name: "Laptop", slug: "laptop", categoryId: catComputers.id, code: "CT001", description: "Efficient Productivity", status: "ACTIVE" },
-    { name: "Desktop", slug: "desktop", categoryId: catComputers.id, code: "CT002", description: "Compact Design", status: "ACTIVE" },
-    { name: "Sneakers", slug: "sneakers", categoryId: catShoe.id, code: "CT003", description: "Dynamic Grip", status: "ACTIVE" },
-  ];
-
-  for (const sub of subCategories) {
-    await prisma.subCategory.create({ data: sub });
-  }
-
-  // 8. Create Customers matching Screenshot
+  // 10. Customers
+  console.log("Creating Customers...");
+  await prisma.customer.deleteMany();
   const customersData = [
-    { code: "CU001", name: "Carl Evans", email: "carlevans@example.com", phone: "+12163547758", country: "Germany", avatar: "/assets/images/customer11.jpg", status: "ACTIVE" },
-    { code: "CU002", name: "Minerva Rameriz", email: "rameriz@example.com", phone: "+11367529510", country: "Japan", avatar: "/assets/images/customer12.jpg", status: "ACTIVE" },
-    { code: "CU003", name: "Robert Lamon", email: "robert@example.com", phone: "+15362789414", country: "USA", avatar: "/assets/images/customer13.jpg", status: "ACTIVE" },
-    { code: "CU004", name: "Patricia Lewis", email: "patricia@example.com", phone: "+18513094627", country: "Austria", avatar: "/assets/images/customer14.jpg", status: "ACTIVE" },
-    { code: "CU005", name: "Mark Joslyn", email: "markjoslyn@example.com", phone: "+14678219025", country: "Turkey", avatar: "/assets/images/customer15.jpg", status: "ACTIVE" },
-    { code: "CU006", name: "Marsha Betts", email: "marshabetts@example.com", phone: "+10913278319", country: "Mexico", avatar: "/assets/images/customer16.jpg", status: "ACTIVE" },
-    { code: "CU007", name: "Daniel Jude", email: "daieljude@example.com", phone: "+19125852947", country: "France", avatar: "/assets/images/customer17.jpg", status: "ACTIVE" },
-    { code: "CU008", name: "Emma Bates", email: "emmabates@example.com", phone: "+13671835209", country: "Greece", avatar: "/assets/images/customer18.jpg", status: "ACTIVE" },
-    { code: "CU009", name: "Richard Fralick", email: "richard@example.com", phone: "+19756194733", country: "Italy", avatar: "/assets/images/avatar-01.jpg", status: "ACTIVE" },
-    { code: "CU010", name: "Michelle Robison", email: "robinson@example.com", phone: "+19167850925", country: "China", avatar: "/assets/images/avatar-02.jpg", status: "ACTIVE" },
+    {
+      name: "บริษัท สยามแม็คโคร จำกัด (มหาชน)",
+      code: "CUST-MAKRO",
+      email: "procurement@siammakro.co.th",
+      phone: "+66 2 067 8999",
+      address: "1468 ถ.พัฒนาการ แขวงพัฒนาการ เขตสวนหลวง กรุงเทพฯ 10250",
+      city: "กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท บิ๊กซี ซูเปอร์เซ็นเตอร์ จำกัด (มหาชน)",
+      code: "CUST-BIGC",
+      email: "packaging@bigc.co.th",
+      phone: "+66 2 655 0666",
+      address: "88/9 ซอยสมานฉันท์-บาร์โบส แขวงพระโขนง เขตคลองเตย กรุงเทพฯ",
+      city: "กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "ห้างหุ้นส่วนจำกัด เอกชัยบรรจุภัณฑ์ (ตลาดไท)",
+      code: "CUST-EKACHAI",
+      email: "ekachai.pkg@gmail.com",
+      phone: "+66 81 888 7766",
+      address: "ตลาดไท โซนพลาซ่า 2 ต.คลองสอง อ.คลองหลวง จ.ปทุมธานี",
+      city: "ปทุมธานี",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท เจริญโภคภัณฑ์อาหาร จำกัด (มหาชน)",
+      code: "CUST-CPF",
+      email: "purchase-pkg@cpf.co.th",
+      phone: "+66 2 766 8000",
+      address: "313 อาคารซี.พี.ทาวเวอร์ ถ.สีลม บางรัก กรุงเทพฯ",
+      city: "กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "โรงพยาบาลศิริราช (Siriraj Hospital)",
+      code: "CUST-SIRIRAJ",
+      email: "supply@sirirajhospital.org",
+      phone: "+66 2 419 7000",
+      address: "2 ถ.วังหลัง แขวงศิริราช เขตบางกอกน้อย กรุงเทพฯ 10700",
+      city: "กรุงเทพฯ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "บริษัท ไทยซัมมิท อินดัสทรี จำกัด",
+      code: "CUST-THAISUMMIT",
+      email: "purchasing@thaisummit.co.th",
+      phone: "+66 2 325 8000",
+      address: "นิคมอุตสาหกรรมบางพลี จ.สมุทรปราการ",
+      city: "สมุทรปราการ",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
+    {
+      name: "Walk-in Customer (ลูกค้ารายย่อยหน้าร้าน)",
+      code: "CUST-WALKIN",
+      email: "walkin@siampolypack.com",
+      phone: "+66 80 000 0000",
+      address: "หน้าร้านศูนย์กระจายสินค้า พระราม 2",
+      city: "สมุทรสาคร",
+      country: "Thailand",
+      status: "ACTIVE",
+    },
   ];
 
+  const custMap: Record<string, string> = {};
   for (const c of customersData) {
-    await prisma.customer.create({ data: c });
+    const created = await prisma.customer.create({ data: c });
+    custMap[c.code] = created.id;
   }
 
-  // 9. Create Products (Rich Low Stock, Out of Stock, Expiry & Healthy Stock Seeds)
-  const allBrands = await prisma.brand.findMany();
-  const allUnits = await prisma.unit.findMany();
-  const allWarehouses = await prisma.warehouse.findMany();
-  const allStores = await prisma.store.findMany();
-
-  const getBrandId = (name: string) => allBrands.find((b) => b.name.toLowerCase().includes(name.toLowerCase()))?.id;
-  const getUnitId = (name: string) => allUnits.find((u) => u.name.toLowerCase().includes(name.toLowerCase()))?.id || allUnits[0]?.id;
-  const getWhId = (index: number) => allWarehouses[index % allWarehouses.length]?.id;
-  const getStoreId = (index: number) => allStores[index % allStores.length]?.id;
-
-  const sampleProducts = [
-    // --- LOW STOCK ITEMS (0 < Stock <= minStockAlert) ---
+  // 11. Billers
+  console.log("Creating Billers...");
+  await prisma.biller.deleteMany();
+  const billersData = [
     {
-      name: "Lenovo IdeaPad 3 Core i5",
-      sku: "PT001",
-      barcode: "885901234001",
-      price: 600,
-      costPrice: 450,
-      stock: 4, // LOW STOCK
-      minStockAlert: 15,
-      categoryId: catComputers.id,
-      brandId: getBrandId("Lenovo"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(0),
-      storeId: getStoreId(0),
-      image: "/assets/images/product-01.jpg",
-      manufacturedDate: new Date("2025-01-10"),
-      expiredDate: new Date("2027-01-10"),
+      name: "บริษัท สยามโพลีแพ็ค แมนูแฟคเจอริ่ง จำกัด (สำนักงานใหญ่)",
+      code: "BIL-HQ",
+      email: "billing@siampolypack.com",
+      phone: "+66 2 890 1234",
+      address: "88/18 หมู่ 4 ถ.พระราม 2 ต.คอกกระบือ อ.เมือง จ.สมุทรสาคร 74000",
+      country: "Thailand",
       status: "ACTIVE",
     },
     {
-      name: "Beats Pro Wireless Headphones",
-      sku: "PT002",
-      barcode: "885901234002",
-      price: 160,
-      costPrice: 100,
-      stock: 2, // LOW STOCK
-      minStockAlert: 20,
-      categoryId: catElectronics.id,
-      brandId: getBrandId("Beats"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(1),
-      storeId: getStoreId(1),
-      image: "/assets/images/product-03.jpg",
-      manufacturedDate: new Date("2024-12-10"),
-      expiredDate: new Date("2026-12-07"),
-      status: "ACTIVE",
-    },
-    {
-      name: "Amazon Echo Dot 5th Generation",
-      sku: "PT005",
-      barcode: "885901234005",
-      price: 50,
-      costPrice: 30,
-      stock: 3, // LOW STOCK
-      minStockAlert: 25,
-      categoryId: catElectronics.id,
-      brandId: getBrandId("Amazon"),
-      unitId: getUnitId("Boxes"),
-      warehouseId: getWhId(4),
-      storeId: getStoreId(4),
-      image: "/assets/images/product-06.jpg",
-      manufacturedDate: new Date("2024-11-06"),
-      expiredDate: new Date("2026-11-04"),
-      status: "ACTIVE",
-    },
-    {
-      name: "Sanford Ergonomic Chair Sofa",
-      sku: "PT006",
-      barcode: "885901234006",
-      price: 290,
-      costPrice: 180,
-      stock: 1, // LOW STOCK
-      minStockAlert: 8,
-      categoryId: catFurniture.id,
-      brandId: getBrandId("Woodmart"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(5),
-      storeId: getStoreId(5),
-      image: "/assets/images/product-07.jpg",
-      manufacturedDate: new Date("2024-10-25"),
-      expiredDate: new Date("2026-10-20"),
-      status: "ACTIVE",
-    },
-    {
-      name: "Iphone 14 Pro Max 256GB",
-      sku: "PT008",
-      barcode: "885901234008",
-      price: 1100,
-      costPrice: 850,
-      stock: 2, // LOW STOCK
-      minStockAlert: 10,
-      categoryId: catPhone.id,
-      brandId: getBrandId("Apple"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(7),
-      storeId: getStoreId(7),
-      image: "/assets/images/product-09.jpg",
-      manufacturedDate: new Date("2024-10-03"),
-      expiredDate: new Date("2026-10-01"),
-      status: "ACTIVE",
-    },
-
-    // --- OUT OF STOCK ITEMS (Stock === 0) ---
-    {
-      name: "Nike Air Jordan 1 Retro",
-      sku: "PT003",
-      barcode: "885901234003",
-      price: 150,
-      costPrice: 90,
-      stock: 0, // OUT OF STOCK
-      minStockAlert: 35,
-      categoryId: catShoe.id,
-      brandId: getBrandId("Nike"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(2),
-      storeId: getStoreId(2),
-      image: "/assets/images/product-04.jpg",
-      manufacturedDate: new Date("2024-11-27"),
-      expiredDate: new Date("2026-11-20"),
-      status: "OUT_OF_STOCK",
-    },
-    {
-      name: "Apple Series 5 Smart Watch",
-      sku: "PT004",
-      barcode: "885901234004",
-      price: 399,
-      costPrice: 250,
-      stock: 0, // OUT OF STOCK
-      minStockAlert: 45,
-      categoryId: catElectronics.id,
-      brandId: getBrandId("Apple"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(3),
-      storeId: getStoreId(3),
-      image: "/assets/images/product-05.jpg",
-      manufacturedDate: new Date("2024-11-18"),
-      expiredDate: new Date("2026-11-15"),
-      status: "OUT_OF_STOCK",
-    },
-    {
-      name: "Nilkamal Pro Gaming Chair",
-      sku: "PT009",
-      barcode: "885901234009",
-      price: 220,
-      costPrice: 130,
-      stock: 0, // OUT OF STOCK
-      minStockAlert: 10,
-      categoryId: catFurniture.id,
-      brandId: getBrandId("Nilkamal"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(8),
-      storeId: getStoreId(8),
-      image: "/assets/images/product-10.jpg",
-      manufacturedDate: new Date("2024-09-20"),
-      expiredDate: new Date("2026-09-16"),
-      status: "OUT_OF_STOCK",
-    },
-    {
-      name: "Dior Red Premium Satchel Bag",
-      sku: "PT007",
-      barcode: "885901234007",
-      price: 450,
-      costPrice: 280,
-      stock: 0, // OUT OF STOCK
-      minStockAlert: 20,
-      categoryId: catBags.id,
-      brandId: getBrandId("Dior"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(6),
-      storeId: getStoreId(6),
-      image: "/assets/images/product-08.jpg",
-      manufacturedDate: new Date("2024-10-14"),
-      expiredDate: new Date("2026-10-10"),
-      status: "OUT_OF_STOCK",
-    },
-
-    // --- EXPIRED & EXPIRING SOON PRODUCTS ---
-    {
-      name: "Lava Energy Booster Drink Pack",
-      sku: "PT011",
-      barcode: "885901234011",
-      price: 25,
-      costPrice: 12,
-      stock: 18,
-      minStockAlert: 10,
-      categoryId: catElectronics.id,
-      brandId: getBrandId("Lava"),
-      unitId: getUnitId("Boxes"),
-      warehouseId: getWhId(1),
-      storeId: getStoreId(1),
-      image: "/assets/images/product-01.jpg",
-      manufacturedDate: new Date("2025-02-01"),
-      expiredDate: new Date("2026-08-15"), // EXPIRED 15 days ago
-      status: "ACTIVE",
-    },
-    {
-      name: "Organic Coffee Roasted Beans 1kg",
-      sku: "PT012",
-      barcode: "885901234012",
-      price: 35,
-      costPrice: 18,
-      stock: 12,
-      minStockAlert: 8,
-      categoryId: catBags.id,
-      brandId: getBrandId("Amazon"),
-      unitId: getUnitId("Kilograms"),
-      warehouseId: getWhId(2),
-      storeId: getStoreId(2),
-      image: "/assets/images/product-03.jpg",
-      manufacturedDate: new Date("2026-03-01"),
-      expiredDate: new Date("2026-09-04"), // EXPIRES IN 5 DAYS
-      status: "ACTIVE",
-    },
-    {
-      name: "Protein Bar Crunch Dark Chocolate",
-      sku: "PT013",
-      barcode: "885901234013",
-      price: 15,
-      costPrice: 7,
-      stock: 25,
-      minStockAlert: 10,
-      categoryId: catShoe.id,
-      brandId: getBrandId("Nike"),
-      unitId: getUnitId("Boxes"),
-      warehouseId: getWhId(3),
-      storeId: getStoreId(3),
-      image: "/assets/images/product-04.jpg",
-      manufacturedDate: new Date("2026-02-15"),
-      expiredDate: new Date("2026-09-22"), // EXPIRES IN 23 DAYS
-      status: "ACTIVE",
-    },
-
-    // --- HEALTHY STOCK ITEMS ---
-    {
-      name: "The North Face Borealis Backpack",
-      sku: "PT010",
-      barcode: "885901234010",
-      price: 99,
-      costPrice: 60,
-      stock: 65, // HEALTHY STOCK
-      minStockAlert: 15,
-      categoryId: catBags.id,
-      brandId: getBrandId("The North Face"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(9),
-      storeId: getStoreId(9),
-      image: "/assets/images/product-11.jpg",
-      manufacturedDate: new Date("2024-09-10"),
-      expiredDate: new Date("2027-09-06"),
-      status: "ACTIVE",
-    },
-    {
-      name: "Apple MacBook Air M2 13-inch",
-      sku: "PT014",
-      barcode: "885901234014",
-      price: 1099,
-      costPrice: 800,
-      stock: 45, // HEALTHY STOCK
-      minStockAlert: 10,
-      categoryId: catComputers.id,
-      brandId: getBrandId("Apple"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(0),
-      storeId: getStoreId(0),
-      image: "/assets/images/product-01.jpg",
-      manufacturedDate: new Date("2025-04-01"),
-      expiredDate: new Date("2028-04-01"),
-      status: "ACTIVE",
-    },
-    {
-      name: "Beats Studio Wireless Over-Ear",
-      sku: "PT015",
-      barcode: "885901234015",
-      price: 349,
-      costPrice: 220,
-      stock: 80, // HEALTHY STOCK
-      minStockAlert: 15,
-      categoryId: catElectronics.id,
-      brandId: getBrandId("Beats"),
-      unitId: getUnitId("Pieces"),
-      warehouseId: getWhId(1),
-      storeId: getStoreId(1),
-      image: "/assets/images/product-03.jpg",
-      manufacturedDate: new Date("2025-05-15"),
-      expiredDate: new Date("2028-05-15"),
+      name: "สาขา ตลาดไท ศูนย์บรรจุภัณฑ์",
+      code: "BIL-TALAADTHAI",
+      email: "billing-tt@siampolypack.com",
+      phone: "+66 2 529 8890",
+      address: "ตลาดไท โซนพลาซ่า อ.คลองหลวง จ.ปทุมธานี",
+      country: "Thailand",
       status: "ACTIVE",
     },
   ];
-
-  for (const item of sampleProducts) {
-    await prisma.product.create({ data: item });
+  for (const b of billersData) {
+    await prisma.biller.create({ data: b });
   }
 
-  // 10. Create Shifts matching Screenshot
+  // Expense Categories
+  console.log("Creating Expense Categories...");
+  await prisma.expense.deleteMany();
+  await prisma.expenseCategory.deleteMany();
+  const expCats = [
+    { name: "ค่าสาธารณูปโภคโรงงาน (Electricity & Water)", code: "EXP-UTIL" },
+    { name: "ค่าซ่อมบำรุงเครื่องจักร (Machine Maintenance)", code: "EXP-MAINT" },
+    { name: "ค่าขนส่งและโลจิสติกส์ (Freight & Logistics)", code: "EXP-LOGIS" },
+    { name: "ค่าวัสดุสิ้นเปลืองและบรรจุภัณฑ์ (Supplies & Packaging)", code: "EXP-SUPPLY" },
+    { name: "ค่าตรวจรับรองมาตรฐาน (Lab & Certification)", code: "EXP-CERT" },
+  ];
+  const expCatMap: Record<string, string> = {};
+  for (const ec of expCats) {
+    const created = await prisma.expenseCategory.create({ data: ec });
+    expCatMap[ec.code] = created.id;
+  }
+
+  console.log("Cleaning old transactions and products...");
+  await prisma.orderItem.deleteMany();
+  await prisma.order.deleteMany();
+  await prisma.workOrderMaterial.deleteMany();
+  await prisma.productionScrap.deleteMany();
+  await prisma.workOrder.deleteMany();
+  await prisma.bomItem.deleteMany();
+  await prisma.billOfMaterial.deleteMany();
+  await prisma.salesOrderItem.deleteMany();
+  await prisma.salesOrder.deleteMany();
+  await prisma.billingNoteItem.deleteMany();
+  await prisma.billingNote.deleteMany();
+  await prisma.taxInvoice.deleteMany();
+  await prisma.withholdingTax.deleteMany();
+  await prisma.saleItem.deleteMany();
+  await prisma.invoice.deleteMany();
+  await prisma.sale.deleteMany();
+  await prisma.purchaseItem.deleteMany();
+  await prisma.purchase.deleteMany();
+  await prisma.stockMovement.deleteMany();
+  await prisma.productStock.deleteMany();
+  await prisma.stockTransfer.deleteMany();
+  await prisma.stockAdjustment.deleteMany();
+  await prisma.productExpiryBatch.deleteMany();
+  await prisma.productVariant.deleteMany();
+  await prisma.product.deleteMany();
+
+  const rmWhId = whMap["คลังวัตถุดิบเม็ดพลาสติก A (RM-01)"];
+  const fg1WhId = whMap["คลังสินค้าสำเร็จรูป 1 (FG-01)"];
+  const fg2WhId = whMap["คลังสินค้าสำเร็จรูป 2 (FG-02)"];
+  const rcWhId = whMap["คลังเศษพลาสติกรีไซเคิล (RC-01)"];
+  const mainStoreId = storeMap["ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2"];
+
+  // 12. Create Comprehensive Products (~28 Products)
+  console.log("Seeding Comprehensive Products (~28 Products across all statuses)...");
+
+  const allProductsData: any[] = [
+    // ----------------------------------------------------
+    // Group 1: Raw Materials & Polymers
+    // ----------------------------------------------------
+    {
+      name: "เม็ดพลาสติก HDPE เป่าฟิล์ม SCG H6140B",
+      sku: "RM-HDPE-6140",
+      barcode: "8859011000101",
+      productType: "SINGLE",
+      price: 48.0,
+      costPrice: 42.0,
+      stock: 25000,
+      minStockAlert: 5000,
+      categoryId: catMap["plastic-resins"],
+      brandId: brandMap["SCGC (เอสซีจี เคมิคอลส์)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-01.jpg",
+      description: "เม็ดพลาสติก HDPE เกรดเป่าฟิล์ม ความหนาแน่นสูง ทนแรงดึงดีเยี่ยม สำหรับผลิตถุงหูหิ้วและถุงช้อปปิ้ง",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2025-10-10"),
+      expiredDate: new Date("2027-10-10"),
+      batches: [
+        { batchNo: "LOT-SCG-2510", manufacturedDate: new Date("2025-10-10"), expiredDate: new Date("2027-10-10"), quantity: 15000, costPrice: 41.5, notes: "ล็อตนำเข้าปลายปี 2025" },
+        { batchNo: "LOT-SCG-2601", manufacturedDate: new Date("2026-01-15"), expiredDate: new Date("2028-01-15"), quantity: 10000, costPrice: 42.5, notes: "ล็อตเสริมต้นปี 2026" },
+      ],
+    },
+    {
+      name: "เม็ดพลาสติก LDPE ฟิล์มใสเหนียว PTT LD2420D",
+      sku: "RM-LDPE-2420",
+      barcode: "8859011000200",
+      productType: "SINGLE",
+      price: 52.0,
+      costPrice: 45.0,
+      stock: 18000,
+      minStockAlert: 3000,
+      categoryId: catMap["plastic-resins"],
+      brandId: brandMap["PTT GC (พีทีที โกลบอล เคมิคอล)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-02.jpg",
+      description: "เม็ดพลาสติก LDPE เกรดพรีเมียม ให้ฟิล์มใส ผิวนิ่ม เหนียว ยืดหยุ่นดี สำหรับถุงเย็นและถุงซิป",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2025-11-15"),
+      expiredDate: new Date("2027-11-15"),
+      batches: [
+        { batchNo: "LOT-PTT-2511", manufacturedDate: new Date("2025-11-15"), expiredDate: new Date("2027-11-15"), quantity: 18000, costPrice: 45.0, notes: "เกรดส่งออกฟิล์มใส" },
+      ],
+    },
+    {
+      name: "เม็ดพลาสติก PP ถุงร้อนใส IRPC 1100NK",
+      sku: "RM-PP-1100",
+      barcode: "8859011000309",
+      productType: "SINGLE",
+      price: 50.0,
+      costPrice: 43.5,
+      stock: 20000,
+      minStockAlert: 4000,
+      categoryId: catMap["plastic-resins"],
+      brandId: brandMap["IRPC (ไออาร์พีซี)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-03.jpg",
+      description: "เม็ดโพลีโพรพีลีน PP ใสพิเศษ ทนความร้อนได้สูงถึง 100°C สำหรับผลิตถุงแกงและถุงใส่อาหารร้อน",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2025-12-01"),
+      expiredDate: new Date("2027-12-01"),
+      batches: [
+        { batchNo: "LOT-IRPC-2512", manufacturedDate: new Date("2025-12-01"), expiredDate: new Date("2027-12-01"), quantity: 20000, costPrice: 43.5, notes: "เกรดฟู้ดเกรดใสเงา" },
+      ],
+    },
+    {
+      name: "เม็ดพลาสติกรีไซเคิล PCR สีดำ (Post-Consumer Resin)",
+      sku: "RM-PCR-BLACK",
+      barcode: "8859011000408",
+      productType: "SINGLE",
+      price: 28.0,
+      costPrice: 22.0,
+      stock: 15000,
+      minStockAlert: 2000,
+      categoryId: catMap["plastic-resins"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["kg"],
+      warehouseId: rcWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-04.jpg",
+      description: "เม็ดพลาสติกรีไซเคิล 100% ผ่านการคัดแยก ล้างสะอาด และหลอมเม็ด สำหรับผลิตถุงขยะดำ",
+      status: "ACTIVE",
+    },
+    {
+      name: "เม็ดพลาสติก LLDPE PTT 0209AA สำหรับฟิล์มยืด",
+      sku: "RM-LLDPE-0209",
+      barcode: "8859011000552",
+      productType: "SINGLE",
+      price: 49.0,
+      costPrice: 43.0,
+      stock: 22000,
+      minStockAlert: 4000,
+      categoryId: catMap["plastic-resins"],
+      brandId: brandMap["PTT GC (พีทีที โกลบอล เคมิคอล)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-05.jpg",
+      description: "เม็ดโพลีเอทิลีนความหนาแน่นต่ำเชิงเส้น ทนต่อแรงทิ่มทะลุสูงมาก เหมาะสำหรับผลิตฟิล์มยืดพันพาเลท",
+      status: "ACTIVE",
+    },
+    // Expiring Soon Raw Material
+    {
+      name: "เม็ดพลาสติกชีวภาพ PBAT/PLA (Bio-Resin ย่อยสลายได้)",
+      sku: "RM-BIO-RESIN",
+      barcode: "8859011000651",
+      productType: "SINGLE",
+      price: 135.0,
+      costPrice: 115.0,
+      stock: 4000,
+      minStockAlert: 1000,
+      categoryId: catMap["plastic-resins"],
+      brandId: brandMap["BASF (บีเอเอสเอฟ)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-06.jpg",
+      description: "เม็ดพลาสติกชีวภาพ ย่อยสลายเป็นปุ๋ยอินทรีย์ได้ 100% ภายใน 180 วันตามมาตรฐานสากล (มีอายุ Shelf Life สั้น)",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2025-03-15"),
+      expiredDate: new Date("2026-03-20"), // Expiring Soon (< 45 days)
+      batches: [
+        { batchNo: "LOT-BIO-2503", manufacturedDate: new Date("2025-03-15"), expiredDate: new Date("2026-03-20"), quantity: 4000, costPrice: 115.0, notes: "ใกล้หมดอายุ ต้องเร่งจัดคิวผลิตถุงรักษ์โลก" },
+      ],
+    },
+
+    // ----------------------------------------------------
+    // Group 2: Masterbatch & Chemical Additives
+    // ----------------------------------------------------
+    {
+      name: "เม็ดแม่สีขาว White Masterbatch (TiO2 70%)",
+      sku: "MB-WHITE-01",
+      barcode: "8859011000705",
+      productType: "SINGLE",
+      price: 95.0,
+      costPrice: 80.0,
+      stock: 3500,
+      minStockAlert: 500,
+      categoryId: catMap["masterbatch-additives"],
+      brandId: brandMap["Thai Color Masterbatch"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-07.jpg",
+      description: "เม็ดแม่สีขาวเข้มข้น ความทึบแสงสูง กระจายตัวในเนื้อฟิล์มได้ดี ไม่เป็นจุดด่าง",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2025-06-20"),
+      expiredDate: new Date("2027-06-20"),
+    },
+    // Expired Masterbatch (สำหรับทดสอบรายงานหมดอายุ)
+    {
+      name: "เม็ดแม่สีแดง Red Masterbatch (เกรดถุงขยะติดเชื้อ)",
+      sku: "MB-RED-01",
+      barcode: "8859011000750",
+      productType: "SINGLE",
+      price: 115.0,
+      costPrice: 95.0,
+      stock: 500,
+      minStockAlert: 200,
+      categoryId: catMap["masterbatch-additives"],
+      brandId: brandMap["Thai Color Masterbatch"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-08.jpg",
+      description: "เม็ดแม่สีแดงสด สำหรับผสมเป่าถุงขยะติดเชื้อโรงพยาบาล (ล็อตนี้ค้างสต็อก หมดอายุแล้ว)",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2024-01-10"),
+      expiredDate: new Date("2026-01-10"), // Expired!
+      batches: [
+        { batchNo: "LOT-RED-2401", manufacturedDate: new Date("2024-01-10"), expiredDate: new Date("2026-01-10"), quantity: 500, costPrice: 95.0, notes: "หมดอายุแล้ว ต้องตั้งพักรอกรรมวิธีทำลาย/เคลม" },
+      ],
+    },
+    {
+      name: "เม็ดแม่สีน้ำเงิน Blue Masterbatch",
+      sku: "MB-BLUE-01",
+      barcode: "8859011000804",
+      productType: "SINGLE",
+      price: 110.0,
+      costPrice: 90.0,
+      stock: 1500,
+      minStockAlert: 300,
+      categoryId: catMap["masterbatch-additives"],
+      brandId: brandMap["Thai Color Masterbatch"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-09.jpg",
+      description: "เม็ดแม่สีน้ำเงินเข้มข้น สำหรับถุงช้อปปิ้งและถุงขยะทั่วไป",
+      status: "ACTIVE",
+    },
+    {
+      name: "สารกันลื่น Slip Agent (Erucamide เปิดปากถุงง่าย)",
+      sku: "ADD-SLIP-01",
+      barcode: "8859011000859",
+      productType: "SINGLE",
+      price: 180.0,
+      costPrice: 150.0,
+      stock: 800,
+      minStockAlert: 100,
+      categoryId: catMap["masterbatch-additives"],
+      brandId: brandMap["BASF (บีเอเอสเอฟ)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-10.jpg",
+      description: "สารเติมแต่งช่วยลดแรงเสียดทาน ทำให้ปากถุงเปิดง่าย ซ้อนทับกันไม่เหนียวติด",
+      status: "ACTIVE",
+    },
+    // Low Stock Additive (สำหรับทดสอบแจ้งเตือนสต็อกต่ำ)
+    {
+      name: "สารกันรังสี UV Stabilizer ฟิล์มการเกษตร",
+      sku: "ADD-UV-01",
+      barcode: "8859011000903",
+      productType: "SINGLE",
+      price: 320.0,
+      costPrice: 270.0,
+      stock: 2, // Low stock! (Threshold is 20)
+      minStockAlert: 20,
+      categoryId: catMap["masterbatch-additives"],
+      brandId: brandMap["BASF (บีเอเอสเอฟ)"],
+      unitId: unitMap["kg"],
+      warehouseId: rmWhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-11.jpg",
+      description: "สารป้องกันรังสีอัลตราไวโอเลต ช่วยยืดอายุฟิล์มโรงเรือนและถุงเพาะชำกลางแจ้ง (สต็อกเหลือน้อยมาก)",
+      status: "ACTIVE",
+    },
+
+    // ----------------------------------------------------
+    // Group 3: Industrial Films & Single Finished Goods
+    // ----------------------------------------------------
+    {
+      name: "ฟิล์มยืดพันพาเลท 17 ไมครอน กว้าง 50 ซม. ตรา SiamStretch",
+      sku: "FG-STR-17UM",
+      barcode: "8859022000100",
+      productType: "SINGLE",
+      price: 240.0,
+      costPrice: 175.0,
+      stock: 1200,
+      minStockAlert: 200,
+      categoryId: catMap["stretch-roll-films"],
+      brandId: brandMap["SiamStretch (สยามสเตรทช์)"],
+      unitId: unitMap["rl"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-12.jpg",
+      description: "ฟิล์มยืด LLDPE เกรดพันพาเลท ยืดตัวได้ถึง 300% เหนียว ไม่ฉีกขาดง่าย เกาะติดแน่น",
+      status: "ACTIVE",
+    },
+    {
+      name: "ฟิล์มหดหุ้มสินค้า POF Shrink Film 19 ไมครอน",
+      sku: "FG-SHRINK-19UM",
+      barcode: "8859022000155",
+      productType: "SINGLE",
+      price: 850.0,
+      costPrice: 620.0,
+      stock: 450,
+      minStockAlert: 80,
+      categoryId: catMap["stretch-roll-films"],
+      brandId: brandMap["SiamStretch (สยามสเตรทช์)"],
+      unitId: unitMap["rl"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-01.jpg",
+      description: "ฟิล์มหดความร้อน POF ใสเงาเป็นพิเศษ ปลอดสารพิษ สัมผัสอาหารได้ สำหรับแพ็คโหลขวดน้ำและกล่องสินค้า",
+      status: "ACTIVE",
+    },
+    {
+      name: "ถุงขยะติดเชื้อสีแดง 24x28 นิ้ว หนาพิเศษ (รพ.ศิริราช)",
+      sku: "FG-MED-TRASH-RED",
+      barcode: "8859022000209",
+      productType: "SINGLE",
+      price: 65.0,
+      costPrice: 42.0,
+      stock: 850,
+      minStockAlert: 150,
+      categoryId: catMap["trash-heavy-bags"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-02.jpg",
+      description: "ถุงขยะมูลฝอยติดเชื้อ สีแดงสว่าง พิมพ์สัญลักษณ์ Biohazard สากล ก้นซีล Star Seal ป้องกันการรั่วซึม 100%",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2026-01-20"),
+      expiredDate: new Date("2029-01-20"),
+      batches: [
+        { batchNo: "LOT-MED-2601", manufacturedDate: new Date("2026-01-20"), expiredDate: new Date("2029-01-20"), quantity: 500, costPrice: 42.0, notes: "ผลิตตามสเปก รพ.ศิริราช" },
+        { batchNo: "LOT-MED-2602", manufacturedDate: new Date("2026-02-10"), expiredDate: new Date("2029-02-10"), quantity: 350, costPrice: 42.0, notes: "รอบส่งมอบเดือนกุมภาพันธ์" },
+      ],
+    },
+    // Low Stock Alert Item
+    {
+      name: "ถุงขยะสีเขียวสำหรับขยะเปียกอินทรีย์ 24x28 นิ้ว",
+      sku: "FG-TRASH-GREEN",
+      barcode: "8859022000308",
+      productType: "SINGLE",
+      price: 45.0,
+      costPrice: 30.0,
+      stock: 4, // Low stock! (Threshold is 50)
+      minStockAlert: 50,
+      categoryId: catMap["trash-heavy-bags"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-03.jpg",
+      description: "ถุงขยะคัดแยกประเภท สีเขียวสดใส สำหรับขยะเปียกและเศษอาหาร ย่อยสลายตามธรรมชาติได้",
+      status: "ACTIVE",
+    },
+    // Out of Stock Item (เพื่อทดสอบสถานะ Out of Stock)
+    {
+      name: "ถุงขยะสีเหลืองสำหรับขยะรีไซเคิล 30x40 นิ้ว",
+      sku: "FG-TRASH-YELLOW",
+      barcode: "8859022000353",
+      productType: "SINGLE",
+      price: 82.0,
+      costPrice: 55.0,
+      stock: 0, // Out of Stock!
+      minStockAlert: 40,
+      categoryId: catMap["trash-heavy-bags"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-04.jpg",
+      description: "ถุงขยะคัดแยกสีเหลือง ความจุ 90 ลิตร สำหรับคัดแยกขยะรีไซเคิล (สินค้าหมดชั่วคราว อยู่ระหว่างคิวผลิต)",
+      status: "OUT_OF_STOCK",
+    },
+    {
+      name: "ถุงเพาะชำต้นไม้ สีดำเจาะรูระบายน้ำ 4x8 นิ้ว",
+      sku: "FG-NURSERY-48",
+      barcode: "8859022000407",
+      productType: "SINGLE",
+      price: 0.85,
+      costPrice: 0.45,
+      stock: 12000,
+      minStockAlert: 2000,
+      categoryId: catMap["trash-heavy-bags"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["pcs"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-05.jpg",
+      description: "ถุงเพาะกล้าไม้ PE สีดำผสมสารกันแดด ไม่กรอบแตกง่ายเมื่อตากแดด เจาะรูระบายน้ำรอบตัว",
+      status: "ACTIVE",
+    },
+    {
+      name: "ถุงช้อปปิ้งย่อยสลายได้ 100% Compostable 8x16 นิ้ว",
+      sku: "FG-BIO-BAG-01",
+      barcode: "8859022000506",
+      productType: "SINGLE",
+      price: 75.0,
+      costPrice: 52.0,
+      stock: 600,
+      minStockAlert: 100,
+      categoryId: catMap["t-shirt-shopping-bags"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-06.jpg",
+      description: "ถุงช้อปปิ้งรักษ์โลก ผลิตจากแป้งข้าวโพดและ PBAT ย่อยสลายตามธรรมชาติได้ 100% เป็นมิตรต่อสิ่งแวดล้อม",
+      status: "ACTIVE",
+      manufacturedDate: new Date("2025-09-01"),
+      expiredDate: new Date("2026-03-01"), // Expiring soon
+      batches: [
+        { batchNo: "LOT-BIOBAG-2509", manufacturedDate: new Date("2025-09-01"), expiredDate: new Date("2026-03-01"), quantity: 600, costPrice: 52.0, notes: "รอบผลิตส่งห้างสรรพสินค้า" },
+      ],
+    },
+    {
+      name: "ซองซีลสูญญากาศ Nylon/PE ถนอมอาหาร 7x10 นิ้ว",
+      sku: "FG-VACUUM-710",
+      barcode: "8859022000605",
+      productType: "SINGLE",
+      price: 120.0,
+      costPrice: 85.0,
+      stock: 2200,
+      minStockAlert: 300,
+      categoryId: catMap["food-packaging-bags"],
+      brandId: brandMap["PolyTech (โพลีเทค)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-07.jpg",
+      description: "ซองสูญญากาศลามิเนต 2 ชั้น ทนความเย็นเยือกแข็ง -40°C และต้มในน้ำร้อนได้ ซีลปิดแน่นสนิท อากาศไม่ซึมผ่าน",
+      status: "ACTIVE",
+    },
+    {
+      name: "ถุงเย็นใส LDPE เกรดแช่แข็ง 8x12 นิ้ว ตรา KingBag",
+      sku: "FG-COLD-LD-812",
+      barcode: "8859022000704",
+      productType: "SINGLE",
+      price: 52.0,
+      costPrice: 36.0,
+      stock: 3800,
+      minStockAlert: 500,
+      categoryId: catMap["food-packaging-bags"],
+      brandId: brandMap["KingBag (ตรา ราชาถุง)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-08.jpg",
+      description: "ถุงใส่น้ำแข็งและอาหารแช่แข็ง เนื้อเหนียวนิ่ม ไม่แตกเปราะเมื่ออยู่ในช่องฟรีซ บรรจุแพ็ค 500 กรัม",
+      status: "ACTIVE",
+    },
+    {
+      name: "ถุงหูเจาะแฟชั่น PE ลายกราฟิก 10x14 นิ้ว",
+      sku: "FG-DIECUT-1014",
+      barcode: "8859022000803",
+      productType: "SINGLE",
+      price: 48.0,
+      costPrice: 32.0,
+      stock: 5000,
+      minStockAlert: 600,
+      categoryId: catMap["t-shirt-shopping-bags"],
+      brandId: brandMap["KingBag (ตรา ราชาถุง)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-09.jpg",
+      description: "ถุงหูเจาะรูปไข่ ผิวเนียนนุ่ม พิมพ์ลายกราฟิกสวยงาม เหมาะสำหรับร้านเสื้อผ้าและกิฟต์ช็อป",
+      status: "ACTIVE",
+    },
+
+    // ----------------------------------------------------
+    // Group 4: Variable Products (Matrix Combinations)
+    // ----------------------------------------------------
+    {
+      name: "ถุงหูหิ้วขาวขุ่น HDPE เกรด A ตรา KingBag (แพ็ค 500g)",
+      sku: "VAR-KB-TSHIRT",
+      barcode: "8859033000100",
+      productType: "VARIABLE",
+      price: 45.0,
+      costPrice: 32.0,
+      stock: 9400,
+      minStockAlert: 1000,
+      categoryId: catMap["t-shirt-shopping-bags"],
+      brandId: brandMap["KingBag (ตรา ราชาถุง)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-10.jpg",
+      description: "ถุงหูหิ้วพลาสติก HDPE สีขาวขุ่น เหนียว ทนทาน ไม่ขาดง่าย หูหิ้วรับน้ำหนักได้มาก บรรจุแพ็คละ 500 กรัม",
+      status: "ACTIVE",
+      variants: [
+        { name: "ถุงหูหิ้วขาวขุ่น ตรา KingBag 6x14 นิ้ว", sku: "VAR-KB-TS-0614", barcode: "8859033000117", attributes: JSON.stringify({ Size: "6x14 นิ้ว" }), price: 38.0, costPrice: 28.0, stock: 1500, minStockAlert: 200 },
+        { name: "ถุงหูหิ้วขาวขุ่น ตรา KingBag 8x16 นิ้ว", sku: "VAR-KB-TS-0816", barcode: "8859033000124", attributes: JSON.stringify({ Size: "8x16 นิ้ว" }), price: 45.0, costPrice: 32.0, stock: 2800, minStockAlert: 400 },
+        { name: "ถุงหูหิ้วขาวขุ่น ตรา KingBag 9x18 นิ้ว", sku: "VAR-KB-TS-0918", barcode: "8859033000131", attributes: JSON.stringify({ Size: "9x18 นิ้ว" }), price: 55.0, costPrice: 38.0, stock: 3200, minStockAlert: 500 },
+        { name: "ถุงหูหิ้วขาวขุ่น ตรา KingBag 12x20 นิ้ว", sku: "VAR-KB-TS-1220", barcode: "8859033000148", attributes: JSON.stringify({ Size: "12x20 นิ้ว" }), price: 72.0, costPrice: 50.0, stock: 1900, minStockAlert: 300 },
+      ],
+    },
+    {
+      name: "ถุงร้อนใส PP เกรดบรรจุอาหาร ตรา KingBag (แพ็ค 500g)",
+      sku: "VAR-KB-HOTBAG",
+      barcode: "8859033000209",
+      productType: "VARIABLE",
+      price: 36.0,
+      costPrice: 25.0,
+      stock: 13600,
+      minStockAlert: 1500,
+      categoryId: catMap["food-packaging-bags"],
+      brandId: brandMap["KingBag (ตรา ราชาถุง)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-11.jpg",
+      description: "ถุงแกงใส PP ฟู้ดเกรด ทนความร้อนสูง น้ำแกงเดือดไม่หดตัว ใสเงาเห็นอาหารชัดเจน ปลอดสารก่อมะเร็ง",
+      status: "ACTIVE",
+      variants: [
+        { name: "ถุงร้อนใส PP ตรา KingBag 4.5x7 นิ้ว", sku: "VAR-KB-HOT-457", barcode: "8859033000216", attributes: JSON.stringify({ Size: "4.5x7 นิ้ว" }), price: 26.0, costPrice: 18.0, stock: 2000, minStockAlert: 200 },
+        { name: "ถุงร้อนใส PP ตรา KingBag 5x8 นิ้ว", sku: "VAR-KB-HOT-58", barcode: "8859033000223", attributes: JSON.stringify({ Size: "5x8 นิ้ว" }), price: 30.0, costPrice: 21.0, stock: 3500, minStockAlert: 400 },
+        { name: "ถุงร้อนใส PP ตรา KingBag 6x9 นิ้ว", sku: "VAR-KB-HOT-69", barcode: "8859033000230", attributes: JSON.stringify({ Size: "6x9 นิ้ว" }), price: 36.0, costPrice: 25.0, stock: 4200, minStockAlert: 500 },
+        { name: "ถุงร้อนใส PP ตรา KingBag 7x11 นิ้ว", sku: "VAR-KB-HOT-711", barcode: "8859033000247", attributes: JSON.stringify({ Size: "7x11 นิ้ว" }), price: 45.0, costPrice: 32.0, stock: 2100, minStockAlert: 300 },
+        { name: "ถุงร้อนใส PP ตรา KingBag 8x12 นิ้ว", sku: "VAR-KB-HOT-812", barcode: "8859033000254", attributes: JSON.stringify({ Size: "8x12 นิ้ว" }), price: 54.0, costPrice: 38.0, stock: 1800, minStockAlert: 250 },
+      ],
+    },
+    {
+      name: "ถุงขยะดำรีไซเคิลมาตรฐาน ตรา EcoPoly (แพ็ค 1 kg)",
+      sku: "VAR-ECO-TRASH",
+      barcode: "8859033000308",
+      productType: "VARIABLE",
+      price: 55.0,
+      costPrice: 36.0,
+      stock: 8350,
+      minStockAlert: 1000,
+      categoryId: catMap["trash-heavy-bags"],
+      brandId: brandMap["EcoPoly (ตรา อีโค่โพลี)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg2WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-12.jpg",
+      description: "ถุงขยะดำรักษ์โลก ผลิตจากเม็ดรีไซเคิล PCR เหนียวพิเศษ กลิ่นไม่ฉุน มีเชือกรัดปากถุงในตัว",
+      status: "ACTIVE",
+      variants: [
+        { name: "ถุงขยะดำ EcoPoly 18x20 นิ้ว (ถุงเล็ก 11 ลิตร)", sku: "VAR-ECO-TR-1820", barcode: "8859033000315", attributes: JSON.stringify({ Size: "18x20 นิ้ว" }), price: 28.0, costPrice: 18.0, stock: 1200, minStockAlert: 200 },
+        { name: "ถุงขยะดำ EcoPoly 24x28 นิ้ว (ถุงกลาง 36 ลิตร)", sku: "VAR-ECO-TR-2428", barcode: "8859033000322", attributes: JSON.stringify({ Size: "24x28 นิ้ว" }), price: 42.0, costPrice: 28.0, stock: 2500, minStockAlert: 300 },
+        { name: "ถุงขยะดำ EcoPoly 28x36 นิ้ว (ถุงใหญ่ 54 ลิตร)", sku: "VAR-ECO-TR-2836", barcode: "8859033000339", attributes: JSON.stringify({ Size: "28x36 นิ้ว" }), price: 62.0, costPrice: 40.0, stock: 2100, minStockAlert: 300 },
+        { name: "ถุงขยะดำ EcoPoly 30x40 นิ้ว (ถุงจัมโบ้ 90 ลิตร)", sku: "VAR-ECO-TR-3040", barcode: "8859033000346", attributes: JSON.stringify({ Size: "30x40 นิ้ว" }), price: 78.0, costPrice: 50.0, stock: 1600, minStockAlert: 250 },
+        { name: "ถุงขยะดำ EcoPoly 36x45 นิ้ว (ถุงยักษ์ 120 ลิตร)", sku: "VAR-ECO-TR-3645", barcode: "8859033000353", attributes: JSON.stringify({ Size: "36x45 นิ้ว" }), price: 98.0, costPrice: 65.0, stock: 950, minStockAlert: 150 },
+      ],
+    },
+    {
+      name: "ถุงซิปล็อคใส LDPE Food Grade ตรา PolyTech",
+      sku: "VAR-POLY-ZIP",
+      barcode: "8859033000407",
+      productType: "VARIABLE",
+      price: 45.0,
+      costPrice: 28.0,
+      stock: 4600,
+      minStockAlert: 600,
+      categoryId: catMap["food-packaging-bags"],
+      brandId: brandMap["PolyTech (โพลีเทค)"],
+      unitId: unitMap["pk"],
+      warehouseId: fg1WhId,
+      storeId: mainStoreId,
+      image: "/assets/images/product-01.jpg",
+      description: "ถุงซิปใสเหนียวรางเดี่ยว รูดเปิด-ปิดสะดวก ป้องกันฝุ่นและความชื้น 100% สัมผัสอาหารได้ปลอดภัย",
+      status: "ACTIVE",
+      variants: [
+        { name: "ถุงซิปล็อค PolyTech 6x8 ซม. (แพ็ค 100 ใบ)", sku: "VAR-ZIP-0608", barcode: "8859033000414", attributes: JSON.stringify({ Size: "6x8 ซม." }), price: 22.0, costPrice: 14.0, stock: 1200, minStockAlert: 150 },
+        { name: "ถุงซิปล็อค PolyTech 10x15 ซม. (แพ็ค 100 ใบ)", sku: "VAR-ZIP-1015", barcode: "8859033000421", attributes: JSON.stringify({ Size: "10x15 ซม." }), price: 35.0, costPrice: 22.0, stock: 1600, minStockAlert: 200 },
+        { name: "ถุงซิปล็อค PolyTech 15x23 ซม. (แพ็ค 100 ใบ)", sku: "VAR-ZIP-1523", barcode: "8859033000438", attributes: JSON.stringify({ Size: "15x23 ซม." }), price: 55.0, costPrice: 35.0, stock: 1100, minStockAlert: 150 },
+        { name: "ถุงซิปล็อค PolyTech 20x30 ซม. (แพ็ค 100 ใบ)", sku: "VAR-ZIP-2030", barcode: "8859033000445", attributes: JSON.stringify({ Size: "20x30 ซม." }), price: 80.0, costPrice: 52.0, stock: 700, minStockAlert: 100 },
+      ],
+    },
+  ];
+
+  const productMap: Record<string, string> = {};
+
+  for (const p of allProductsData) {
+    const { batches, variants, ...prodData } = p;
+    const created = await prisma.product.create({ data: prodData });
+    productMap[p.sku] = created.id;
+
+    // Handle variants if variable
+    if (variants && variants.length > 0) {
+      for (const v of variants) {
+        const createdVariant = await prisma.productVariant.create({
+          data: {
+            productId: created.id,
+            sku: v.sku,
+            barcode: v.barcode,
+            name: v.name,
+            attributes: v.attributes,
+            price: v.price,
+            costPrice: v.costPrice,
+            stock: v.stock,
+            minStockAlert: v.minStockAlert,
+            status: "ACTIVE",
+          },
+        });
+        productMap[v.sku] = createdVariant.id;
+      }
+    }
+
+    // Warehouse Stock
+    await prisma.productStock.create({
+      data: {
+        productId: created.id,
+        warehouseId: p.warehouseId,
+        quantity: p.stock,
+      },
+    });
+
+    // Stock Movement ledger
+    await prisma.stockMovement.create({
+      data: {
+        productId: created.id,
+        warehouseId: p.warehouseId,
+        type: "INITIAL_STOCK",
+        quantity: p.stock,
+        balanceAfter: p.stock,
+        unitCost: p.costPrice,
+        referenceNo: `INIT-${p.sku}`,
+        notes: `ยอดยกมาเริ่มต้นสินค้า ${p.name}`,
+        createdBy: "Admin",
+      },
+    });
+
+    // Batches
+    if (batches && batches.length > 0) {
+      for (const b of batches) {
+        await prisma.productExpiryBatch.create({
+          data: {
+            productId: created.id,
+            batchNo: b.batchNo,
+            manufacturedDate: b.manufacturedDate,
+            expiredDate: b.expiredDate,
+            quantity: b.quantity,
+            initialQuantity: b.quantity,
+            costPrice: b.costPrice,
+            notes: b.notes,
+            status: new Date(b.expiredDate) < new Date() ? "EXPIRED" : "ACTIVE",
+          },
+        });
+      }
+    }
+  }
+
+  // 13. Manufacturing BOM & Work Orders
+  console.log("Creating Bill of Materials (BOM) & Work Orders for Plastic Production...");
+  const tShirtProdId = productMap["VAR-KB-TSHIRT"];
+  const hotBagProdId = productMap["VAR-KB-HOTBAG"];
+  const rmHdpeId = productMap["RM-HDPE-6140"];
+  const rmPpId = productMap["RM-PP-1100"];
+  const mbWhiteId = productMap["MB-WHITE-01"];
+  const addSlipId = productMap["ADD-SLIP-01"];
+
+  const bom1 = await prisma.billOfMaterial.create({
+    data: {
+      bomCode: "BOM-HDPE-TSHIRT-100KG",
+      name: "สูตรผลิตถุงหูหิ้ว HDPE ขาวขุ่น (100 kg)",
+      finishedProductId: tShirtProdId,
+      outputQty: 100.0,
+      unit: "kg",
+      totalCost: 4200.0,
+      laborCost: 350.0,
+      overheadCost: 250.0,
+      status: "ACTIVE",
+      notes: "สัดส่วน: เม็ด HDPE 92% + สีขาว 5% + สารกันลื่น 3%",
+      items: {
+        create: [
+          { rawMaterialId: rmHdpeId, quantity: 92.0 },
+          { rawMaterialId: mbWhiteId, quantity: 5.0 },
+          { rawMaterialId: addSlipId, quantity: 3.0 },
+        ],
+      },
+    },
+  });
+
+  const bom2 = await prisma.billOfMaterial.create({
+    data: {
+      bomCode: "BOM-PP-HOTBAG-100KG",
+      name: "สูตรผลิตถุงร้อนใส PP เกรดอาหาร (100 kg)",
+      finishedProductId: hotBagProdId,
+      outputQty: 100.0,
+      unit: "kg",
+      totalCost: 4500.0,
+      laborCost: 400.0,
+      overheadCost: 300.0,
+      status: "ACTIVE",
+      notes: "สัดส่วน: เม็ด PP ใส 98% + สารกันลื่น 2%",
+      items: {
+        create: [
+          { rawMaterialId: rmPpId, quantity: 98.0 },
+          { rawMaterialId: addSlipId, quantity: 2.0 },
+        ],
+      },
+    },
+  });
+
+  await prisma.workOrder.create({
+    data: {
+      orderNo: "WO-2026-001",
+      bomId: bom1.id,
+      finishedProductId: tShirtProdId,
+      targetQty: 1000.0,
+      producedQty: 1000.0,
+      scrapQty: 25.0,
+      unit: "kg",
+      startDate: new Date("2026-02-01"),
+      endDate: new Date("2026-02-03"),
+      status: "COMPLETED",
+      operator: "วิชัย เป่าฟิล์ม",
+      machineNo: "Extruder Line #1 (เครื่องเป่าฟิล์ม HDPE)",
+      warehouseId: fg1WhId,
+      totalCost: 42000.0,
+      notes: "ผลิตถุงหูหิ้วขาวขุ่นล็อตส่งแม็คโคร ส่งมอบเข้าคลังเรียบร้อย",
+      materials: {
+        create: [
+          { rawMaterialId: rmHdpeId, plannedQty: 920.0, actualQty: 935.0, unitCost: 42.0 },
+          { rawMaterialId: mbWhiteId, plannedQty: 50.0, actualQty: 50.0, unitCost: 80.0 },
+          { rawMaterialId: addSlipId, plannedQty: 30.0, actualQty: 30.0, unitCost: 150.0 },
+        ],
+      },
+      scraps: {
+        create: [
+          {
+            scrapNo: "SCR-2026-001",
+            scrapType: "EDGE_TRIM",
+            materialName: "เศษฟิล์มริมม้วน HDPE (Edge Trim Scrap)",
+            weightKg: 25.0,
+            notes: "ตัดริมม้วนฟิล์ม ส่งลานบดรีไซเคิล RC-01 เพื่อหลอมเป็นเม็ด PCR",
+            isRecycled: false,
+          },
+        ],
+      },
+    },
+  });
+
+  await prisma.workOrder.create({
+    data: {
+      orderNo: "WO-2026-002",
+      bomId: bom2.id,
+      finishedProductId: hotBagProdId,
+      targetQty: 800.0,
+      producedQty: 450.0,
+      scrapQty: 12.0,
+      unit: "kg",
+      startDate: new Date("2026-02-20"),
+      endDate: new Date("2026-02-22"),
+      status: "IN_PROGRESS",
+      operator: "สมคิด คุมเครื่อง",
+      machineNo: "Extruder Line #3 (เครื่องเป่าถุงร้อน PP)",
+      warehouseId: fg1WhId,
+      totalCost: 36000.0,
+      notes: "กำลังเดินเครื่องเป่าฟิล์มกะกลางวัน",
+      materials: {
+        create: [
+          { rawMaterialId: rmPpId, plannedQty: 784.0, actualQty: 441.0, unitCost: 43.5 },
+          { rawMaterialId: addSlipId, plannedQty: 16.0, actualQty: 9.0, unitCost: 150.0 },
+        ],
+      },
+    },
+  });
+
+  // 14. 7-Month Realistic Historical Analytics & Transactions
+  console.log("Generating 7-Month Historical Purchases, Sales, POS Orders, and Expenses for Charts & Reports...");
+
+  const now = new Date();
+  const monthOffsets = [6, 5, 4, 3, 2, 1, 0]; // 6 months ago up to current month (e.g. Aug 2025 to Feb 2026)
+
+  const monthlyProfiles = [
+    { offset: 6, b2bSales: 220000, posSales: 35000, purchases: 260000, elecCost: 42000, maintCost: 12000 },
+    { offset: 5, b2bSales: 245000, posSales: 42000, purchases: 280000, elecCost: 44000, maintCost: 15000 },
+    { offset: 4, b2bSales: 290000, posSales: 48000, purchases: 320000, elecCost: 48000, maintCost: 18000 },
+    { offset: 3, b2bSales: 310000, posSales: 55000, purchases: 340000, elecCost: 51000, maintCost: 14000 },
+    { offset: 2, b2bSales: 360000, posSales: 68000, purchases: 390000, elecCost: 56000, maintCost: 22000 },
+    { offset: 1, b2bSales: 280000, posSales: 52000, purchases: 310000, elecCost: 46000, maintCost: 16000 },
+    { offset: 0, b2bSales: 320000, posSales: 58000, purchases: 350000, elecCost: 49000, maintCost: 15000 },
+  ];
+
+  let orderCounter = 100;
+  let saleCounter = 100;
+  let poCounter = 100;
+
+  for (const prof of monthlyProfiles) {
+    const txDate = new Date(now.getFullYear(), now.getMonth() - prof.offset, 15, 11, 30);
+    const dateStr = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, "0")}-15`;
+
+    // A. B2B Sales (Sale & Invoice)
+    saleCounter++;
+    const saleRef = `SL-202${saleCounter}`;
+    const invNo = `INV-202${saleCounter}`;
+    const b2bTax = Math.round(prof.b2bSales * 0.07);
+    const b2bGrandTotal = prof.b2bSales + b2bTax;
+
+    await prisma.sale.create({
+      data: {
+        reference: saleRef,
+        customerId: custMap["CUST-MAKRO"],
+        customerName: "บริษัท สยามแม็คโคร จำกัด (มหาชน)",
+        billerName: "บริษัท สยามโพลีแพ็ค แมนูแฟคเจอริ่ง จำกัด (สำนักงานใหญ่)",
+        warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
+        storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+        date: txDate,
+        createdAt: txDate,
+        status: "COMPLETED",
+        paymentStatus: "PAID",
+        paymentMethod: "BANK_TRANSFER",
+        subtotal: prof.b2bSales,
+        tax: b2bTax,
+        grandTotal: b2bGrandTotal,
+        paid: b2bGrandTotal,
+        due: 0.0,
+        notes: `ยอดส่งมอบสินค้า B2B ประจำเดือน ${txDate.toLocaleString("en-US", { month: "short" })}`,
+        items: {
+          create: [
+            {
+              productId: tShirtProdId,
+              productName: "ถุงหูหิ้วขาวขุ่น ตรา KingBag (ขนาด 8x16 นิ้ว)",
+              sku: "VAR-KB-TS-0816",
+              quantity: Math.round(prof.b2bSales * 0.55 / 45),
+              unitPrice: 45.0,
+              subtotal: Math.round(prof.b2bSales * 0.55),
+              total: Math.round(prof.b2bSales * 0.55 * 1.07),
+              createdAt: txDate,
+            },
+            {
+              productId: hotBagProdId,
+              productName: "ถุงร้อนใส PP ตรา KingBag (ขนาด 6x9 นิ้ว)",
+              sku: "VAR-KB-HOT-69",
+              quantity: Math.round(prof.b2bSales * 0.45 / 36),
+              unitPrice: 36.0,
+              subtotal: Math.round(prof.b2bSales * 0.45),
+              total: Math.round(prof.b2bSales * 0.45 * 1.07),
+              createdAt: txDate,
+            },
+          ],
+        },
+        invoices: {
+          create: [
+            {
+              invoiceNo: invNo,
+              customerName: "บริษัท สยามแม็คโคร จำกัด (มหาชน)",
+              amount: b2bGrandTotal,
+              paid: b2bGrandTotal,
+              amountDue: 0.0,
+              status: "PAID",
+              createdAt: txDate,
+            },
+          ],
+        },
+      },
+    });
+
+    // B. POS Orders (for Top Selling Products & Dashboard Recent Transactions)
+    orderCounter++;
+    const posOrderNo = `ORD-${txDate.getFullYear()}-${String(orderCounter).padStart(4, "0")}`;
+    const posTax = Math.round(prof.posSales * 0.07);
+    const posTotal = prof.posSales + posTax;
+
+    await prisma.order.create({
+      data: {
+        orderNumber: posOrderNo,
+        customerId: custMap["CUST-WALKIN"],
+        subtotal: prof.posSales,
+        tax: posTax,
+        total: posTotal,
+        discount: 0.0,
+        paymentMethod: prof.offset % 2 === 0 ? "PROMPTPAY" : "CASH",
+        paymentStatus: "PAID",
+        cashierName: "กานดา การค้า",
+        notes: "ยอดขายหน้าร้าน POS",
+        createdAt: txDate,
+        items: {
+          create: [
+            {
+              productId: tShirtProdId,
+              productName: "ถุงหูหิ้วขาวขุ่น ตรา KingBag (แพ็ค 500g)",
+              quantity: Math.round(prof.posSales * 0.4 / 45),
+              unitPrice: 45.0,
+              subtotal: Math.round(prof.posSales * 0.4),
+              createdAt: txDate,
+            },
+            {
+              productId: hotBagProdId,
+              productName: "ถุงร้อนใส PP เกรดบรรจุอาหาร ตรา KingBag",
+              quantity: Math.round(prof.posSales * 0.35 / 36),
+              unitPrice: 36.0,
+              subtotal: Math.round(prof.posSales * 0.35),
+              createdAt: txDate,
+            },
+            {
+              productId: productMap["VAR-ECO-TRASH"],
+              productName: "ถุงขยะดำรีไซเคิลมาตรฐาน ตรา EcoPoly",
+              quantity: Math.round(prof.posSales * 0.25 / 55),
+              unitPrice: 55.0,
+              subtotal: Math.round(prof.posSales * 0.25),
+              createdAt: txDate,
+            },
+          ],
+        },
+      },
+    });
+
+    // C. Purchases (PO) from SCGC & PTTGC
+    poCounter++;
+    const poRef = `PO-202${poCounter}`;
+    const poTax = Math.round(prof.purchases * 0.07);
+    const poTotal = prof.purchases + poTax;
+
+    await prisma.purchase.create({
+      data: {
+        reference: poRef,
+        supplierId: suppMap["SUP-SCGC"],
+        supplierName: "บริษัท เอสซีจี เคมิคอลส์ จำกัด (มหาชน)",
+        warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+        storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+        date: txDate,
+        createdAt: txDate,
+        status: "RECEIVED",
+        paymentStatus: "PAID",
+        subtotal: prof.purchases,
+        tax: poTax,
+        total: poTotal,
+        paid: poTotal,
+        due: 0.0,
+        notes: `รอบสั่งซื้อเม็ดพลาสติกเข้าคลังประจำเดือน ${txDate.toLocaleString("en-US", { month: "short" })}`,
+        items: {
+          create: [
+            {
+              productId: rmHdpeId,
+              productName: "เม็ดพลาสติก HDPE เป่าฟิล์ม SCG H6140B",
+              sku: "RM-HDPE-6140",
+              quantity: Math.round(prof.purchases / 42),
+              receivedQty: Math.round(prof.purchases / 42),
+              unitCost: 42.0,
+              subtotal: prof.purchases,
+              total: poTotal,
+              createdAt: txDate,
+            },
+          ],
+        },
+      },
+    });
+
+    // D. Factory Expenses (for Profit & Loss Reports)
+    await prisma.expense.create({
+      data: {
+        reference: `EXP-EL-${prof.offset}`,
+        expenseName: "ค่าไฟฟ้าแรงสูงเครื่องเป่าฟิล์ม (MEA)",
+        categoryId: expCatMap["EXP-UTIL"],
+        categoryName: "ค่าสาธารณูปโภคโรงงาน (Electricity & Water)",
+        description: `ค่าไฟโรงงานประจำเดือน ${txDate.toLocaleString("en-US", { month: "short" })}`,
+        date: dateStr,
+        amount: prof.elecCost,
+        status: "Approved",
+        storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+        createdAt: txDate,
+      },
+    });
+
+    await prisma.expense.create({
+      data: {
+        reference: `EXP-MT-${prof.offset}`,
+        expenseName: "ค่าบำรุงรักษาหัวดายและเครื่องเป่าฟิล์ม",
+        categoryId: expCatMap["EXP-MAINT"],
+        categoryName: "ค่าซ่อมบำรุงเครื่องจักร (Machine Maintenance)",
+        description: `Preventive Maintenance ประจำเดือน ${txDate.toLocaleString("en-US", { month: "short" })}`,
+        date: dateStr,
+        amount: prof.maintCost,
+        status: "Approved",
+        storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+        createdAt: txDate,
+      },
+    });
+  }
+
+  // 15. HR / Department / Employees
+  console.log("Creating HR Departments & Staff for Plastic Manufacturing Plant...");
+  await prisma.attendance.deleteMany();
+  await prisma.payroll.deleteMany();
+  await prisma.leave.deleteMany();
+  await prisma.holiday.deleteMany();
+  await prisma.leaveType.deleteMany();
+  await prisma.employee.deleteMany();
+  await prisma.designation.deleteMany();
+  await prisma.department.deleteMany();
+  await prisma.shift.deleteMany();
+
   const shiftsData = [
-    { name: "Fixed", timing: "09:00 AM - 6:00 PM", weekOff: "Sunday, Monday", createdAt: new Date("2024-08-04"), status: "ACTIVE" },
-    { name: "Rotating", timing: "06:00 AM - 3:00 PM", weekOff: "Saturday, Sunday", createdAt: new Date("2024-07-21"), status: "ACTIVE" },
-    { name: "Split", timing: "03:00 AM - 9:00 PM", weekOff: "Tuesday, Saturday", createdAt: new Date("2024-01-31"), status: "ACTIVE" },
-    { name: "On-Call", timing: "09:00 AM - 6:00 PM", weekOff: "Monday", createdAt: new Date("2024-05-15"), status: "ACTIVE" },
-    { name: "Weekend", timing: "06:00 AM - 3:00 PM", weekOff: "Friday", createdAt: new Date("2024-08-04"), status: "ACTIVE" },
+    { name: "กะเช้า (Morning Shift)", timing: "08:00 AM - 05:00 PM", weekOff: "Sunday", status: "ACTIVE" },
+    { name: "กะบ่าย (Afternoon Shift)", timing: "04:00 PM - 12:00 AM", weekOff: "Sunday", status: "ACTIVE" },
+    { name: "กะดึก (Night Shift)", timing: "12:00 AM - 08:00 AM", weekOff: "Sunday", status: "ACTIVE" },
   ];
   for (const s of shiftsData) {
     await prisma.shift.create({ data: s });
   }
 
-  // 11. Create Designations matching Screenshot
-  const designationsData = [
-    { name: "Sales Manager", department: "Sales", totalMembers: 7, createdAt: new Date("2024-12-24"), status: "ACTIVE" },
-    { name: "Inventory Manager", department: "Inventory", totalMembers: 10, createdAt: new Date("2024-12-10"), status: "ACTIVE" },
-    { name: "Accountant", department: "Finance", totalMembers: 5, createdAt: new Date("2024-11-27"), status: "ACTIVE" },
-    { name: "System Administrator", department: "Admin", totalMembers: 10, createdAt: new Date("2024-11-18"), status: "ACTIVE" },
-    { name: "HR Manager", department: "Human Resources", totalMembers: 6, createdAt: new Date("2024-11-06"), status: "ACTIVE" },
-    { name: "Marketing Manager", department: "Marketing", totalMembers: 12, createdAt: new Date("2024-10-25"), status: "ACTIVE" },
-    { name: "QA Analyst", department: "Quality Assurance", totalMembers: 8, createdAt: new Date("2024-10-14"), status: "ACTIVE" },
-    { name: "Research Analyst", department: "R&D", totalMembers: 7, createdAt: new Date("2024-10-03"), status: "ACTIVE" },
-    { name: "Support Engineer", department: "IT Support", totalMembers: 10, createdAt: new Date("2024-09-20"), status: "ACTIVE" },
-    { name: "Content Writer", department: "Content Creation", totalMembers: 8, createdAt: new Date("2024-09-10"), status: "INACTIVE" },
-  ];
-  for (const d of designationsData) {
-    await prisma.designation.create({ data: d });
-  }
-
-  // 12. Create Departments matching Screenshot
   const departmentsData = [
-    { name: "Inventory", headName: "Mitchum Daniel", headAvatar: "/assets/images/customer11.jpg", totalMembers: 8, status: "ACTIVE" },
-    { name: "Human Resources", headName: "Susan Lopez", headAvatar: "/assets/images/customer12.jpg", totalMembers: 10, status: "ACTIVE" },
-    { name: "Admin", headName: "Robert Grossman", headAvatar: "/assets/images/customer13.jpg", totalMembers: 5, status: "ACTIVE" },
-    { name: "Sales", headName: "Janet Hembre", headAvatar: "/assets/images/customer14.jpg", totalMembers: 10, status: "ACTIVE" },
-    { name: "Marketing", headName: "Russell Belle", headAvatar: "/assets/images/customer15.jpg", totalMembers: 6, status: "ACTIVE" },
-    { name: "Quality Assurance", headName: "Edward Muniz", headAvatar: "/assets/images/customer16.jpg", totalMembers: 6, status: "ACTIVE" },
-    { name: "Finance", headName: "Susan Moore", headAvatar: "/assets/images/customer17.jpg", totalMembers: 8, status: "ACTIVE" },
-    { name: "Maintenance", headName: "Lance Jackson", headAvatar: "/assets/images/customer18.jpg", totalMembers: 7, status: "ACTIVE" },
-    { name: "R&D", headName: "Travis Marcotte", headAvatar: "/assets/images/avatar-01.jpg", totalMembers: 10, status: "ACTIVE" },
-    { name: "Content Creation", headName: "Malinda Ruiz", headAvatar: "/assets/images/avatar-02.jpg", totalMembers: 8, status: "ACTIVE" },
-    { name: "Social Media", headName: "David Slater", headAvatar: "/assets/images/avatar-03.jpg", totalMembers: 6, status: "ACTIVE" },
-    { name: "IT Support", headName: "Michele Kim", headAvatar: "/assets/images/avatar-10.jpg", totalMembers: 4, status: "ACTIVE" },
+    { name: "ฝ่ายผลิตและเครื่องจักร (Production & Extrusion)", headName: "วิชัย เป่าฟิล์ม", totalMembers: 12, status: "ACTIVE" },
+    { name: "ฝ่ายคลังสินค้าและจัดส่ง (Warehouse & Logistics)", headName: "สมเกียรติ สต็อกแมน", totalMembers: 8, status: "ACTIVE" },
+    { name: "ฝ่ายขายและการตลาด (Sales & Marketing)", headName: "กานดา การค้า", totalMembers: 6, status: "ACTIVE" },
+    { name: "ฝ่ายควบคุมคุณภาพและแล็บ (QA/QC)", headName: "ธนากร ตรวจสอบ", totalMembers: 4, status: "ACTIVE" },
+    { name: "ฝ่ายบัญชีและการเงิน (Accounting & Finance)", headName: "นภาพร บัญชี", totalMembers: 5, status: "ACTIVE" },
   ];
-  for (const dep of departmentsData) {
-    await prisma.department.create({ data: dep });
+  for (const d of departmentsData) {
+    await prisma.department.create({ data: d });
   }
 
-  // 13. Create Employees matching Screenshot
+  const designationsData = [
+    { name: "ผู้จัดการโรงงาน (Plant Manager)", department: "ฝ่ายผลิตและเครื่องจักร (Production & Extrusion)", totalMembers: 1, status: "ACTIVE" },
+    { name: "หัวหน้าช่างเป่าฟิล์ม (Lead Extruder)", department: "ฝ่ายผลิตและเครื่องจักร (Production & Extrusion)", totalMembers: 3, status: "ACTIVE" },
+    { name: "ช่างคุมเครื่องตัดซีล (Sealing Operator)", department: "ฝ่ายผลิตและเครื่องจักร (Production & Extrusion)", totalMembers: 8, status: "ACTIVE" },
+    { name: "หัวหน้าคลังสินค้า (Warehouse Supervisor)", department: "ฝ่ายคลังสินค้าและจัดส่ง (Warehouse & Logistics)", totalMembers: 2, status: "ACTIVE" },
+    { name: "เจ้าหน้าที่ตรวจแล็บ (QC Inspector)", department: "ฝ่ายควบคุมคุณภาพและแล็บ (QA/QC)", totalMembers: 4, status: "ACTIVE" },
+    { name: "เจ้าหน้าที่ขายโครงการ B2B (Key Account Sales)", department: "ฝ่ายขายและการตลาด (Sales & Marketing)", totalMembers: 4, status: "ACTIVE" },
+  ];
+  for (const des of designationsData) {
+    await prisma.designation.create({ data: des });
+  }
+
   const employeesData = [
-    { empId: "POS001", name: "Anthony Lewis", avatar: "/assets/images/customer11.jpg", role: "System Admin", department: "HR", joinedDate: "30 May 2023", email: "anthony@example.com", phone: "+12498345785", status: "ACTIVE" },
-    { empId: "POS002", name: "Brian Villalobos", avatar: "/assets/images/customer12.jpg", role: "Software Developer", department: "UI/UX", joinedDate: "30 May 2023", email: "brian@example.com", phone: "+13178964582", status: "ACTIVE" },
-    { empId: "POS003", name: "Harvey Smith", avatar: "/assets/images/customer13.jpg", role: "System Admin", department: "Admin", joinedDate: "30 May 2023", email: "harvey@example.com", phone: "+12796183487", status: "ACTIVE" },
-    { empId: "POS004", name: "Stephan Peralt", avatar: "/assets/images/customer14.jpg", role: "System Admin", department: "Admin", joinedDate: "30 May 2023", email: "stephan@example.com", phone: "+17538647943", status: "ACTIVE" },
-    { empId: "POS005", name: "Doglas Martini", avatar: "/assets/images/customer15.jpg", role: "System Admin", department: "IT", joinedDate: "30 May 2023", email: "doglas@example.com", phone: "+13798132475", status: "ACTIVE" },
-    { empId: "POS006", name: "Linda Ray", avatar: "/assets/images/customer16.jpg", role: "System Admin", department: "Support", joinedDate: "30 May 2023", email: "linda@example.com", phone: "+17596341894", status: "ACTIVE" },
-    { empId: "POS007", name: "Elliot Murray", avatar: "/assets/images/customer17.jpg", role: "System Admin", department: "UI/UX", joinedDate: "30 May 2023", email: "elliot@example.com", phone: "+12973548678", status: "ACTIVE" },
-    { empId: "POS008", name: "Rebecca Smtih", avatar: "/assets/images/customer18.jpg", role: "System Admin", department: "HR", joinedDate: "30 May 2023", email: "rebecca@example.com", phone: "+13147858357", status: "ACTIVE" },
+    {
+      empId: "EMP-001",
+      name: "สมชาย ชัยชนะ",
+      email: "somchai.c@siampolypack.com",
+      phone: "+66 81 234 5678",
+      department: "ฝ่ายผลิตและเครื่องจักร (Production & Extrusion)",
+      role: "ผู้จัดการโรงงาน (Plant Manager)",
+      joinedDate: "15 Jan 2024",
+      status: "ACTIVE",
+    },
+    {
+      empId: "EMP-002",
+      name: "วิชัย เป่าฟิล์ม",
+      email: "wichai.p@siampolypack.com",
+      phone: "+66 89 876 5432",
+      department: "ฝ่ายผลิตและเครื่องจักร (Production & Extrusion)",
+      role: "หัวหน้าช่างเป่าฟิล์ม (Lead Extruder)",
+      joinedDate: "01 Mar 2024",
+      status: "ACTIVE",
+    },
+    {
+      empId: "EMP-003",
+      name: "กานดา การค้า",
+      email: "kanda.k@siampolypack.com",
+      phone: "+66 86 555 1234",
+      department: "ฝ่ายขายและการตลาด (Sales & Marketing)",
+      role: "เจ้าหน้าที่ขายโครงการ B2B (Key Account Sales)",
+      joinedDate: "10 May 2024",
+      status: "ACTIVE",
+    },
+    {
+      empId: "EMP-004",
+      name: "สมเกียรติ สต็อกแมน",
+      email: "somkiat.s@siampolypack.com",
+      phone: "+66 84 333 9988",
+      department: "ฝ่ายคลังสินค้าและจัดส่ง (Warehouse & Logistics)",
+      role: "หัวหน้าคลังสินค้า (Warehouse Supervisor)",
+      joinedDate: "01 Jun 2024",
+      status: "ACTIVE",
+    },
   ];
   for (const emp of employeesData) {
     await prisma.employee.create({ data: emp });
   }
 
-  // 14. Create Attendance matching Admin & Employee Screenshots
-  const attendanceData = [
-    { employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:00 AM", clockOut: "07:15 PM", production: "09h 00m", breakTime: "0h 45m", overtime: "0h 20m", totalHours: "09h 20m", progress: 85 },
-    { employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:15 AM", clockOut: "07:12 PM", production: "09h 00m", breakTime: "01h 15m", overtime: "0h 12m", totalHours: "09h 12m", progress: 90 },
-    { employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:40 AM", clockOut: "07:00 PM", production: "08h 45m", breakTime: "01h 00m", overtime: "00h 00m", totalHours: "08h 45m", progress: 88 },
-    { employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:45 AM", clockOut: "08:10 PM", production: "09h 12m", breakTime: "00h 50m", overtime: "00 14m", totalHours: "09h 14m", progress: 82 },
-    { employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", date: "01 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-", progress: 0 },
-    { employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:17 AM", clockOut: "07:34 PM", production: "09h 26m", breakTime: "01h 20m", overtime: "00h 26m", totalHours: "09h 26m", progress: 80 },
-    { employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", date: "01 Jan 2026", status: "ABSENT", clockIn: "-", clockOut: "-", production: "-", breakTime: "-", overtime: "-", totalHours: "-", progress: 0 },
-    { employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:42 AM", clockOut: "07:20 PM", production: "09h 17m", breakTime: "01h 00m", overtime: "00h 17m", totalHours: "09h 17m", progress: 86 },
-    { employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:18 AM", clockOut: "07:11 PM", production: "09h 32m", breakTime: "01h 15m", overtime: "00h 32m", totalHours: "09h 32m", progress: 89 },
-    { employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", date: "01 Jan 2026", status: "PRESENT", clockIn: "09:30 AM", clockOut: "08:10 PM", production: "09h 00m", breakTime: "00h 34m", overtime: "00h 20m", totalHours: "09h 20m", progress: 87 },
-  ];
-  for (const att of attendanceData) {
-    await prisma.attendance.create({ data: att });
-  }
-
-  // 15. Create Leave Types matching Screenshot
-  const leaveTypesData = [
-    { name: "Sick Leave", quota: 5, createdAt: new Date("2023-08-02"), status: "ACTIVE" },
-    { name: "Maternity", quota: 5, createdAt: new Date("2023-08-03"), status: "ACTIVE" },
-    { name: "Paternity", quota: 5, createdAt: new Date("2023-08-04"), status: "ACTIVE" },
-    { name: "Casual Leave", quota: 5, createdAt: new Date("2023-08-07"), status: "ACTIVE" },
-    { name: "Emergency", quota: 5, createdAt: new Date("2023-08-08"), status: "ACTIVE" },
-    { name: "Vacation", quota: 5, createdAt: new Date("2023-08-10"), status: "ACTIVE" },
-  ];
-  for (const lt of leaveTypesData) {
-    await prisma.leaveType.create({ data: lt });
-  }
-
-  // 16. Create Leaves matching Screenshot
-  const leavesData = [
-    { empCode: "EMP001", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", leaveType: "Sick Leave", fromDate: "24 Dec 2024", toDate: "24 Dec 2024", duration: "01 Day", appliedOn: "23 Dec 2024", shift: "Regular", status: "APPROVED" },
-    { empCode: "EMP002", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", leaveType: "Casual Leave", fromDate: "10 Dec 2024", toDate: "10 Dec 2024", duration: "01 Day", appliedOn: "09 Dec 2024", shift: "Regular", status: "APPROVED" },
-    { empCode: "EMP003", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", leaveType: "Casual Leave", fromDate: "27 Nov 2024", toDate: "28 Nov 2024", duration: "02 Day", appliedOn: "26 Nov 2024", shift: "Regular", status: "APPLIED" },
-    { empCode: "EMP004", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", leaveType: "Sick Leave", fromDate: "18 Nov 2024", toDate: "18 Nov 2024", duration: "02 hrs", appliedOn: "18 Nov 2024", shift: "Regular", status: "APPROVED" },
-    { empCode: "EMP005", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", leaveType: "Casual Leave", fromDate: "06 Nov 2024", toDate: "08 Nov 2024", duration: "03 Days", appliedOn: "05 Nov 2024", shift: "Regular", status: "APPROVED" },
-    { empCode: "EMP006", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", leaveType: "Sick Leave", fromDate: "25 Oct 2024", toDate: "25 Oct 2024", duration: "01 Days", appliedOn: "24 Oct 2024", shift: "Regular", status: "REJECTED" },
-    { empCode: "EMP007", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", leaveType: "Casual Leave", fromDate: "14 Oct 2024", toDate: "15 Oct 2024", duration: "02 Days", appliedOn: "13 Oct 2024", shift: "Regular", status: "APPROVED" },
-    { empCode: "EMP008", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", leaveType: "Casual Leave", fromDate: "03 Oct 2024", toDate: "03 Oct 2024", duration: "01 Days", appliedOn: "02 Oct 2024", shift: "Regular", status: "APPLIED" },
-    { empCode: "EMP009", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", leaveType: "Sick Leave", fromDate: "20 Sep 2024", toDate: "21 Sep 2024", duration: "02 Days", appliedOn: "19 Sep 2024", shift: "Regular", status: "APPROVED" },
-    { empCode: "EMP010", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", leaveType: "Casual Leave", fromDate: "10 Sep 2024", toDate: "10 Sep 2024", duration: "02 hrs", appliedOn: "09 Sep 2024", shift: "Regular", status: "REJECTED" },
-  ];
-  for (const l of leavesData) {
-    await prisma.leave.create({ data: l });
-  }
-
-  // 17. Create Holidays matching Screenshot
-  const holidaysData = [
-    { name: "New Year", date: "01 Jan 2026", description: "First day of the new year", status: "ACTIVE" },
-    { name: "Martin Luther King Jr. Day", date: "15 Jan 2026", description: "Celebrating the civil rights leader", status: "ACTIVE" },
-    { name: "Presidents' Day", date: "19 Feb 2026", description: "Honoring past US Presidents", status: "ACTIVE" },
-    { name: "Good Friday", date: "29 Mar 2026", description: "Holiday before Easter", status: "ACTIVE" },
-    { name: "Easter Monday", date: "01 Apr 2026", description: "Holiday after Easter", status: "ACTIVE" },
-    { name: "Memorial Day", date: "27 May 2026", description: "Honors military personnel", status: "ACTIVE" },
-    { name: "Independence Day", date: "04 Jul 2026", description: "Celebrates Independence", status: "ACTIVE" },
-    { name: "Labour Day", date: "02 Sep 2026", description: "Honors working people", status: "ACTIVE" },
-    { name: "Veterans Day", date: "11 Nov 2026", description: "Honors working people", status: "ACTIVE" },
-    { name: "Christmas Day", date: "25 Dec 2026", description: "Celebration of Christmas", status: "ACTIVE" },
-  ];
-  for (const h of holidaysData) {
-    await prisma.holiday.create({ data: h });
-  }
-
-  // 18. Create Payroll matching Screenshot
-  const payrollData = [
-    { empCode: "EMP001", employeeName: "Carl Evans", employeeRole: "Designer", employeeAvatar: "/assets/images/customer11.jpg", email: "carlevans@example.com", salary: 30000, basicSalary: 32000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP002", employeeName: "Minerva Rameriz", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer12.jpg", email: "rameriz@example.com", salary: 20000, basicSalary: 20000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP003", employeeName: "Robert Lamon", employeeRole: "Developer", employeeAvatar: "/assets/images/customer13.jpg", email: "robert@example.com", salary: 35000, basicSalary: 35000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP004", employeeName: "Patricia Lewis", employeeRole: "HR Manager", employeeAvatar: "/assets/images/customer14.jpg", email: "robert@example.com", salary: 35000, basicSalary: 35000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP005", employeeName: "Mark Joslyn", employeeRole: "Designer", employeeAvatar: "/assets/images/customer15.jpg", email: "markjoslyn@example.com", salary: 32000, basicSalary: 32000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP006", employeeName: "Marsha Betts", employeeRole: "Developer", employeeAvatar: "/assets/images/customer16.jpg", email: "marshabetts@example.com", salary: 28000, basicSalary: 28000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP007", employeeName: "Daniel Jude", employeeRole: "Administrator", employeeAvatar: "/assets/images/customer17.jpg", email: "daieljude@example.com", salary: 25000, basicSalary: 25000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP008", employeeName: "Emma Bates", employeeRole: "HR Assistant", employeeAvatar: "/assets/images/customer18.jpg", email: "emmabates@example.com", salary: 21000, basicSalary: 21000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP009", employeeName: "Richard Fralick", employeeRole: "Designer", employeeAvatar: "/assets/images/avatar-01.jpg", email: "richard@example.com", salary: 34000, basicSalary: 34000, payPeriod: "Jan 2026", location: "USA", status: "PAID" },
-    { empCode: "EMP010", employeeName: "Michelle Robison", employeeRole: "HR Manager", employeeAvatar: "/assets/images/avatar-02.jpg", email: "robinson@example.com", salary: 28000, basicSalary: 28000, payPeriod: "Jan 2026", location: "USA", status: "UNPAID" },
-  ];
-  for (const p of payrollData) {
-    await prisma.payroll.create({ data: p });
-  }
-
-  // 19. Create Sales Report Items matching Screenshot
-  const salesReportData = [
-    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", brand: "Lenovo", category: "Computers", soldQty: 5, soldAmount: 3000, instockQty: 100 },
-    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", brand: "Beats", category: "Electronics", soldQty: 10, soldAmount: 1600, instockQty: 140 },
-    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", brand: "Nike", category: "Shoe", soldQty: 8, soldAmount: 880, instockQty: 300 },
-    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", brand: "Apple", category: "Electronics", soldQty: 10, soldAmount: 1200, instockQty: 450 },
-    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", brand: "Amazon", category: "Electronics", soldQty: 5, soldAmount: 400, instockQty: 320 },
-    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", brand: "Modern Wave", category: "Furniture", soldQty: 7, soldAmount: 2240, instockQty: 650 },
-    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", brand: "Dior", category: "Bags", soldQty: 15, soldAmount: 900, instockQty: 700 },
-    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", brand: "Apple", category: "Phone", soldQty: 12, soldAmount: 6480, instockQty: 630 },
-    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", brand: "Arlime", category: "Furniture", soldQty: 10, soldAmount: 2000, instockQty: 410 },
-    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", brand: "The North Face", category: "Bags", soldQty: 20, soldAmount: 900, instockQty: 550 },
-  ];
-  for (const s of salesReportData) {
-    await prisma.salesReportItem.create({ data: s });
-  }
-
-  // 20. Create Purchase Report Items matching Screenshot
-  const purchaseReportData = [
-    { reference: "PO2026", sku: "PT001", dueDate: "24 Dec 2024", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", instockQty: 100, purchaseQty: 5, purchaseAmount: 500 },
-    { reference: "PO2026", sku: "PT002", dueDate: "10 Dec 2024", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", instockQty: 140, purchaseQty: 10, purchaseAmount: 1500 },
-    { reference: "PO2026", sku: "PT003", dueDate: "27 Nov 2024", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", instockQty: 300, purchaseQty: 8, purchaseAmount: 600 },
-    { reference: "PO2026", sku: "PT004", dueDate: "18 Nov 2024", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", instockQty: 450, purchaseQty: 10, purchaseAmount: 1000 },
-    { reference: "PO2026", sku: "PT005", dueDate: "18 Nov 2024", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", instockQty: 320, purchaseQty: 5, purchaseAmount: 1200 },
-    { reference: "PO2026", sku: "PT006", dueDate: "25 Oct 2024", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", instockQty: 650, purchaseQty: 7, purchaseAmount: 800 },
-    { reference: "PO2026", sku: "PT007", dueDate: "14 Oct 2024", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", instockQty: 700, purchaseQty: 15, purchaseAmount: 2000 },
-    { reference: "PO2026", sku: "PT008", dueDate: "03 Oct 2024", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", instockQty: 630, purchaseQty: 12, purchaseAmount: 2000 },
-    { reference: "PO2026", sku: "PT009", dueDate: "20 Sep 2024", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", instockQty: 410, purchaseQty: 10, purchaseAmount: 300 },
-    { reference: "PO2026", sku: "PT010", dueDate: "10 Sep 2024", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", instockQty: 550, purchaseQty: 20, purchaseAmount: 5000 },
-  ];
-  for (const pr of purchaseReportData) {
-    await prisma.purchaseReportItem.create({ data: pr });
-  }
-
-  // 21. Create Inventory Report Items
-  const inventoryReportData = [
-    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", unit: "Pc", instockQty: 100, minStock: 10, stockValue: 3000 },
-    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", unit: "Pc", instockQty: 140, minStock: 10, stockValue: 1600 },
-    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", unit: "Pc", instockQty: 300, minStock: 15, stockValue: 880 },
-    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", unit: "Pc", instockQty: 450, minStock: 20, stockValue: 1200 },
-    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", unit: "Pc", instockQty: 320, minStock: 10, stockValue: 400 },
-    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", unit: "Pc", instockQty: 650, minStock: 5, stockValue: 2240 },
-    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", unit: "Pc", instockQty: 700, minStock: 15, stockValue: 900 },
-    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", unit: "Pc", instockQty: 630, minStock: 20, stockValue: 6480 },
-    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", unit: "Pc", instockQty: 410, minStock: 5, stockValue: 2000 },
-    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", unit: "Pc", instockQty: 550, minStock: 15, stockValue: 900 },
-  ];
-  for (const ir of inventoryReportData) {
-    await prisma.inventoryReportItem.create({ data: ir });
-  }
-
-  // 22. Create Stock History Items matching Screenshot
-  const stockHistoryData = [
-    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", initialQuantity: 6000, addedQuantity: 100, soldQuantity: 100, defectiveQuantity: 100, finalQuantity: 100 },
-    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", initialQuantity: 10, addedQuantity: 140, soldQuantity: 140, defectiveQuantity: 140, finalQuantity: 140 },
-    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", initialQuantity: 8, addedQuantity: 300, soldQuantity: 300, defectiveQuantity: 300, finalQuantity: 300 },
-    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", initialQuantity: 10, addedQuantity: 450, soldQuantity: 450, defectiveQuantity: 450, finalQuantity: 450 },
-    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", initialQuantity: 5, addedQuantity: 320, soldQuantity: 320, defectiveQuantity: 320, finalQuantity: 320 },
-    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", initialQuantity: 7, addedQuantity: 650, soldQuantity: 650, defectiveQuantity: 650, finalQuantity: 650 },
-    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", initialQuantity: 15, addedQuantity: 700, soldQuantity: 700, defectiveQuantity: 700, finalQuantity: 700 },
-    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", initialQuantity: 12, addedQuantity: 630, soldQuantity: 630, defectiveQuantity: 630, finalQuantity: 630 },
-    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", initialQuantity: 10, addedQuantity: 410, soldQuantity: 410, defectiveQuantity: 410, finalQuantity: 410 },
-    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", initialQuantity: 20, addedQuantity: 550, soldQuantity: 550, defectiveQuantity: 550, finalQuantity: 550 },
-  ];
-  for (const sh of stockHistoryData) {
-    await prisma.stockHistoryItem.create({ data: sh });
-  }
-
-  // 23. Create Sold Stock Items matching Screenshot
-  const soldStockData = [
-    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", unit: 6000, quantity: 100, taxValue: 300, total: 300 },
-    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", unit: 10, quantity: 140, taxValue: 10, total: 1600 },
-    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", unit: 8, quantity: 300, taxValue: 80, total: 880 },
-    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", unit: 10, quantity: 450, taxValue: 100, total: 1200 },
-    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", unit: 5, quantity: 320, taxValue: 400, total: 400 },
-    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", unit: 7, quantity: 650, taxValue: 220, total: 2240 },
-    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", unit: 15, quantity: 700, taxValue: 90, total: 900 },
-    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", unit: 12, quantity: 630, taxValue: 680, total: 6480 },
-    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", unit: 10, quantity: 410, taxValue: 200, total: 2000 },
-    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", unit: 20, quantity: 550, taxValue: 400, total: 900 },
-  ];
-  for (const ss of soldStockData) {
-    await prisma.soldStockItem.create({ data: ss });
-  }
-
-  // 24. Create Invoice Report Items matching Screenshot
-  const invoiceReportData = [
-    { invoiceNo: "INV001", customer: "Carl Evans", dueDate: "24 Dec 2024", amount: 500, paid: 500, amountDue: 500, status: "PAID" },
-    { invoiceNo: "INV002", customer: "Minerva Rameriz", dueDate: "10 Dec 2024", amount: 1500, paid: 1500, amountDue: 1500, status: "PAID" },
-    { invoiceNo: "INV003", customer: "Robert Lamon", dueDate: "27 Nov 2024", amount: 600, paid: 600, amountDue: 600, status: "PAID" },
-    { invoiceNo: "INV004", customer: "Patricia Lewis", dueDate: "18 Nov 2024", amount: 1000, paid: 1000, amountDue: 1000, status: "PAID" },
-    { invoiceNo: "INV005", customer: "Mark Joslyn", dueDate: "06 Nov 2024", amount: 1200, paid: 1200, amountDue: 1200, status: "PAID" },
-    { invoiceNo: "INV006", customer: "Marsha Betts", dueDate: "25 Oct 2024", amount: 800, paid: 800, amountDue: 800, status: "PAID" },
-    { invoiceNo: "INV007", customer: "Daniel Jude", dueDate: "14 Oct 2024", amount: 2000, paid: 2000, amountDue: 2000, status: "PAID" },
-    { invoiceNo: "INV008", customer: "Emma Bates", dueDate: "03 Oct 2024", amount: 100, paid: 100, amountDue: 100, status: "PAID" },
-    { invoiceNo: "INV009", customer: "Richard Fralick", dueDate: "20 Sep 2024", amount: 300, paid: 300, amountDue: 300, status: "PAID" },
-    { invoiceNo: "INV010", customer: "Michelle Robison", dueDate: "10 Sep 2024", amount: 5000, paid: 5000, amountDue: 5000, status: "UNPAID" },
-  ];
-  for (const inv of invoiceReportData) {
-    await prisma.invoiceReportItem.create({ data: inv });
-  }
-
-  // 25. Create Supplier Report Items matching Screenshot
-  const supplierReportData = [
-    { reference: "INV/PO2026", supplierId: "SU001", supplierName: "Apex Computers", supplierImage: "/assets/images/product-01.jpg", totalItems: 10, amount: 1000, paymentMethod: "Cash", status: "RECEIVED" },
-    { reference: "INV/PO2031", supplierId: "SU002", supplierName: "Beats Headphones", supplierImage: "/assets/images/product-02.jpg", totalItems: 15, amount: 1500, paymentMethod: "Paypal", status: "PENDING" },
-    { reference: "INV/PO2042", supplierId: "SU003", supplierName: "Dazzle Shoes", supplierImage: "/assets/images/product-03.jpg", totalItems: 22, amount: 1500, paymentMethod: "Paypal", status: "RECEIVED" },
-    { reference: "INV/PO2033", supplierId: "SU004", supplierName: "Best Accessories", supplierImage: "/assets/images/product-04.jpg", totalItems: 14, amount: 2000, paymentMethod: "Stripe", status: "ORDERED" },
-    { reference: "INV/PO2042", supplierId: "SU005", supplierName: "A-Z Store", supplierImage: "/assets/images/product-05.jpg", totalItems: 12, amount: 800, paymentMethod: "Paypal", status: "RECEIVED" },
-    { reference: "INV/PO2011", supplierId: "SU006", supplierName: "Hatimi Hardwares", supplierImage: "/assets/images/product-06.jpg", totalItems: 45, amount: 750, paymentMethod: "Cash", status: "PENDING" },
-    { reference: "INV/PO2014", supplierId: "SU007", supplierName: "Aesthetic Bags", supplierImage: "/assets/images/product-07.jpg", totalItems: 21, amount: 1300, paymentMethod: "Credit Card", status: "RECEIVED" },
-    { reference: "INV/PO2047", supplierId: "SU009", supplierName: "Sigma Chairs", supplierImage: "/assets/images/product-08.jpg", totalItems: 25, amount: 2300, paymentMethod: "Credit Card", status: "ORDERED" },
-    { reference: "INV/PO2017", supplierId: "SU010", supplierName: "Zenith Bags", supplierImage: "/assets/images/product-09.jpg", totalItems: 15, amount: 1700, paymentMethod: "Stripe", status: "PENDING" },
-  ];
-  for (const sup of supplierReportData) {
-    await prisma.supplierReportItem.create({ data: sup });
-  }
-
-  // 26. Create Supplier Due Report Items matching Screenshot
-  const supplierDueReportData = [
-    { reference: "INV/PO2026", supplierId: "SU001", supplierName: "Apex Computers", supplierImage: "/assets/images/product-01.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
-    { reference: "INV/PO2042", supplierId: "SU003", supplierName: "Dazzle Shoes", supplierImage: "/assets/images/product-03.jpg", totalAmount: 1500, paid: 1500, due: 0, status: "PAID" },
-    { reference: "INV/PO2033", supplierId: "SU004", supplierName: "Best Accessories", supplierImage: "/assets/images/product-04.jpg", totalAmount: 2000, paid: 2000, due: 0, status: "PAID" },
-    { reference: "INV/PO2042", supplierId: "SU005", supplierName: "A-Z Store", supplierImage: "/assets/images/product-05.jpg", totalAmount: 800, paid: 800, due: 0, status: "PAID" },
-    { reference: "INV/PO2011", supplierId: "SU006", supplierName: "Hatimi Hardwares", supplierImage: "/assets/images/product-06.jpg", totalAmount: 750, paid: 750, due: 0, status: "PAID" },
-    { reference: "INV/PO2014", supplierId: "SU007", supplierName: "Aesthetic Bags", supplierImage: "/assets/images/product-07.jpg", totalAmount: 1300, paid: 1300, due: 0, status: "OVERDUE" },
-    { reference: "INV/PO2056", supplierId: "SU008", supplierName: "Alpha Mobiles", supplierImage: "/assets/images/product-08.jpg", totalAmount: 1100, paid: 1100, due: 0, status: "PAID" },
-    { reference: "INV/PO2047", supplierId: "SU009", supplierName: "Sigma Chairs", supplierImage: "/assets/images/product-09.jpg", totalAmount: 2300, paid: 2300, due: 0, status: "PAID" },
-    { reference: "INV/PO2017", supplierId: "SU010", supplierName: "Zenith Bags", supplierImage: "/assets/images/product-10.jpg", totalAmount: 1700, paid: 1700, due: 0, status: "UNPAID" },
-  ];
-  for (const sd of supplierDueReportData) {
-    await prisma.supplierDueReportItem.create({ data: sd });
-  }
-
-  // 27. Create Customer Report Items matching Screenshot
-  const customerReportData = [
-    { reference: "INV2026", customerCode: "CU001", customerName: "Carl Evans", customerImage: "/assets/images/customer11.jpg", totalOrders: 10, amount: 1000, paymentMethod: "Cash", status: "COMPLETED" },
-    { reference: "INV2031", customerCode: "CU002", customerName: "Minerva Rameriz", customerImage: "/assets/images/customer12.jpg", totalOrders: 15, amount: 1500, paymentMethod: "Paypal", status: "COMPLETED" },
-    { reference: "INV2042", customerCode: "CU003", customerName: "Robert Lamon", customerImage: "/assets/images/customer13.jpg", totalOrders: 22, amount: 1500, paymentMethod: "Paypal", status: "COMPLETED" },
-    { reference: "INV2033", customerCode: "CU004", customerName: "Patricia Lewis", customerImage: "/assets/images/customer14.jpg", totalOrders: 14, amount: 2000, paymentMethod: "Stripe", status: "COMPLETED" },
-    { reference: "INV2042", customerCode: "CU005", customerName: "Mark Joslyn", customerImage: "/assets/images/customer15.jpg", totalOrders: 12, amount: 800, paymentMethod: "Paypal", status: "COMPLETED" },
-    { reference: "INV2011", customerCode: "CU006", customerName: "Marsha Betts", customerImage: "/assets/images/customer16.jpg", totalOrders: 45, amount: 750, paymentMethod: "Cash", status: "COMPLETED" },
-    { reference: "INV2014", customerCode: "CU007", customerName: "Daniel Jude", customerImage: "/assets/images/customer17.jpg", totalOrders: 21, amount: 1300, paymentMethod: "Credit Card", status: "COMPLETED" },
-    { reference: "INV2056", customerCode: "CU008", customerName: "Emma Bates", customerImage: "/assets/images/customer18.jpg", totalOrders: 78, amount: 1100, paymentMethod: "Stripe", status: "COMPLETED" },
-    { reference: "INV2047", customerCode: "CU009", customerName: "Richard Fralick", customerImage: "/assets/images/avatar-01.jpg", totalOrders: 15, amount: 1700, paymentMethod: "Credit Card", status: "COMPLETED" },
-  ];
-  for (const cr of customerReportData) {
-    await prisma.customerReportItem.create({ data: cr });
-  }
-
-  // 28. Create Customer Due Report Items matching Screenshot
-  const customerDueReportData = [
-    { reference: "INV2026", customerCode: "CU001", customerName: "Carl Evans", customerImage: "/assets/images/customer11.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
-    { reference: "INV2031", customerCode: "CU002", customerName: "Minerva Rameriz", customerImage: "/assets/images/customer12.jpg", totalAmount: 1500, paid: 1500, due: 0, status: "PAID" },
-    { reference: "INV2042", customerCode: "CU003", customerName: "Robert Lamon", customerImage: "/assets/images/customer13.jpg", totalAmount: 1600, paid: 1600, due: 0, status: "PAID" },
-    { reference: "INV2033", customerCode: "CU004", customerName: "Patricia Lewis", customerImage: "/assets/images/customer14.jpg", totalAmount: 700, paid: 700, due: 0, status: "PAID" },
-    { reference: "INV2042", customerCode: "CU005", customerName: "Mark Joslyn", customerImage: "/assets/images/customer15.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "PAID" },
-    { reference: "INV2011", customerCode: "CU006", customerName: "Marsha Betts", customerImage: "/assets/images/customer16.jpg", totalAmount: 2000, paid: 2000, due: 0, status: "PAID" },
-    { reference: "INV2014", customerCode: "CU007", customerName: "Daniel Jude", customerImage: "/assets/images/customer17.jpg", totalAmount: 600, paid: 600, due: 0, status: "OVERDUE" },
-    { reference: "INV2056", customerCode: "CU008", customerName: "Emma Bates", customerImage: "/assets/images/customer18.jpg", totalAmount: 1000, paid: 1000, due: 0, status: "UNPAID" },
-    { reference: "INV2047", customerCode: "CU009", customerName: "Richard Fralick", customerImage: "/assets/images/avatar-01.jpg", totalAmount: 500, paid: 500, due: 0, status: "COMPLETED" },
-  ];
-  for (const cd of customerDueReportData) {
-    await prisma.customerDueReportItem.create({ data: cd });
-  }
-
-  // 29. Create Product Report Items matching Screenshot
-  const productReportData = [
-    { sku: "PT001", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", category: "Computers", brand: "Lenovo", qty: 100, price: 600, totalOrdered: 5000, revenue: 787258 },
-    { sku: "PT002", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", category: "Electronics", brand: "Beats", qty: 140, price: 160, totalOrdered: 4860, revenue: 689788 },
-    { sku: "PT003", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", category: "Shoe", brand: "Nike", qty: 300, price: 110, totalOrdered: 40, revenue: 7757 },
-    { sku: "PT004", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", category: "Electronics", brand: "Apple", qty: 450, price: 120, totalOrdered: 9642, revenue: 7555 },
-    { sku: "PT005", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", category: "Electronics", brand: "Amazon", qty: 320, price: 80, totalOrdered: 5464, revenue: 39698 },
-    { sku: "PT006", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", category: "Furniture", brand: "Modern Wave", qty: 650, price: 320, totalOrdered: 158, revenue: 748 },
-    { sku: "PT007", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", category: "Bags", brand: "Dior", qty: 700, price: 60, totalOrdered: 7845, revenue: 7985 },
-    { sku: "PT008", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", category: "Phone", brand: "Apple", qty: 630, price: 540, totalOrdered: 540, revenue: 8769798 },
-    { sku: "PT009", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", category: "Furniture", brand: "Arlime", qty: 410, price: 200, totalOrdered: 200, revenue: 788979 },
-    { sku: "PT010", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", category: "Bags", brand: "The North Face", qty: 550, price: 45, totalOrdered: 45, revenue: 895 },
-  ];
-  for (const pr of productReportData) {
-    await prisma.productReportItem.create({ data: pr });
-  }
-
-  // 30. Create Product Expiry Report Items matching Screenshot
-  const productExpiryData = [
-    { sku: "PT001", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
-    { sku: "PT002", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", manufacturedDate: "25 Dec 2024", expiredDate: "21 Dec 2026" },
-    { sku: "PT003", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", manufacturedDate: "26 Dec 2024", expiredDate: "22 Dec 2026" },
-    { sku: "PT004", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", manufacturedDate: "30 Dec 2024", expiredDate: "25 Dec 2026" },
-    { sku: "PT005", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", manufacturedDate: "28 Dec 2024", expiredDate: "26 Dec 2026" },
-    { sku: "PT006", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "29 Dec 2026" },
-    { sku: "PT007", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", manufacturedDate: "15 Dec 2024", expiredDate: "30 Dec 2026" },
-    { sku: "PT008", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
-    { sku: "PT009", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", manufacturedDate: "30 Dec 2024", expiredDate: "20 Dec 2026" },
-    { sku: "PT010", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", manufacturedDate: "24 Dec 2024", expiredDate: "20 Dec 2026" },
-  ];
-  for (const pe of productExpiryData) {
-    await prisma.productExpiryReportItem.create({ data: pe });
-  }
-
-  // 31. Create Product Quantity Alert Items matching Screenshot
-  const productQuantityAlertData = [
-    { sku: "PT001", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Lenovo IdeaPad 3", productImage: "/assets/images/product-01.jpg", totalQuantity: 98, alertQuantity: 79 },
-    { sku: "PT002", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Beats Pro", productImage: "/assets/images/product-02.jpg", totalQuantity: 156, alertQuantity: 66 },
-    { sku: "PT003", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Nike Jordan", productImage: "/assets/images/product-03.jpg", totalQuantity: 89, alertQuantity: 69 },
-    { sku: "PT004", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Apple Series 5 Watch", productImage: "/assets/images/product-04.jpg", totalQuantity: 569, alertQuantity: 68 },
-    { sku: "PT005", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Amazon Echo Dot", productImage: "/assets/images/product-05.jpg", totalQuantity: 548, alertQuantity: 33 },
-    { sku: "PT006", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Sanford Chair Sofa", productImage: "/assets/images/product-06.jpg", totalQuantity: 456, alertQuantity: 16 },
-    { sku: "PT007", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Red Premium Satchel", productImage: "/assets/images/product-07.jpg", totalQuantity: 178, alertQuantity: 86 },
-    { sku: "PT008", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Iphone 14 Pro", productImage: "/assets/images/product-08.jpg", totalQuantity: 1768, alertQuantity: 33 },
-    { sku: "PT009", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Gaming Chair", productImage: "/assets/images/product-09.jpg", totalQuantity: 568, alertQuantity: 528 },
-    { sku: "PT010", serialNo: "LNV-IP3-8GB-256SSD-BL", productName: "Borealis Backpack", productImage: "/assets/images/product-10.jpg", totalQuantity: 146, alertQuantity: 11 },
-  ];
-  for (const pqa of productQuantityAlertData) {
-    await prisma.productQuantityAlertItem.create({ data: pqa });
-  }
-
-  // 32. Create Expense Report Items matching Screenshot
-  const expenseReportData = [
-    { expenseName: "Electricity Payment", category: "Utilities", description: "Electricity Bill", expenseDate: "24 Dec 2024", amount: 200, paymentMethod: "Cash", status: "APPROVED" },
-    { expenseName: "Stationery Purchase", category: "Office Supplies", description: "Stationery items for office", expenseDate: "10 Dec 2024", amount: 50, paymentMethod: "Paypal", status: "PENDING" },
-    { expenseName: "AC Repair Service", category: "Repairs & Maintenance", description: "AC Repair for Office", expenseDate: "27 Nov 2024", amount: 800, paymentMethod: "Cash", status: "APPROVED" },
-    { expenseName: "Social Media Promotion", category: "Marketing", description: "Social Media Ads Campaign", expenseDate: "18 Nov 2024", amount: 100, paymentMethod: "Stripe", status: "APPROVED" },
-    { expenseName: "Client Meeting", category: "Travel Expenses", description: "Travel fare for client meeting", expenseDate: "06 Nov 2024", amount: 700, paymentMethod: "Credit Card", status: "APPROVED" },
-    { expenseName: "Team Lunch", category: "Employee Benefits", description: "Team Lunch at Restaurant", expenseDate: "25 Oct 2024", amount: 1000, paymentMethod: "Cash", status: "PENDING" },
-    { expenseName: "Business Flight Ticket", category: "Travel Expenses", description: "Flight tickets for meetings", expenseDate: "14 Oct 2024", amount: 1200, paymentMethod: "Credit Card", status: "APPROVED" },
-    { expenseName: "Chair Purchase", category: "Office Supplies", description: "Ergonomic chairs for staff", expenseDate: "03 Oct 2024", amount: 750, paymentMethod: "Bank Transfer", status: "APPROVED" },
-    { expenseName: "Plumbing Service", category: "Repairs & Maintenance", description: "Plumbing repairs in office", expenseDate: "20 Sep 2024", amount: 450, paymentMethod: "Cash", status: "APPROVED" },
-    { expenseName: "Internet Bill Payment", category: "Utilities", description: "Monthly internet subscription", expenseDate: "10 Sep 2024", amount: 300, paymentMethod: "Paypal", status: "PENDING" },
-  ];
-  for (const exp of expenseReportData) {
-    await prisma.expenseReportItem.create({ data: exp });
-  }
-
-  // 33. Create Income Report Items
-  const incomeReportData = [
-    { incomeName: "Product Sales", category: "Sales", description: "Monthly store sales", incomeDate: "24 Dec 2024", amount: 4565, paymentMethod: "Cash", status: "RECEIVED" },
-    { incomeName: "Consulting Fee", category: "Consulting", description: "Client strategy consulting", incomeDate: "10 Dec 2024", amount: 4494, paymentMethod: "Paypal", status: "RECEIVED" },
-    { incomeName: "Store Rent", category: "Rental Income", description: "Branch office rental", incomeDate: "27 Nov 2024", amount: 65945, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { incomeName: "Investment Dividend", category: "Investments", description: "Quarterly dividend payout", incomeDate: "18 Nov 2024", amount: 1948, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { incomeName: "Web Development", category: "Services", description: "Custom web app service", incomeDate: "06 Nov 2024", amount: 1686, paymentMethod: "Stripe", status: "RECEIVED" },
-    { incomeName: "Service Charge", category: "Services", description: "POS setup and training", incomeDate: "25 Oct 2024", amount: 16547, paymentMethod: "Cash", status: "PENDING" },
-    { incomeName: "Affiliate Commission", category: "Marketing", description: "Referral commission", incomeDate: "14 Oct 2024", amount: 141845, paymentMethod: "Paypal", status: "RECEIVED" },
-    { incomeName: "Maintenance Retainer", category: "Maintenance", description: "Annual maintenance contract", incomeDate: "03 Oct 2024", amount: 44188, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { incomeName: "Licensing Fee", category: "Royalties", description: "Brand licensing", incomeDate: "20 Sep 2024", amount: 614848, paymentMethod: "Bank Transfer", status: "RECEIVED" },
-    { incomeName: "Software Subscription", category: "Software", description: "Cloud POS subscription", incomeDate: "10 Sep 2024", amount: 77818, paymentMethod: "Stripe", status: "PENDING" },
-  ];
-  for (const inc of incomeReportData) {
-    await prisma.incomeReportItem.create({ data: inc });
-  }
-
-  // 34. Create Purchase Tax Report Items matching Screenshot
-  const purchaseTaxData = [
-    { reference: "#4237300", supplier: "Apex Computers", taxDate: "24 Dec 2024", store: "Electro Mart", amount: 200, paymentMethod: "Stripe", discount: 200, taxAmount: 200 },
-    { reference: "#7590325", supplier: "Beats Headphones", taxDate: "10 Dec 2024", store: "Quantum Gadgets", amount: 50, paymentMethod: "Paypal", discount: 50, taxAmount: 50 },
-    { reference: "#9814521", supplier: "Dazzle Shoes", taxDate: "27 Nov 2024", store: "Prime Bazaar", amount: 800, paymentMethod: "Cash", discount: 800, taxAmount: 800 },
-    { reference: "#8745225", supplier: "Best Accessories", taxDate: "18 Nov 2024", store: "Gadget World", amount: 100, paymentMethod: "Paypal", discount: 100, taxAmount: 100 },
-    { reference: "#4237022", supplier: "A-Z Store", taxDate: "06 Nov 2024", store: "Volt Vault", amount: 700, paymentMethod: "Cash", discount: 700, taxAmount: 700 },
-    { reference: "#8744439", supplier: "Hatimi Hardwares", taxDate: "25 Oct 2024", store: "Elite Retail", amount: 1000, paymentMethod: "Cash", discount: 1000, taxAmount: 1000 },
-    { reference: "#7590365", supplier: "Aesthetic Bags", taxDate: "14 Oct 2024", store: "Prime Mart", amount: 1200, paymentMethod: "Paypal", discount: 1200, taxAmount: 1200 },
-    { reference: "#8745478", supplier: "Alpha Mobiles", taxDate: "03 Oct 2024", store: "NeoTech Store", amount: 750, paymentMethod: "Stripe", discount: 750, taxAmount: 750 },
-    { reference: "#7590321", supplier: "Sigma Chairs", taxDate: "20 Sep 2024", store: "Urban Mart", amount: 450, paymentMethod: "Stripe", discount: 450, taxAmount: 450 },
-    { reference: "#8745245", supplier: "Zenith Bags", taxDate: "10 Sep 2024", store: "Travel Mart", amount: 300, paymentMethod: "Cash", discount: 300, taxAmount: 300 },
-  ];
-  for (const pt of purchaseTaxData) {
-    await prisma.purchaseTaxReportItem.create({ data: pt });
-  }
-
-  // 35. Create Sales Tax Report Items
-  const salesTaxData = [
-    { reference: "#4237300", customer: "Apex Computers", taxDate: "24 Dec 2024", store: "Electro Mart", amount: 200, paymentMethod: "Stripe", discount: 200, taxAmount: 200 },
-    { reference: "#7590325", customer: "Beats Headphones", taxDate: "10 Dec 2024", store: "Quantum Gadgets", amount: 50, paymentMethod: "Paypal", discount: 50, taxAmount: 50 },
-    { reference: "#9814521", customer: "Dazzle Shoes", taxDate: "27 Nov 2024", store: "Prime Bazaar", amount: 800, paymentMethod: "Cash", discount: 800, taxAmount: 800 },
-    { reference: "#8745225", customer: "Best Accessories", taxDate: "18 Nov 2024", store: "Gadget World", amount: 100, paymentMethod: "Paypal", discount: 100, taxAmount: 100 },
-    { reference: "#4237022", customer: "A-Z Store", taxDate: "06 Nov 2024", store: "Volt Vault", amount: 700, paymentMethod: "Cash", discount: 700, taxAmount: 700 },
-    { reference: "#8744439", customer: "Hatimi Hardwares", taxDate: "25 Oct 2024", store: "Elite Retail", amount: 1000, paymentMethod: "Cash", discount: 1000, taxAmount: 1000 },
-    { reference: "#7590365", customer: "Aesthetic Bags", taxDate: "14 Oct 2024", store: "Prime Mart", amount: 1200, paymentMethod: "Paypal", discount: 1200, taxAmount: 1200 },
-    { reference: "#8745478", customer: "Alpha Mobiles", taxDate: "03 Oct 2024", store: "NeoTech Store", amount: 750, paymentMethod: "Stripe", discount: 750, taxAmount: 750 },
-    { reference: "#7590321", customer: "Sigma Chairs", taxDate: "20 Sep 2024", store: "Urban Mart", amount: 450, paymentMethod: "Stripe", discount: 450, taxAmount: 450 },
-    { reference: "#8745245", customer: "Zenith Bags", taxDate: "10 Sep 2024", store: "Travel Mart", amount: 300, paymentMethod: "Cash", discount: 300, taxAmount: 300 },
-  ];
-  for (const st of salesTaxData) {
-    await prisma.salesTaxReportItem.create({ data: st });
-  }
-
-  // 36. Create Profit / Loss Report Items matching Screenshot
-  const profitLossData = [
-    { type: "INCOME", itemKey: "Sales", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000, may2026: 50000, jun2026: 50000 },
-    { type: "INCOME", itemKey: "Service", jan2026: 30000, feb2026: 30000, mar2026: 30000, apr2026: 30000, may2026: 30000, jun2026: 30000 },
-    { type: "INCOME", itemKey: "Purchase Return", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000, may2026: 7000, jun2026: 7000 },
-    { type: "EXPENSE", itemKey: "Sales", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000, may2026: 50000, jun2026: 50000 },
-    { type: "EXPENSE", itemKey: "Purrchase", jan2026: 30000, feb2026: 30000, mar2026: 30000, apr2026: 30000, may2026: 30000, jun2026: 30000 },
-    { type: "EXPENSE", itemKey: "Sales Return", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000, may2026: 7000, jun2026: 7000 },
-  ];
-  for (const pl of profitLossData) {
-    await prisma.profitLossReportItem.create({ data: pl });
-  }
-
-  // 37. Create Annual Report Items matching Screenshot
-  const annualData = [
-    { monthName: "January", jan2026: 50000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { monthName: "Febuary", jan2026: 30000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { monthName: "March", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { monthName: "April", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { monthName: "May", jan2026: 7000, feb2026: 50000, mar2026: 50000, apr2026: 50000 },
-    { monthName: "June", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
-    { monthName: "July", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
-    { monthName: "August", jan2026: 7000, feb2026: 30000, mar2026: 30000, apr2026: 30000 },
-    { monthName: "September", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-    { monthName: "October", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-    { monthName: "November", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-    { monthName: "December", jan2026: 7000, feb2026: 7000, mar2026: 7000, apr2026: 7000 },
-  ];
-  for (const an of annualData) {
-    await prisma.annualReportItem.create({ data: an });
-  }
-
-  // 38. Create User Profile Settings
-  await prisma.userProfileSettings.create({
-    data: {
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@example.com",
-      phone: "+1 (555) 234-5678",
-      userName: "johndoe_admin",
-      address: "4517 Washington Ave.",
-      city: "Manchester",
-      country: "United States",
-      postalCode: "39401",
-      bio: "Senior Store Operations Manager & Lead POS Administrator with 8+ years experience in retail logistics and multi-outlet management.",
-      avatar: "/assets/images/customer11.jpg",
-    },
-  });
-
-  // 39. Create User Security Settings & Session Logs
-  await prisma.userSecuritySettings.create({
-    data: {
-      twoFactorEnabled: true,
-      twoFactorMethod: "Authenticator App (Google Authenticator)",
-      passwordLastChanged: "25 days ago",
-      loginAlerts: true,
-    },
-  });
-
-  const sessionLogsData = [
-    { device: "MacBook Pro 16\"", browser: "Chrome 122.0.6261 (macOS Sonoma)", ipAddress: "192.168.1.104", location: "Bangkok, Thailand", lastActive: "Active Now", isCurrent: true },
-    { device: "iPhone 15 Pro Max", browser: "Mobile Safari 17.2 (iOS)", ipAddress: "182.232.14.88", location: "Bangkok, Thailand", lastActive: "2 hours ago", isCurrent: false },
-    { device: "Windows Desktop PC", browser: "Microsoft Edge 122.0", ipAddress: "115.87.192.45", location: "Chiang Mai, Thailand", lastActive: "3 days ago", isCurrent: false },
-    { device: "iPad Air (5th Gen)", browser: "Safari 17.0 (iPadOS)", ipAddress: "192.168.1.112", location: "Bangkok, Thailand", lastActive: "1 week ago", isCurrent: false },
-  ];
-  for (const log of sessionLogsData) {
-    await prisma.userSessionLog.create({ data: log });
-  }
-
-  // 40. Create User Notification Settings
-  await prisma.userNotificationSettings.create({
-    data: {
-      emailAlerts: true,
-      pushAlerts: true,
-      smsAlerts: false,
-      lowStockAlerts: true,
-      newOrderAlerts: true,
-      invoicesAlerts: true,
-      paymentAlerts: true,
-      weeklyReports: true,
-    },
-  });
-
-  // 41. Create Connected Apps Items
-  const connectedAppsData = [
+  // 16. Bank Accounts
+  console.log("Creating Bank Accounts...");
+  await prisma.bankAccount.deleteMany();
+  const bankAccounts = [
     {
-      appName: "Slack",
-      appCategory: "Team Communication",
-      appLogo: "/assets/images/apps/slack.svg",
-      description: "Receive instant notifications for online POS orders, stock quantity alerts, and daily sales summaries in dedicated channels.",
-      status: "CONNECTED",
-      connectedAccount: "pos-workspace@slack.com",
-      connectedDate: "15 Jan 2024",
+      bankName: "ธนาคารกสิกรไทย (KBANK)",
+      accountName: "บริษัท สยามโพลีแพ็ค แมนูแฟคเจอริ่ง จำกัด",
+      accountNumber: "045-1-89234-1",
+      branch: "สาขาถนนพระราม 2",
+      balance: 2450000.0,
+      status: "ACTIVE",
     },
     {
-      appName: "Google Drive",
-      appCategory: "Cloud Storage & Backup",
-      appLogo: "/assets/images/apps/google-drive.svg",
-      description: "Automatically back up daily database snapshots, exported PDF receipts, and inventory spreadsheets to your cloud folder.",
-      status: "CONNECTED",
-      connectedAccount: "admin.drive@gmail.com",
-      connectedDate: "02 Feb 2024",
+      bankName: "ธนาคารไทยพาณิชย์ (SCB)",
+      accountName: "บริษัท สยามโพลีแพ็ค แมนูแฟคเจอริ่ง จำกัด",
+      accountNumber: "112-2-76543-8",
+      branch: "สาขาสมุทรสาคร",
+      balance: 1890000.0,
+      status: "ACTIVE",
     },
     {
-      appName: "Mailchimp",
-      appCategory: "Email Marketing & CRM",
-      appLogo: "/assets/images/apps/mailchimp.svg",
-      description: "Sync registered POS customer contacts, purchase history, and birthday rewards directly into your marketing audience lists.",
-      status: "CONNECTED",
-      connectedAccount: "pos_marketing_list@mailchimp.com",
-      connectedDate: "10 Mar 2024",
-    },
-    {
-      appName: "Stripe Payments",
-      appCategory: "Payment Gateway",
-      appLogo: "/assets/images/apps/stripe.svg",
-      description: "Accept credit cards, debit cards, and Apple Pay directly at the register with real-time settlement and automated dispute alerts.",
-      status: "CONNECTED",
-      connectedAccount: "acct_1NZX49POSLive",
-      connectedDate: "18 Nov 2023",
-    },
-    {
-      appName: "QuickBooks Online",
-      appCategory: "Accounting & Tax",
-      appLogo: "/assets/images/apps/quickbooks.svg",
-      description: "Automate ledger entries, tax collection records, expense reconciliation, and balance sheet syncing with your QuickBooks account.",
-      status: "DISCONNECTED",
-      connectedAccount: null,
-      connectedDate: null,
-    },
-    {
-      appName: "GitHub",
-      appCategory: "Developer & Webhooks",
-      appLogo: "/assets/images/apps/github.svg",
-      description: "Trigger automated webhooks for third-party developer integrations, API logs, and custom system extensions.",
-      status: "DISCONNECTED",
-      connectedAccount: null,
-      connectedDate: null,
+      bankName: "ธนาคารกรุงเทพ (BBL)",
+      accountName: "บริษัท สยามโพลีแพ็ค แมนูแฟคเจอริ่ง จำกัด",
+      accountNumber: "208-3-54321-0",
+      branch: "สาขามหาชัย",
+      balance: 920000.0,
+      status: "ACTIVE",
     },
   ];
-  for (const app of connectedAppsData) {
-    await prisma.connectedAppItem.create({ data: app });
+  for (const b of bankAccounts) {
+    await prisma.bankAccount.create({ data: b });
   }
 
-  console.log("Seeding finished successfully with all modules!");
+  console.log("✅ Successfully seeded 28 plastic products & 7-Month historical transactions!");
 }
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seed failed with error:", e);
     process.exit(1);
   })
   .finally(async () => {
