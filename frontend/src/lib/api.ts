@@ -162,6 +162,7 @@ export async function createProductApi(payload: {
   sku: string;
   barcode?: string;
   description?: string;
+  productType?: "SINGLE" | "VARIABLE";
   price: number;
   costPrice?: number;
   stock: number;
@@ -175,6 +176,8 @@ export async function createProductApi(payload: {
   status?: string;
   manufacturedDate?: string;
   expiredDate?: string;
+  variants?: any[];
+  expiryBatches?: any[];
 }): Promise<Product> {
   const res = await fetch(`${API_BASE_URL}/products`, {
     method: "POST",
@@ -195,6 +198,7 @@ export async function updateProductApi(
     sku?: string;
     barcode?: string | null;
     description?: string | null;
+    productType?: "SINGLE" | "VARIABLE";
     price?: number;
     costPrice?: number;
     stock?: number;
@@ -208,6 +212,8 @@ export async function updateProductApi(
     status?: string;
     manufacturedDate?: string | null;
     expiredDate?: string | null;
+    variants?: any[];
+    expiryBatches?: any[];
   }
 ): Promise<Product> {
   const res = await fetch(`${API_BASE_URL}/products/${id}`, {

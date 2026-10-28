@@ -9,9 +9,10 @@ import {
   fetchUnits,
   fetchWarehouses,
   fetchStores,
+  fetchVariantAttributes,
   createProductApi,
 } from "@/lib/api";
-import { Category, Brand, Unit, Warehouse, Store } from "@/types";
+import { Category, Brand, Unit, Warehouse, Store, VariantAttribute } from "@/types";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 import { useAuthStore } from "@/store/useAuthStore";
 import Link from "next/link";
@@ -30,6 +31,14 @@ import {
   Info,
   CheckCircle,
   AlertTriangle,
+  Sliders,
+  Layers,
+  Copy,
+  Settings2,
+  Check,
+  Calendar,
+  CalendarDays,
+  Clock,
 } from "lucide-react";
 
 export default function AddProductPage() {
@@ -73,6 +82,53 @@ export default function AddProductPage() {
   const [manufacturedDate, setManufacturedDate] = useState<string>("");
   const [expiryDate, setExpiryDate] = useState<string>("");
 
+  // Multi-Expiry Batches State (Lot Optional)
+  const [expiryTrackingMode, setExpiryTrackingMode] = useState<"SINGLE_DATE" | "MULTI_BATCH">("SINGLE_DATE");
+  const [expiryBatchRows, setExpiryBatchRows] = useState<
+    {
+      id: string;
+      batchNo: string;
+      manufacturedDate: string;
+      expiredDate: string;
+      quantity: number;
+      costPrice: number;
+    }[]
+  >([
+    {
+      id: "batch-1",
+      batchNo: "",
+      manufacturedDate: "",
+      expiredDate: "",
+      quantity: 10,
+      costPrice: 0,
+    },
+  ]);
+
+  // Variable Product Attributes & Combination Matrix State
+  const [variantAttributesList, setVariantAttributesList] = useState<VariantAttribute[]>([]);
+  const [selectedAttributeId, setSelectedAttributeId] = useState<string>("");
+  const [selectedAttrs, setSelectedAttrs] = useState<
+    { attributeId: string; attributeName: string; values: string[]; allValues: string[] }[]
+  >([]);
+  const [variantRows, setVariantRows] = useState<
+    {
+      id: string;
+      name: string;
+      attributes: Record<string, string>;
+      sku: string;
+      barcode: string;
+      price: number;
+      costPrice: number;
+      stock: number;
+      minStockAlert: number;
+    }[]
+  >([]);
+
+  // Bulk Variant Controls
+  const [bulkPrice, setBulkPrice] = useState<string>("");
+  const [bulkCost, setBulkCost] = useState<string>("");
+  const [bulkStock, setBulkStock] = useState<string>("");
+
   useEffect(() => {
     fetchRolePermissions().then(() => {
       if (!canCreateProduct()) {
@@ -91,8 +147,10 @@ export default function AddProductPage() {
       fetchUnits(),
       fetchWarehouses(),
       fetchStores(),
+      fetchVariantAttributes(),
     ])
-      .then(([cats, brds, unts, whs, strs]) => {
+      .then(([cats, brds, unts, whs, strs, vAttrs]) => {
+        setVariantAttributesList(vAttrs || []);
         setCategories(cats);
         if (cats.length > 0) setCategoryId(cats[0].id);
 
@@ -159,6 +217,169 @@ export default function AddProductPage() {
     setBarcode(`885${random}`);
   };
 
+  // Add a new expiry batch row
+  const handleAddBatchRow = () => {
+    setExpiryBatchRows((prev) => [
+      ...prev,
+      {
+        id: `batch-${Date.now()}`,
+        batchNo: "",
+        manufacturedDate: "",
+        expiredDate: "",
+        quantity: 10,
+        costPrice: Number(costPrice) || 0,
+      },
+    ]);
+  };
+
+  // Remove an expiry batch row
+  const handleRemoveBatchRow = (id: string) => {
+    setExpiryBatchRows((prev) => (prev.length > 1 ? prev.filter((r) => r.id !== id) : prev));
+  };
+
+  // Update field in expiry batch row
+  const handleUpdateBatchRow = (id: string, field: string, val: any) => {
+    setExpiryBatchRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: val } : r))
+    );
+  };
+
+  // Add an attribute to the product
+  const handleAddAttribute = () => {
+    if (!selectedAttributeId) return;
+    const attr = variantAttributesList.find((a) => a.id === selectedAttributeId);
+    if (!attr) return;
+    if (selectedAttrs.some((item) => item.attributeId === attr.id)) return;
+
+    const parsedValues = attr.values
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+
+    setSelectedAttrs((prev) => [
+      ...prev,
+      {
+        attributeId: attr.id,
+        attributeName: attr.name,
+        values: [...parsedValues], // default all selected
+        allValues: parsedValues,
+      },
+    ]);
+    setSelectedAttributeId("");
+  };
+
+  // Toggle value in an attribute
+  const handleToggleValue = (attrId: string, val: string) => {
+    setSelectedAttrs((prev) =>
+      prev.map((item) => {
+        if (item.attributeId !== attrId) return item;
+        const exists = item.values.includes(val);
+        const nextVals = exists
+          ? item.values.filter((v) => v !== val)
+          : [...item.values, val];
+        return { ...item, values: nextVals };
+      })
+    );
+  };
+
+  // Remove attribute
+  const handleRemoveAttribute = (attrId: string) => {
+    setSelectedAttrs((prev) => prev.filter((item) => item.attributeId !== attrId));
+  };
+
+  // Cartesian generator for variants
+  const handleGenerateMatrix = () => {
+    const activeAttrs = selectedAttrs.filter((a) => a.values.length > 0);
+    if (activeAttrs.length === 0) {
+      setVariantRows([]);
+      return;
+    }
+
+    // Cartesian product
+    const cartesian = (arrays: string[][]): string[][] => {
+      return arrays.reduce(
+        (acc, curr) => acc.flatMap((c) => curr.map((n) => [...c, n])),
+        [[]] as string[][]
+      );
+    };
+
+    const valueArrays = activeAttrs.map((a) => a.values);
+    const combinations = cartesian(valueArrays);
+
+    const baseSku = sku.trim() || "PRD";
+    const baseSellingPrice = Number(price) || 0;
+    const baseCostPrice = Number(costPrice) || 0;
+    const baseAlert = Number(minStockAlert) || 5;
+
+    const newRows = combinations.map((combo) => {
+      const attrRecord: Record<string, string> = {};
+      const comboTags: string[] = [];
+      const skuSuffixParts: string[] = [];
+
+      combo.forEach((val, idx) => {
+        const attrName = activeAttrs[idx].attributeName;
+        attrRecord[attrName] = val;
+        comboTags.push(`${attrName}: ${val}`);
+        skuSuffixParts.push(val.toUpperCase().replace(/[^A-Z0-9]/g, ""));
+      });
+
+      const variantName = comboTags.join(" / ");
+      const variantSku = `${baseSku}-${skuSuffixParts.join("-")}`;
+
+      // Check if existing variant has custom price/stock
+      const existing = variantRows.find((r) => r.name === variantName);
+      if (existing) {
+        return existing;
+      }
+
+      return {
+        id: `v-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+        name: variantName,
+        attributes: attrRecord,
+        sku: variantSku,
+        barcode: "",
+        price: baseSellingPrice,
+        costPrice: baseCostPrice,
+        stock: 10,
+        minStockAlert: baseAlert,
+      };
+    });
+
+    setVariantRows(newRows);
+  };
+
+  // Apply Bulk Values to all variants
+  const handleApplyBulk = (type: "price" | "cost" | "stock") => {
+    if (type === "price") {
+      const p = parseFloat(bulkPrice);
+      if (isNaN(p)) return;
+      setVariantRows((prev) => prev.map((r) => ({ ...r, price: p })));
+      setBulkPrice("");
+    } else if (type === "cost") {
+      const c = parseFloat(bulkCost);
+      if (isNaN(c)) return;
+      setVariantRows((prev) => prev.map((r) => ({ ...r, costPrice: c })));
+      setBulkCost("");
+    } else if (type === "stock") {
+      const s = parseInt(bulkStock, 10);
+      if (isNaN(s)) return;
+      setVariantRows((prev) => prev.map((r) => ({ ...r, stock: s })));
+      setBulkStock("");
+    }
+  };
+
+  // Update specific variant row field
+  const handleUpdateVariantRow = (id: string, field: string, val: any) => {
+    setVariantRows((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, [field]: val } : r))
+    );
+  };
+
+  // Delete specific variant row
+  const handleDeleteVariantRow = (id: string) => {
+    setVariantRows((prev) => prev.filter((r) => r.id !== id));
+  };
+
   // Feedback Modal State
   const [feedbackModal, setFeedbackModal] = useState<{
     isOpen: boolean;
@@ -217,25 +438,113 @@ export default function AddProductPage() {
       // Serialize images if multiple or single
       const imagePayload = images.length > 0 ? JSON.stringify(images) : undefined;
 
-      await createProductApi({
-        name: name.trim(),
-        sku: sku.trim(),
-        barcode: barcode.trim() || undefined,
-        description: description.trim() || undefined,
-        price: Number(price || 0),
-        costPrice: Number(costPrice || 0),
-        stock: Number(quantity || 0),
-        minStockAlert: Number(minStockAlert || 5),
-        categoryId: categoryId || undefined,
-        brandId: brandId || undefined,
-        unitId: unitId || undefined,
-        warehouseId: warehouseId || undefined,
-        storeId: storeId || undefined,
-        image: imagePayload,
-        status: Number(quantity) > 0 ? "ACTIVE" : "OUT_OF_STOCK",
-        manufacturedDate: manufacturedDate || undefined,
-        expiredDate: expiryDate || undefined,
-      });
+      const validBatchesPayload =
+        expiryTrackingMode === "MULTI_BATCH"
+          ? expiryBatchRows
+              .filter((b) => b.expiredDate && b.expiredDate.trim())
+              .map((b) => ({
+                batchNo: b.batchNo.trim() || undefined,
+                manufacturedDate: b.manufacturedDate || undefined,
+                expiredDate: b.expiredDate,
+                quantity: Number(b.quantity) || 0,
+                costPrice: Number(b.costPrice) || 0,
+              }))
+          : undefined;
+
+      if (expiryTrackingMode === "MULTI_BATCH" && (!validBatchesPayload || validBatchesPayload.length === 0)) {
+        setFeedbackModal({
+          isOpen: true,
+          type: "error",
+          title: "Missing Expiry Dates",
+          message: "Please specify at least one valid Expiry Date for the multi-expiry batches mode.",
+        });
+        return;
+      }
+
+      const totalBatchStock = validBatchesPayload
+        ? validBatchesPayload.reduce((acc, b) => acc + (Number(b.quantity) || 0), 0)
+        : 0;
+
+      if (productType === "VARIABLE") {
+        if (variantRows.length === 0) {
+          setFeedbackModal({
+            isOpen: true,
+            type: "error",
+            title: "No Variants Configured",
+            message: "Please configure and generate at least one variant combination for this Variable Product.",
+          });
+          return;
+        }
+
+        // Validate variant SKUs
+        const emptySkuIndex = variantRows.findIndex((r) => !r.sku.trim());
+        if (emptySkuIndex !== -1) {
+          setFeedbackModal({
+            isOpen: true,
+            type: "error",
+            title: "Missing Variant SKU",
+            message: `Variant #${emptySkuIndex + 1} (${variantRows[emptySkuIndex].name}) is missing a SKU.`,
+          });
+          return;
+        }
+
+        const totalStock = variantRows.reduce((acc, v) => acc + (Number(v.stock) || 0), 0);
+        const minPrice = Math.min(...variantRows.map((v) => Number(v.price) || 0));
+
+        await createProductApi({
+          name: name.trim(),
+          sku: sku.trim(),
+          barcode: barcode.trim() || undefined,
+          description: description.trim() || undefined,
+          productType: "VARIABLE",
+          price: minPrice,
+          costPrice: Number(costPrice || variantRows[0]?.costPrice || 0),
+          stock: totalStock,
+          minStockAlert: Number(minStockAlert || 5),
+          categoryId: categoryId || undefined,
+          brandId: brandId || undefined,
+          unitId: unitId || undefined,
+          warehouseId: warehouseId || undefined,
+          storeId: storeId || undefined,
+          image: imagePayload,
+          status: totalStock > 0 ? "ACTIVE" : "OUT_OF_STOCK",
+          manufacturedDate: manufacturedDate || undefined,
+          expiredDate: expiryDate || undefined,
+          expiryBatches: validBatchesPayload,
+          variants: variantRows.map((v) => ({
+            name: v.name,
+            sku: v.sku.trim(),
+            barcode: v.barcode.trim() || undefined,
+            attributes: v.attributes,
+            price: Number(v.price || 0),
+            costPrice: Number(v.costPrice || 0),
+            stock: Number(v.stock || 0),
+            minStockAlert: Number(v.minStockAlert || 5),
+          })),
+        });
+      } else {
+        await createProductApi({
+          name: name.trim(),
+          sku: sku.trim(),
+          barcode: barcode.trim() || undefined,
+          description: description.trim() || undefined,
+          productType: "SINGLE",
+          price: Number(price || 0),
+          costPrice: Number(costPrice || 0),
+          stock: validBatchesPayload && totalBatchStock > 0 ? totalBatchStock : Number(quantity || 0),
+          minStockAlert: Number(minStockAlert || 5),
+          categoryId: categoryId || undefined,
+          brandId: brandId || undefined,
+          unitId: unitId || undefined,
+          warehouseId: warehouseId || undefined,
+          storeId: storeId || undefined,
+          image: imagePayload,
+          status: (validBatchesPayload && totalBatchStock > 0 ? totalBatchStock : Number(quantity)) > 0 ? "ACTIVE" : "OUT_OF_STOCK",
+          manufacturedDate: manufacturedDate || undefined,
+          expiredDate: expiryDate || undefined,
+          expiryBatches: validBatchesPayload,
+        });
+      }
 
       setFeedbackModal({
         isOpen: true,
@@ -517,93 +826,368 @@ export default function AddProductPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
-            {/* Quantity */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">
-                Quantity (Stock) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
-              />
-            </div>
+          {/* Standard Single Product Pricing */}
+          {productType === "SINGLE" && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5">
+              {/* Quantity */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">
+                  Quantity (Stock) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  required
+                  value={quantity}
+                  onChange={(e) => setQuantity(Number(e.target.value))}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                />
+              </div>
 
-            {/* Selling Price */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">
-                Selling Price (฿) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                required
-                value={price || ""}
-                onChange={(e) => setPrice(Number(e.target.value))}
-                placeholder="0.00"
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-orange-600 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
-              />
-            </div>
+              {/* Selling Price */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">
+                  Selling Price (฿) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  required
+                  value={price || ""}
+                  onChange={(e) => setPrice(Number(e.target.value))}
+                  placeholder="0.00"
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-orange-600 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                />
+              </div>
 
-            {/* Cost Price */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Cost Price (฿)</label>
-              <input
-                type="number"
-                min="0"
-                step="any"
-                value={costPrice || ""}
-                onChange={(e) => setCostPrice(Number(e.target.value))}
-                placeholder="0.00"
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
-              />
-            </div>
+              {/* Cost Price */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Cost Price (฿)</label>
+                <input
+                  type="number"
+                  min="0"
+                  step="any"
+                  value={costPrice || ""}
+                  onChange={(e) => setCostPrice(Number(e.target.value))}
+                  placeholder="0.00"
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                />
+              </div>
 
-            {/* Tax Type */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Tax Type</label>
-              <select
-                value={taxType}
-                onChange={(e) => setTaxType(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              >
-                <option value="Exclusive">Exclusive</option>
-                <option value="Inclusive">Inclusive</option>
-              </select>
-            </div>
+              {/* Tax Type */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Tax Type</label>
+                <select
+                  value={taxType}
+                  onChange={(e) => setTaxType(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                >
+                  <option value="Exclusive">Exclusive</option>
+                  <option value="Inclusive">Inclusive</option>
+                </select>
+              </div>
 
-            {/* Tax */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Tax Rate</label>
-              <select
-                value={taxRate}
-                onChange={(e) => setTaxRate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              >
-                <option value="7% VAT">7% Standard VAT</option>
-                <option value="0% Zero Tax">0% Exempted</option>
-              </select>
-            </div>
+              {/* Tax Rate */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Tax Rate</label>
+                <select
+                  value={taxRate}
+                  onChange={(e) => setTaxRate(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                >
+                  <option value="7% VAT">7% Standard VAT</option>
+                  <option value="0% Zero Tax">0% Exempted</option>
+                </select>
+              </div>
 
-            {/* Quantity Alert (Min Stock) */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">
-                Quantity Alert (Min Stock) <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="1"
-                value={minStockAlert}
-                onChange={(e) => setMinStockAlert(Number(e.target.value))}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-amber-600 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
-              />
+              {/* Quantity Alert (Min Stock) */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">
+                  Quantity Alert (Min Stock) <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  value={minStockAlert}
+                  onChange={(e) => setMinStockAlert(Number(e.target.value))}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-amber-600 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
+                />
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Variable Product Configuration & Matrix */}
+          {productType === "VARIABLE" && (
+            <div className="space-y-6">
+              {/* Base Defaults Info Banner */}
+              <div className="p-4 bg-orange-50/60 border border-orange-100 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center space-x-2 text-orange-900">
+                  <Sliders className="w-4 h-4 text-[#FE9F43] flex-shrink-0" />
+                  <span>
+                    <strong>Variable Product Mode:</strong> Select attributes (e.g. Size, Color) below to generate sub-SKUs and individual variant stocks.
+                  </span>
+                </div>
+                <Link
+                  href="/variant-attributes"
+                  target="_blank"
+                  className="text-xs font-bold text-[#FE9F43] hover:underline flex items-center space-x-1 flex-shrink-0"
+                >
+                  <Settings2 className="w-3.5 h-3.5" />
+                  <span>Manage Master Attributes</span>
+                </Link>
+              </div>
+
+              {/* Step 1: Attribute Selector */}
+              <div className="p-4 bg-gray-50/70 border border-gray-200 rounded-2xl space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-200 pb-3">
+                  <div>
+                    <h4 className="text-xs font-bold text-gray-900 flex items-center">
+                      <Layers className="w-3.5 h-3.5 mr-1.5 text-[#FE9F43]" />
+                      1. Choose Variant Attributes
+                    </h4>
+                    <p className="text-[11px] text-gray-500">Pick attributes from your database to generate combination choices</p>
+                  </div>
+
+                  <div className="flex items-center space-x-2">
+                    <select
+                      value={selectedAttributeId}
+                      onChange={(e) => setSelectedAttributeId(e.target.value)}
+                      className="px-3 py-1.5 bg-white border border-gray-200 rounded-xl text-xs font-medium text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    >
+                      <option value="">Select Attribute...</option>
+                      {variantAttributesList
+                        .filter((a) => !selectedAttrs.some((item) => item.attributeId === a.id))
+                        .map((a) => (
+                          <option key={a.id} value={a.id}>
+                            {a.name} ({a.values})
+                          </option>
+                        ))}
+                    </select>
+                    <button
+                      type="button"
+                      disabled={!selectedAttributeId}
+                      onClick={handleAddAttribute}
+                      className="px-3 py-1.5 bg-[#FE9F43] hover:bg-[#e88930] disabled:opacity-50 text-white rounded-xl text-xs font-bold flex items-center space-x-1 transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Selected Attributes Badges & Value Pills */}
+                {selectedAttrs.length === 0 ? (
+                  <div className="text-center py-4 text-xs text-gray-400">
+                    No attributes selected yet. Select an attribute above (e.g. Size or Color) to begin.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {selectedAttrs.map((attr) => (
+                      <div
+                        key={attr.attributeId}
+                        className="bg-white p-3 rounded-xl border border-gray-200 shadow-2xs space-y-2"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs font-bold text-gray-900 bg-gray-100 px-2.5 py-0.5 rounded-md">
+                            {attr.attributeName}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveAttribute(attr.attributeId)}
+                            className="text-gray-400 hover:text-rose-500 p-1 rounded-md"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {/* Values Checkboxes/Pills */}
+                        <div className="flex flex-wrap gap-1.5">
+                          {attr.allValues.map((val) => {
+                            const isSelected = attr.values.includes(val);
+                            return (
+                              <button
+                                type="button"
+                                key={val}
+                                onClick={() => handleToggleValue(attr.attributeId, val)}
+                                className={`px-2.5 py-1 rounded-lg text-xs font-semibold border transition-all flex items-center space-x-1 ${
+                                  isSelected
+                                    ? "bg-orange-50 border-[#FE9F43] text-orange-800"
+                                    : "bg-gray-50 border-gray-200 text-gray-500 hover:bg-gray-100"
+                                }`}
+                              >
+                                {isSelected && <Check className="w-3 h-3 text-[#FE9F43]" />}
+                                <span>{val}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))}
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="button"
+                        onClick={handleGenerateMatrix}
+                        className="px-4 py-2 bg-gradient-to-r from-[#FE9F43] to-amber-500 hover:from-[#e88930] hover:to-amber-600 text-white font-bold text-xs rounded-xl shadow-xs flex items-center space-x-1.5 transition-all"
+                      >
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>⚡ Generate / Refresh Variant Matrix</span>
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Step 2: Variant Combinations Table */}
+              {variantRows.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <h4 className="text-xs font-bold text-gray-900 flex items-center">
+                        <Sliders className="w-3.5 h-3.5 mr-1.5 text-[#FE9F43]" />
+                        2. Variant Matrix ({variantRows.length} Variants | Total Stock:{" "}
+                        {variantRows.reduce((acc, r) => acc + (Number(r.stock) || 0), 0)} Units)
+                      </h4>
+                      <p className="text-[11px] text-gray-500">Customize SKU, stock, and pricing for each individual variant</p>
+                    </div>
+
+                    {/* Bulk Fast Controls */}
+                    <div className="flex items-center space-x-2 bg-gray-50 p-1.5 rounded-xl border border-gray-200 text-xs">
+                      <span className="font-bold text-gray-500 text-[10px] pl-1">Batch Apply:</span>
+                      <div className="flex items-center space-x-1">
+                        <input
+                          type="number"
+                          placeholder="Price ฿"
+                          value={bulkPrice}
+                          onChange={(e) => setBulkPrice(e.target.value)}
+                          className="w-16 px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleApplyBulk("price")}
+                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg text-[10px] font-bold"
+                        >
+                          Set
+                        </button>
+                      </div>
+                      <div className="flex items-center space-x-1">
+                        <input
+                          type="number"
+                          placeholder="Stock"
+                          value={bulkStock}
+                          onChange={(e) => setBulkStock(e.target.value)}
+                          className="w-16 px-2 py-1 bg-white border border-gray-200 rounded-lg text-xs font-bold"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleApplyBulk("stock")}
+                          className="px-2 py-1 bg-gray-200 hover:bg-gray-300 rounded-lg text-[10px] font-bold"
+                        >
+                          Set
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Table */}
+                  <div className="overflow-x-auto border border-gray-200 rounded-2xl bg-white">
+                    <table className="w-full text-left text-xs min-w-[700px]">
+                      <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                        <tr>
+                          <th className="py-2.5 px-3">Variant Combination</th>
+                          <th className="py-2.5 px-3">SKU <span className="text-red-500">*</span></th>
+                          <th className="py-2.5 px-3">Barcode</th>
+                          <th className="py-2.5 px-3">Selling Price (฿)</th>
+                          <th className="py-2.5 px-3">Cost Price (฿)</th>
+                          <th className="py-2.5 px-3">Stock Qty</th>
+                          <th className="py-2.5 px-3">Min Alert</th>
+                          <th className="py-2.5 px-2 text-center w-10">Del</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-100">
+                        {variantRows.map((row) => (
+                          <tr key={row.id} className="hover:bg-gray-50/60 transition-colors">
+                            <td className="py-2 px-3 font-semibold text-gray-900">
+                              <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-orange-50 text-orange-800 border border-orange-100">
+                                {row.name}
+                              </span>
+                            </td>
+                            <td className="py-2 px-3">
+                              <input
+                                type="text"
+                                required
+                                value={row.sku}
+                                onChange={(e) => handleUpdateVariantRow(row.id, "sku", e.target.value)}
+                                className="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg font-mono text-xs font-bold focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                              />
+                            </td>
+                            <td className="py-2 px-3">
+                              <input
+                                type="text"
+                                placeholder="Auto/Barcode"
+                                value={row.barcode}
+                                onChange={(e) => handleUpdateVariantRow(row.id, "barcode", e.target.value)}
+                                className="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg font-mono text-xs focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                              />
+                            </td>
+                            <td className="py-2 px-3">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={row.price}
+                                onChange={(e) => handleUpdateVariantRow(row.id, "price", parseFloat(e.target.value) || 0)}
+                                className="w-24 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-orange-600 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                              />
+                            </td>
+                            <td className="py-2 px-3">
+                              <input
+                                type="number"
+                                min="0"
+                                step="any"
+                                value={row.costPrice}
+                                onChange={(e) => handleUpdateVariantRow(row.id, "costPrice", parseFloat(e.target.value) || 0)}
+                                className="w-24 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                              />
+                            </td>
+                            <td className="py-2 px-3">
+                              <input
+                                type="number"
+                                min="0"
+                                value={row.stock}
+                                onChange={(e) => handleUpdateVariantRow(row.id, "stock", parseInt(e.target.value, 10) || 0)}
+                                className="w-20 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                              />
+                            </td>
+                            <td className="py-2 px-3">
+                              <input
+                                type="number"
+                                min="1"
+                                value={row.minStockAlert}
+                                onChange={(e) => handleUpdateVariantRow(row.id, "minStockAlert", parseInt(e.target.value, 10) || 5)}
+                                className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-amber-600 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                              />
+                            </td>
+                            <td className="py-2 px-2 text-center">
+                              <button
+                                type="button"
+                                title="Remove Variant"
+                                onClick={() => handleDeleteVariantRow(row.id)}
+                                className="p-1 text-gray-400 hover:text-rose-500 rounded"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* 3. Card: Product Images (Multi-upload & Individual Delete) */}
@@ -673,33 +1257,179 @@ export default function AddProductPage() {
           </div>
         </div>
 
-        {/* 4. Card: Dates & Warranty */}
+        {/* 4. Card: Dates & Expiry Management */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex items-center space-x-3 border-b border-gray-100 pb-3">
-            <h3 className="font-bold text-gray-900 text-sm">Tracking & Expiry</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Manufactured Date</label>
-              <input
-                type="date"
-                value={manufacturedDate}
-                onChange={(e) => setManufacturedDate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm flex items-center">
+                <CalendarDays className="w-4 h-4 mr-1.5 text-[#FE9F43]" />
+                Tracking & Expiry Dates
+              </h3>
+              <p className="text-[11px] text-gray-500">Manage manufacturing and expiry dates (Single or Multi-Batch tracking)</p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Expiry Date</label>
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              />
+            {/* Mode Toggle */}
+            <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setExpiryTrackingMode("SINGLE_DATE")}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  expiryTrackingMode === "SINGLE_DATE"
+                    ? "bg-white text-gray-900 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Single Date
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpiryTrackingMode("MULTI_BATCH")}
+                className={`px-3 py-1 rounded-lg transition-all flex items-center space-x-1 ${
+                  expiryTrackingMode === "MULTI_BATCH"
+                    ? "bg-[#FE9F43] text-white shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                <span>Multi-Batch / Expiries</span>
+                <span className="px-1.5 py-0.2 bg-white/20 text-white rounded text-[10px]">Lot Optional</span>
+              </button>
             </div>
           </div>
+
+          {/* SINGLE DATE MODE */}
+          {expiryTrackingMode === "SINGLE_DATE" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Manufactured Date (MFG)</label>
+                <input
+                  type="date"
+                  value={manufacturedDate}
+                  onChange={(e) => setManufacturedDate(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Expiry Date (EXP)</label>
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* MULTI-BATCH / EXPIRIES MODE */}
+          {expiryTrackingMode === "MULTI_BATCH" && (
+            <div className="space-y-4">
+              <div className="p-3 bg-amber-50/60 border border-amber-200/60 rounded-xl text-xs text-amber-900 flex items-start space-x-2">
+                <Clock className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong>บันทึกหลายรอบวันหมดอายุ:</strong> กำหนดวันผลิต วันหมดอายุ และจำนวนชิ้นของสินค้าแต่ละรอบได้อย่างอิสระ{" "}
+                  <span className="text-amber-700 font-semibold">(ช่อง Lot No. เป็นทางเลือก ไม่จำเป็นต้องระบุก็ได้)</span>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto border border-gray-200 rounded-2xl bg-white">
+                <table className="w-full text-left text-xs min-w-[650px]">
+                  <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                    <tr>
+                      <th className="py-2.5 px-3">Batch / Lot No. (ไม่บังคับ)</th>
+                      <th className="py-2.5 px-3">MFG Date (วันผลิต)</th>
+                      <th className="py-2.5 px-3">EXP Date (วันหมดอายุ) <span className="text-red-500">*</span></th>
+                      <th className="py-2.5 px-3">Quantity (ชิ้น) <span className="text-red-500">*</span></th>
+                      <th className="py-2.5 px-3">Cost Price (฿)</th>
+                      <th className="py-2.5 px-2 text-center w-10">Del</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {expiryBatchRows.map((batch, index) => (
+                      <tr key={batch.id} className="hover:bg-gray-50/60 transition-colors">
+                        <td className="py-2 px-3">
+                          <input
+                            type="text"
+                            placeholder="เช่น LOT-01 หรือเว้นว่างได้"
+                            value={batch.batchNo}
+                            onChange={(e) => handleUpdateBatchRow(batch.id, "batchNo", e.target.value)}
+                            className="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-mono placeholder:text-gray-400 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                          />
+                        </td>
+                        <td className="py-2 px-3">
+                          <input
+                            type="date"
+                            value={batch.manufacturedDate}
+                            onChange={(e) => handleUpdateBatchRow(batch.id, "manufacturedDate", e.target.value)}
+                            className="w-full px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                          />
+                        </td>
+                        <td className="py-2 px-3">
+                          <input
+                            type="date"
+                            required
+                            value={batch.expiredDate}
+                            onChange={(e) => handleUpdateBatchRow(batch.id, "expiredDate", e.target.value)}
+                            className="w-full px-2.5 py-1 bg-gray-50 border border-amber-300 rounded-lg text-xs font-semibold text-rose-700 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                          />
+                        </td>
+                        <td className="py-2 px-3">
+                          <input
+                            type="number"
+                            min="0"
+                            required
+                            value={batch.quantity}
+                            onChange={(e) => handleUpdateBatchRow(batch.id, "quantity", parseInt(e.target.value, 10) || 0)}
+                            className="w-24 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-900 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                          />
+                        </td>
+                        <td className="py-2 px-3">
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={batch.costPrice}
+                            onChange={(e) => handleUpdateBatchRow(batch.id, "costPrice", parseFloat(e.target.value) || 0)}
+                            className="w-24 px-2.5 py-1 bg-gray-50 border border-gray-200 rounded-lg text-xs font-bold text-gray-700 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                          />
+                        </td>
+                        <td className="py-2 px-2 text-center">
+                          {expiryBatchRows.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveBatchRow(batch.id)}
+                              className="p-1 text-gray-400 hover:text-rose-500 rounded"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={handleAddBatchRow}
+                  className="px-3.5 py-1.5 bg-gray-100 hover:bg-gray-200 text-gray-800 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all w-fit"
+                >
+                  <Plus className="w-3.5 h-3.5 text-[#FE9F43]" />
+                  <span>+ เพิ่มรอบวันหมดอายุ (Add Expiry Date)</span>
+                </button>
+
+                <div className="text-xs text-gray-600 font-medium bg-gray-50 px-3 py-1.5 rounded-xl border border-gray-200">
+                  รวมสต็อกทุกล็อต:{" "}
+                  <strong className="text-emerald-700 font-bold">
+                    {expiryBatchRows.reduce((a, b) => a + (Number(b.quantity) || 0), 0)} ชิ้น
+                  </strong>{" "}
+                  ({expiryBatchRows.filter((b) => b.expiredDate).length} รอบวันหมดอายุ)
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Bottom Action Footer */}

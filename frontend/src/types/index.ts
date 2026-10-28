@@ -571,12 +571,45 @@ export interface StockAdjustment {
   createdAt: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  productId: string;
+  sku: string;
+  barcode?: string | null;
+  name: string;
+  attributes: string;
+  price: number;
+  costPrice: number;
+  stock: number;
+  minStockAlert: number;
+  image?: string | null;
+  status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProductExpiryBatch {
+  id?: string;
+  productId?: string;
+  batchNo?: string | null;
+  manufacturedDate?: string | null;
+  expiredDate: string;
+  quantity: number;
+  initialQuantity?: number;
+  costPrice?: number | null;
+  notes?: string | null;
+  status?: "ACTIVE" | "DEPLETED" | "EXPIRED";
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export interface Product {
   id: string;
   name: string;
   sku: string;
   barcode?: string | null;
   description?: string | null;
+  productType?: "SINGLE" | "VARIABLE";
   price: number;
   costPrice: number;
   stock: number;
@@ -596,6 +629,8 @@ export interface Product {
   storeId?: string | null;
   store?: Store | null;
   stocks?: ProductStock[];
+  variants?: ProductVariant[];
+  expiryBatches?: ProductExpiryBatch[];
   movements?: StockMovement[];
   createdAt: string;
   updatedAt: string;

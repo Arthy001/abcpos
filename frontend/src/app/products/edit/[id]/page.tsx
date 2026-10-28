@@ -32,6 +32,11 @@ import {
   CheckCircle,
   AlertTriangle,
   RotateCcw,
+  CalendarDays,
+  Clock,
+  Plus,
+  ShieldCheck,
+  Lock,
 } from "lucide-react";
 
 export default function EditProductPage() {
@@ -74,6 +79,21 @@ export default function EditProductPage() {
   // Custom Fields / Dates
   const [manufacturedDate, setManufacturedDate] = useState<string>("");
   const [expiryDate, setExpiryDate] = useState<string>("");
+
+  // Expiry Batches State (Master Data Correction)
+  const [expiryTrackingMode, setExpiryTrackingMode] = useState<"SINGLE_DATE" | "MULTI_BATCH">("SINGLE_DATE");
+  const [expiryBatches, setExpiryBatches] = useState<
+    {
+      id: string;
+      batchNo: string;
+      manufacturedDate: string;
+      expiredDate: string;
+      quantity: number;
+      costPrice: number;
+      notes: string;
+      isNew?: boolean;
+    }[]
+  >([]);
 
   useEffect(() => {
     fetchRolePermissions().then(() => {
@@ -141,6 +161,25 @@ export default function EditProductPage() {
         if (prod.expiredDate) {
           setExpiryDate(new Date(prod.expiredDate).toISOString().split("T")[0]);
         }
+
+        if (prod.expiryBatches && prod.expiryBatches.length > 0) {
+          setExpiryTrackingMode("MULTI_BATCH");
+          setExpiryBatches(
+            prod.expiryBatches.map((b) => ({
+              id: b.id || `batch-${Date.now()}`,
+              batchNo: b.batchNo || "",
+              manufacturedDate: b.manufacturedDate
+                ? new Date(b.manufacturedDate).toISOString().split("T")[0]
+                : "",
+              expiredDate: b.expiredDate
+                ? new Date(b.expiredDate).toISOString().split("T")[0]
+                : "",
+              quantity: b.quantity || 0,
+              costPrice: b.costPrice || 0,
+              notes: b.notes || "",
+            }))
+          );
+        }
       })
       .catch((err: any) => {
         console.error("Error loading product for edit:", err);
@@ -191,6 +230,30 @@ export default function EditProductPage() {
     message: "",
   });
 
+  // Add new batch row (for newly received goods without formal adjustment)
+  const handleAddBatchRow = () => {
+    setExpiryBatches((prev) => [
+      ...prev,
+      {
+        id: `new-${Date.now()}`,
+        batchNo: "",
+        manufacturedDate: "",
+        expiredDate: "",
+        quantity: 0,
+        costPrice: Number(costPrice) || 0,
+        notes: "",
+        isNew: true,
+      },
+    ]);
+  };
+
+  // Update specific field in expiry batch (Master Data Correction: Dates/Lot/Notes)
+  const handleUpdateBatchField = (id: string, field: string, val: any) => {
+    setExpiryBatches((prev) =>
+      prev.map((b) => (b.id === id ? { ...b, [field]: val } : b))
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage("");
@@ -236,6 +299,18 @@ export default function EditProductPage() {
         status: status || (Number(quantity) > 0 ? "ACTIVE" : "OUT_OF_STOCK"),
         manufacturedDate: manufacturedDate || undefined,
         expiredDate: expiryDate || undefined,
+        expiryBatches:
+          expiryTrackingMode === "MULTI_BATCH"
+            ? expiryBatches.map((b) => ({
+                id: b.id,
+                batchNo: b.batchNo.trim() || undefined,
+                manufacturedDate: b.manufacturedDate || undefined,
+                expiredDate: b.expiredDate,
+                quantity: b.quantity,
+                costPrice: b.costPrice,
+                notes: b.notes || undefined,
+              }))
+            : undefined,
       });
 
       setFeedbackModal({
@@ -491,19 +566,36 @@ export default function EditProductPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-5">
-            {/* Quantity */}
+            {/* Stock Quantity (ERP Standard: Read-only with Stock Adjustment link) */}
             <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">
-                Stock Quantity <span className="text-red-500">*</span>
-              </label>
-              <input
-                type="number"
-                min="0"
-                required
-                value={quantity}
-                onChange={(e) => setQuantity(Number(e.target.value))}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-bold text-gray-900 focus:outline-none focus:ring-1 focus:ring-[#FE9F43] focus:bg-white"
-              />
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-gray-700 flex items-center space-x-1">
+                  <span>Current Stock (คงเหลือ)</span>
+                  <Lock className="w-3 h-3 text-gray-400" />
+                </label>
+                <Link
+                  href="/stock/adjustment"
+                  target="_blank"
+                  className="text-[10px] font-bold text-[#FE9F43] hover:underline flex items-center space-x-0.5"
+                  title="ปรับยอดสต็อกผ่านเอกสารตรวจนับ (Stock Adjustment)"
+                >
+                  <span>ปรับยอดสต็อก</span>
+                  <span>→</span>
+                </Link>
+              </div>
+              <div className="relative">
+                <input
+                  type="number"
+                  readOnly
+                  disabled
+                  value={quantity}
+                  className="w-full px-3.5 py-2 bg-gray-100 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 cursor-not-allowed select-none"
+                />
+                <span className="absolute right-3 top-2.5 text-[10px] text-gray-400 font-semibold flex items-center space-x-1">
+                  <Lock className="w-3 h-3 text-gray-400" />
+                  <span>Locked</span>
+                </span>
+              </div>
             </div>
 
             {/* Selling Price */}
@@ -618,33 +710,161 @@ export default function EditProductPage() {
           </div>
         </div>
 
-        {/* 4. Card: Dates */}
+        {/* 4. Card: Tracking & Expiry Dates (Master Data Correction) */}
         <div className="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm space-y-4">
-          <div className="flex items-center space-x-3 border-b border-gray-100 pb-3">
-            <h3 className="font-bold text-gray-900 text-sm">Tracking & Expiry</h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Manufactured Date</label>
-              <input
-                type="date"
-                value={manufacturedDate}
-                onChange={(e) => setManufacturedDate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-gray-100 pb-3">
+            <div>
+              <h3 className="font-bold text-gray-900 text-sm flex items-center">
+                <CalendarDays className="w-4 h-4 mr-1.5 text-[#FE9F43]" />
+                Tracking & Expiry Dates (Master Data Correction)
+              </h3>
+              <p className="text-[11px] text-gray-500">Correct manufacturing and expiry dates directly without altering ledger stock</p>
             </div>
 
-            <div className="space-y-1.5">
-              <label className="text-xs font-bold text-gray-700">Expiry Date</label>
-              <input
-                type="date"
-                value={expiryDate}
-                onChange={(e) => setExpiryDate(e.target.value)}
-                className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
-              />
+            {/* Mode Switcher */}
+            <div className="flex items-center bg-gray-100 p-1 rounded-xl text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setExpiryTrackingMode("SINGLE_DATE")}
+                className={`px-3 py-1 rounded-lg transition-all ${
+                  expiryTrackingMode === "SINGLE_DATE"
+                    ? "bg-white text-gray-900 shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                Single Date
+              </button>
+              <button
+                type="button"
+                onClick={() => setExpiryTrackingMode("MULTI_BATCH")}
+                className={`px-3 py-1 rounded-lg transition-all flex items-center space-x-1 ${
+                  expiryTrackingMode === "MULTI_BATCH"
+                    ? "bg-[#FE9F43] text-white shadow-xs font-bold"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                <span>Multi-Batch ({expiryBatches.length})</span>
+                <span className="px-1.5 py-0.2 bg-white/20 text-white rounded text-[10px]">ERP Safe</span>
+              </button>
             </div>
           </div>
+
+          {/* SINGLE DATE MODE */}
+          {expiryTrackingMode === "SINGLE_DATE" && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Manufactured Date (MFG)</label>
+                <input
+                  type="date"
+                  value={manufacturedDate}
+                  onChange={(e) => setManufacturedDate(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-gray-700">Expiry Date (EXP)</label>
+                <input
+                  type="date"
+                  value={expiryDate}
+                  onChange={(e) => setExpiryDate(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs text-gray-800 focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* MULTI-BATCH / MASTER DATA CORRECTION MODE */}
+          {expiryTrackingMode === "MULTI_BATCH" && (
+            <div className="space-y-4">
+              <div className="p-3 bg-blue-50/70 border border-blue-200/70 rounded-xl text-xs text-blue-900 flex items-start space-x-2">
+                <ShieldCheck className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <strong>ERP Master Data Correction:</strong> สามารถคลิกแก้ไข <strong>วันผลิต (MFG)</strong>, <strong>วันหมดอายุ (EXP)</strong>, และ <strong>เลข Lot</strong> ที่คีย์ผิดพลาดได้โดยตรงอย่างปลอดภัย{" "}
+                  <span className="text-blue-800 font-semibold">(จำนวนชิ้นถูกล็อคไว้เพื่อรักษาความถูกต้องของงบบัญชีและประวัติสต็อก)</span>
+                </div>
+              </div>
+
+              {expiryBatches.length === 0 ? (
+                <div className="text-center py-6 border border-dashed border-gray-200 rounded-2xl bg-gray-50/50 space-y-2">
+                  <Clock className="w-8 h-8 mx-auto text-gray-400" />
+                  <p className="text-xs text-gray-500 font-medium">สินค้านี้ยังไม่มีรายการ Expiry Batch</p>
+                  <button
+                    type="button"
+                    onClick={handleAddBatchRow}
+                    className="px-3.5 py-1.5 bg-[#FE9F43] hover:bg-[#e88930] text-white rounded-xl text-xs font-bold inline-flex items-center space-x-1"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>เพิ่มรอบวันหมดอายุ</span>
+                  </button>
+                </div>
+              ) : (
+                <div className="overflow-x-auto border border-gray-200 rounded-2xl bg-white">
+                  <table className="w-full text-left text-xs min-w-[650px]">
+                    <thead className="bg-gray-50 text-gray-700 font-bold border-b border-gray-200">
+                      <tr>
+                        <th className="py-2.5 px-3">Batch / Lot No.</th>
+                        <th className="py-2.5 px-3">MFG Date (แก้ไขได้)</th>
+                        <th className="py-2.5 px-3">EXP Date (แก้ไขได้) <span className="text-red-500">*</span></th>
+                        <th className="py-2.5 px-3">
+                          <span className="flex items-center space-x-1">
+                            <span>คงเหลือ (Locked)</span>
+                            <Lock className="w-3 h-3 text-gray-400" />
+                          </span>
+                        </th>
+                        <th className="py-2.5 px-3">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {expiryBatches.map((b) => (
+                        <tr key={b.id} className="hover:bg-gray-50/60 transition-colors">
+                          <td className="py-2 px-3">
+                            <input
+                              type="text"
+                              placeholder="เว้นว่างได้"
+                              value={b.batchNo}
+                              onChange={(e) => handleUpdateBatchField(b.id, "batchNo", e.target.value)}
+                              className="w-full px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs font-mono focus:ring-1 focus:ring-[#FE9F43]"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="date"
+                              value={b.manufacturedDate}
+                              onChange={(e) => handleUpdateBatchField(b.id, "manufacturedDate", e.target.value)}
+                              className="w-full px-2.5 py-1 bg-white border border-gray-200 rounded-lg text-xs focus:ring-1 focus:ring-[#FE9F43]"
+                            />
+                          </td>
+                          <td className="py-2 px-3">
+                            <input
+                              type="date"
+                              required
+                              value={b.expiredDate}
+                              onChange={(e) => handleUpdateBatchField(b.id, "expiredDate", e.target.value)}
+                              className="w-full px-2.5 py-1 bg-amber-50/50 border border-amber-300 rounded-lg text-xs font-bold text-rose-700 focus:bg-white focus:ring-1 focus:ring-[#FE9F43]"
+                            />
+                          </td>
+                          <td className="py-2 px-3 font-semibold text-gray-700 bg-gray-50/50">
+                            <span className="px-2 py-1 bg-gray-100 border border-gray-200 rounded-md font-mono text-xs flex items-center justify-between w-24">
+                              <span>{b.quantity}</span>
+                              <Lock className="w-3 h-3 text-gray-400" />
+                            </span>
+                          </td>
+                          <td className="py-2 px-3">
+                            <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                              b.quantity > 0 ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-500"
+                            }`}>
+                              {b.quantity > 0 ? "ACTIVE" : "DEPLETED"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         {/* Bottom Action Footer */}

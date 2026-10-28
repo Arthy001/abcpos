@@ -15,6 +15,8 @@ import {
   bulkDeleteProductsApi,
 } from "@/lib/api";
 import {
+  Clock,
+  Sliders,
   PlusCircle,
   Search,
   FileText,
@@ -741,7 +743,14 @@ export default function ProductsPage() {
                               }}
                             />
                             <div>
-                              <span className="font-semibold text-[#1E293B] line-clamp-1">{item.name}</span>
+                              <div className="flex items-center space-x-1.5">
+                                <span className="font-semibold text-[#1E293B] line-clamp-1">{item.name}</span>
+                                {item.productType === "VARIABLE" && (
+                                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-[#FE9F43] flex-shrink-0">
+                                    Variable ({item.variants?.length || 0})
+                                  </span>
+                                )}
+                              </div>
                               {item.barcode && (
                                 <span className="text-[10px] text-gray-400 font-mono">Barcode: {item.barcode}</span>
                               )}
@@ -1083,6 +1092,114 @@ export default function ProductsPage() {
                     </div>
                   </div>
                 </div>
+
+                {/* Product Variants Breakdown */}
+                {viewProduct.variants && viewProduct.variants.length > 0 && (
+                  <div className="p-3.5 bg-orange-50/50 rounded-xl border border-orange-100 text-xs space-y-2">
+                    <div className="flex items-center justify-between font-bold text-orange-900 pb-1 border-b border-orange-200/50">
+                      <div className="flex items-center space-x-1.5">
+                        <Sliders className="w-3.5 h-3.5 text-[#FE9F43]" />
+                        <span>Product Variants Breakdown ({viewProduct.variants.length} Variants)</span>
+                      </div>
+                      <span className="text-[11px] text-orange-700">
+                        Total: {viewProduct.variants.reduce((a, b) => a + b.stock, 0)} {viewProduct.unit?.shortName || "Pcs"}
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-44 border border-orange-100 rounded-lg bg-white">
+                      <table className="w-full text-[11px] text-left">
+                        <thead className="bg-orange-50/60 text-gray-500 font-semibold border-b border-orange-100">
+                          <tr>
+                            <th className="py-1.5 px-2.5">Variant</th>
+                            <th className="py-1.5 px-2 font-mono">SKU</th>
+                            <th className="py-1.5 px-2">Price</th>
+                            <th className="py-1.5 px-2.5 text-right">Stock</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {viewProduct.variants.map((v) => (
+                            <tr key={v.id} className="hover:bg-orange-50/30">
+                              <td className="py-1.5 px-2.5 font-bold text-gray-800">{v.name}</td>
+                              <td className="py-1.5 px-2 font-mono text-gray-500">{v.sku}</td>
+                              <td className="py-1.5 px-2 font-bold text-orange-600">฿{v.price.toLocaleString()}</td>
+                              <td className="py-1.5 px-2.5 text-right font-semibold text-gray-800">
+                                {v.stock} {viewProduct.unit?.shortName || "Pcs"}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                {/* Multi-Expiry Batches Breakdown */}
+                {viewProduct.expiryBatches && viewProduct.expiryBatches.length > 0 && (
+                  <div className="p-3.5 bg-amber-50/50 rounded-xl border border-amber-200/80 text-xs space-y-2">
+                    <div className="flex items-center justify-between font-bold text-amber-900 pb-1 border-b border-amber-200/50">
+                      <div className="flex items-center space-x-1.5">
+                        <Clock className="w-3.5 h-3.5 text-amber-600" />
+                        <span>Expiry Batches Tracking ({viewProduct.expiryBatches.length} Batches)</span>
+                      </div>
+                      <span className="text-[11px] text-amber-800">
+                        Total: {viewProduct.expiryBatches.reduce((a, b) => a + (b.quantity || 0), 0)} {viewProduct.unit?.shortName || "Pcs"}
+                      </span>
+                    </div>
+                    <div className="overflow-x-auto max-h-44 border border-amber-100 rounded-lg bg-white">
+                      <table className="w-full text-[11px] text-left">
+                        <thead className="bg-amber-50/60 text-gray-500 font-semibold border-b border-amber-100">
+                          <tr>
+                            <th className="py-1.5 px-2.5">Lot / Batch</th>
+                            <th className="py-1.5 px-2">MFG Date</th>
+                            <th className="py-1.5 px-2">EXP Date</th>
+                            <th className="py-1.5 px-2">Status / Days Left</th>
+                            <th className="py-1.5 px-2.5 text-right">Qty</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                          {viewProduct.expiryBatches.map((b, idx) => {
+                            const exp = new Date(b.expiredDate);
+                            const now = new Date();
+                            const diffDays = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                            const isExpired = diffDays <= 0;
+                            const isNear = diffDays > 0 && diffDays <= 30;
+
+                            return (
+                              <tr key={b.id || idx} className="hover:bg-amber-50/30">
+                                <td className="py-1.5 px-2.5 font-mono font-medium text-gray-800">
+                                  {b.batchNo || <span className="text-gray-400 italic font-sans">-</span>}
+                                </td>
+                                <td className="py-1.5 px-2 text-gray-600">
+                                  {b.manufacturedDate ? new Date(b.manufacturedDate).toLocaleDateString() : "-"}
+                                </td>
+                                <td className="py-1.5 px-2 font-bold text-gray-900">
+                                  {exp.toLocaleDateString()}
+                                </td>
+                                <td className="py-1.5 px-2">
+                                  {isExpired ? (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">
+                                      Expired
+                                    </span>
+                                  ) : isNear ? (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                      {diffDays} days left
+                                    </span>
+                                  ) : (
+                                    <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700">
+                                      {diffDays} days left
+                                    </span>
+                                  )}
+                                </td>
+                                <td className="py-1.5 px-2.5 text-right font-bold text-gray-900">
+                                  {b.quantity} {viewProduct.unit?.shortName || "Pcs"}
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
 
                 {/* Multi-Warehouse Stock Breakdown */}
                 {modalDisplayStocks.length > 0 && (

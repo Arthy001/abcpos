@@ -159,6 +159,48 @@ export async function recordStockMovement(params: AdjustStockParams) {
     },
   });
 
+  // 4.1 If issue movement (negative quantity) and product has active batches, deduct via FEFO
+  if (quantityDelta < 0) {
+    try {
+      let remainingDeduct = Math.abs(quantityDelta);
+      const activeBatches = await prisma.productExpiryBatch.findMany({
+        where: { productId: product.id, status: "ACTIVE", quantity: { gt: 0 } },
+        orderBy: { expiredDate: "asc" },
+      });
+
+      for (const batch of activeBatches) {
+        if (remainingDeduct <= 0) break;
+        const deductQty = Math.min(batch.quantity, remainingDeduct);
+        const newBatchQty = batch.quantity - deductQty;
+        await prisma.productExpiryBatch.update({
+          where: { id: batch.id },
+          data: {
+            quantity: newBatchQty,
+            status: newBatchQty <= 0 ? "DEPLETED" : "ACTIVE",
+          },
+        });
+        remainingDeduct -= deductQty;
+      }
+
+      // Sync earliest active expiredDate on product
+      const remainingBatches = await prisma.productExpiryBatch.findMany({
+        where: { productId: product.id, status: "ACTIVE", quantity: { gt: 0 } },
+        orderBy: { expiredDate: "asc" },
+      });
+      if (remainingBatches.length > 0) {
+        await prisma.product.update({
+          where: { id: product.id },
+          data: {
+            expiredDate: remainingBatches[0].expiredDate,
+            manufacturedDate: remainingBatches[0].manufacturedDate || null,
+          },
+        });
+      }
+    } catch (batchErr) {
+      console.error("[StockService] Error deducting expiry batches via FEFO:", batchErr);
+    }
+  }
+
   // 5. Create immutable StockMovement ledger entry (Audit Trail)
   const movement = await prisma.stockMovement.create({
     data: {

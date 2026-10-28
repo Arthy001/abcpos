@@ -589,6 +589,7 @@ model Product {
   sku              String      @unique
   barcode          String?     @unique
   description      String?
+  productType      String      @default("SINGLE") // SINGLE, VARIABLE
   price            Float
   costPrice        Float       @default(0.0)
   stock            Int         @default(0)
@@ -614,6 +615,8 @@ model Product {
   store            Store?          @relation(fields: [storeId], references: [id], onDelete: SetNull)
 
   stocks           ProductStock[]
+  variants         ProductVariant[]
+  expiryBatches    ProductExpiryBatch[]
   movements        StockMovement[]
   orderItems       OrderItem[]
   bomsAsFinished   BillOfMaterial[]    @relation("FinishedProductBOM")
@@ -624,6 +627,45 @@ model Product {
   salesOrderItems  SalesOrderItem[]
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
+}
+
+model ProductVariant {
+  id            String   @id @default(uuid())
+  productId     String
+  product       Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  sku           String   @unique
+  barcode       String?  @unique
+  name          String
+  attributes    String   // JSON string e.g. '{"Color":"Red","Size":"M"}'
+  price         Float
+  costPrice     Float    @default(0.0)
+  stock         Int      @default(0)
+  minStockAlert Int      @default(5)
+  image         String?
+  status        String   @default("ACTIVE") // ACTIVE, INACTIVE, OUT_OF_STOCK
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([productId])
+}
+
+model ProductExpiryBatch {
+  id               String    @id @default(uuid())
+  productId        String
+  product          Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  batchNo          String?   // Optional: e.g. "LOT-2026-001" or empty
+  manufacturedDate DateTime? // Optional: วันที่ผลิต
+  expiredDate      DateTime  // Required: วันหมดอายุ
+  quantity         Int       @default(0) // สต็อกคงเหลือของรอบนี้
+  initialQuantity  Int       @default(0) // จำนวนเริ่มต้นที่รับเข้ามา
+  costPrice        Float?    // ต้นทุนของรอบนี้ (ถ้ามี)
+  notes            String?   // บันทึกเพิ่มเติม
+  status           String    @default("ACTIVE") // ACTIVE, DEPLETED, EXPIRED
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  @@index([productId])
+  @@index([expiredDate])
 }
 
 model Customer {
