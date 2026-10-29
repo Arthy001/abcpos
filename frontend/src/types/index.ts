@@ -1463,6 +1463,51 @@ export interface WorkOrder {
   notes?: string | null;
   materials?: WorkOrderMaterial[];
   scraps?: ProductionScrap[];
+  forceStartReason?: string | null;
+  requisitions?: MaterialRequisition[];
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MaterialRequisitionItem {
+  id: string;
+  requisitionId: string;
+  rawMaterialId: string;
+  rawMaterial?: Product;
+  requestedQty: number;
+  issuedQty: number;
+  unit: string;
+  unitCost: number;
+  isIssued: boolean;
+  notes?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface MaterialRequisition {
+  id: string;
+  requisitionNo: string;
+  workOrderId: string;
+  workOrder?: {
+    id: string;
+    orderNo: string;
+    status: string;
+    targetQty?: number;
+    unit?: string;
+    finishedProduct?: Product;
+    bom?: BillOfMaterial | null;
+    materials?: WorkOrderMaterial[];
+  };
+  type: "INITIAL" | "ADDITIONAL" | string;
+  status: "PENDING" | "PARTIAL" | "ISSUED" | "CANCELLED" | string;
+  warehouseId?: string | null;
+  warehouse?: Warehouse | null;
+  requestedBy?: string | null;
+  issuedBy?: string | null;
+  issuedAt?: string | null;
+  reason?: string | null;
+  notes?: string | null;
+  items?: MaterialRequisitionItem[];
   createdAt?: string;
   updatedAt?: string;
 }

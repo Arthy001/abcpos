@@ -492,6 +492,17 @@ export const getWorkOrders = async (req: Request, res: Response) => {
           },
         },
         scraps: true,
+        requisitions: {
+          select: {
+            id: true,
+            requisitionNo: true,
+            type: true,
+            status: true,
+            issuedBy: true,
+            issuedAt: true,
+            createdAt: true,
+          },
+        },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -515,6 +526,7 @@ export const createWorkOrder = async (req: Request, res: Response) => {
       machineNo = "Extruder #1",
       warehouseId,
       notes,
+      autoCreateRequisition = true,
     } = req.body;
 
     if (!orderNo || !finishedProductId || !targetQty) {
@@ -572,7 +584,38 @@ export const createWorkOrder = async (req: Request, res: Response) => {
       },
     });
 
-    res.status(201).json({ success: true, workOrder });
+    // Auto-create initial material requisition if selected and materials exist
+    let initialRequisition = null;
+    if (bomId && autoCreateRequisition && materialsCreate.length > 0) {
+      const reqCount = await prisma.materialRequisition.count();
+      const currentYear = new Date().getFullYear();
+      const reqNo = "MR-" + currentYear + "-" + String(reqCount + 1).padStart(4, "0");
+
+      initialRequisition = await prisma.materialRequisition.create({
+        data: {
+          requisitionNo: reqNo,
+          workOrderId: workOrder.id,
+          type: "INITIAL",
+          status: "PENDING",
+          warehouseId: warehouseId || null,
+          requestedBy: operator || "Admin",
+          notes: "Initial raw materials for Work Order " + orderNo,
+          items: {
+            create: materialsCreate.map((m: any) => ({
+              rawMaterialId: m.rawMaterialId,
+              requestedQty: m.plannedQty,
+              issuedQty: 0,
+              unit: m.unit,
+              unitCost: m.unitCost || 0,
+              isIssued: false,
+            })),
+          },
+        },
+        include: { items: true },
+      });
+    }
+
+    res.status(201).json({ success: true, workOrder, requisition: initialRequisition });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to create Work Order" });
   }
@@ -581,13 +624,16 @@ export const createWorkOrder = async (req: Request, res: Response) => {
 export const updateWorkOrderStatus = async (req: Request, res: Response) => {
   try {
     const id = String(req.params.id);
-    const { status, producedQty, scrapQty, actualMaterials } = req.body;
+    const { status, producedQty, scrapQty, actualMaterials, forceStart, forceStartReason } = req.body;
 
     const workOrder = await prisma.workOrder.findUnique({
       where: { id },
       include: {
         materials: true,
         finishedProduct: true,
+        requisitions: {
+          include: { items: true },
+        },
       },
     });
 
@@ -597,18 +643,50 @@ export const updateWorkOrderStatus = async (req: Request, res: Response) => {
 
     // Status transition handling
     if (status === "IN_PROGRESS" && workOrder.status !== "IN_PROGRESS") {
-      // Deduct raw materials if not already deducted
+      // Check if there are active requisitions (INITIAL or ADDITIONAL)
+      const hasRequisitions = workOrder.requisitions && workOrder.requisitions.length > 0;
+      const unissuedRequisitions = hasRequisitions
+        ? workOrder.requisitions.filter((r: any) => r.status !== "ISSUED" && r.status !== "CANCELLED")
+        : [];
+
+      // If there are unissued requisitions and user did NOT force start:
+      if (hasRequisitions && unissuedRequisitions.length > 0 && !forceStart) {
+        return res.status(400).json({
+          success: false,
+          requiresForceStart: true,
+          unissuedCount: unissuedRequisitions.length,
+          unissuedRequisitions: unissuedRequisitions.map((r: any) => ({
+            id: r.id,
+            requisitionNo: r.requisitionNo,
+            type: r.type,
+            status: r.status,
+          })),
+          error: `ใบเบิกวัตถุดิบ (${unissuedRequisitions.map((r: any) => r.requisitionNo).join(", ")}) ยังเบิกจ่ายไม่ครบสมบูรณ์ กรุณาดำเนินการเบิกจ่าย หรือใช้ Force Start กรณีฉุกเฉิน`,
+        });
+      }
+
+      // If force start is applied, record the reason
+      if (forceStart && forceStartReason) {
+        await prisma.workOrder.update({
+          where: { id },
+          data: { forceStartReason: String(forceStartReason) },
+        });
+      }
+
+      // Deduct raw materials if not already deducted (either via requisition or direct)
       for (const mat of workOrder.materials) {
         if (!mat.isDeducted) {
           const qtyToDeduct = Math.round(mat.plannedQty);
-          await recordStockMovement({
-            productId: mat.rawMaterialId,
-            warehouseId: workOrder.warehouseId || undefined,
-            type: "INTERNAL_ISSUE",
-            quantityDelta: -qtyToDeduct,
-            referenceNo: workOrder.orderNo,
-            notes: `เบิกวัตถุดิบเข้ากระบวนการผลิต (${workOrder.orderNo})`,
-          });
+          if (qtyToDeduct > 0) {
+            await recordStockMovement({
+              productId: mat.rawMaterialId,
+              warehouseId: workOrder.warehouseId || undefined,
+              type: "INTERNAL_ISSUE",
+              quantityDelta: -qtyToDeduct,
+              referenceNo: workOrder.orderNo,
+              notes: `เบิกวัตถุดิบเข้ากระบวนการผลิต (${workOrder.orderNo})${forceStart ? ' [Force Started: ' + forceStartReason + ']' : ''}`,
+            });
+          }
 
           await prisma.workOrderMaterial.update({
             where: { id: mat.id },
@@ -801,5 +879,307 @@ export const deleteProductionScrap = async (req: Request, res: Response) => {
     res.json({ success: true, message: "Scrap record deleted successfully" });
   } catch (error: any) {
     res.status(500).json({ success: false, error: error.message || "Failed to delete scrap" });
+  }
+};
+
+// ==========================================
+// 📦 MATERIAL REQUISITIONS CONTROLLERS
+// ==========================================
+
+export const getMaterialRequisitions = async (req: Request, res: Response) => {
+  try {
+    const { workOrderId, status, type, warehouseId, search } = req.query;
+
+    const where: any = {};
+    if (workOrderId) where.workOrderId = String(workOrderId);
+    if (status && status !== "ALL") where.status = String(status);
+    if (type && type !== "ALL") where.type = String(type);
+    if (warehouseId && warehouseId !== "ALL") where.warehouseId = String(warehouseId);
+
+    if (search) {
+      const q = String(search).trim();
+      where.OR = [
+        { requisitionNo: { contains: q } },
+        { requestedBy: { contains: q } },
+        { issuedBy: { contains: q } },
+        { workOrder: { orderNo: { contains: q } } },
+      ];
+    }
+
+    const requisitions = await prisma.materialRequisition.findMany({
+      where,
+      include: {
+        workOrder: {
+          select: {
+            id: true,
+            orderNo: true,
+            status: true,
+            targetQty: true,
+            unit: true,
+            finishedProduct: { select: { id: true, name: true, sku: true, image: true } },
+          },
+        },
+        warehouse: { select: { id: true, name: true } },
+        items: {
+          include: {
+            rawMaterial: { select: { id: true, name: true, sku: true, barcode: true, stock: true } },
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ success: true, requisitions });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch material requisitions" });
+  }
+};
+
+export const getMaterialRequisitionById = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const requisition = await prisma.materialRequisition.findUnique({
+      where: { id },
+      include: {
+        workOrder: {
+          include: {
+            finishedProduct: true,
+            bom: true,
+            materials: { include: { rawMaterial: true } },
+          },
+        },
+        warehouse: true,
+        items: {
+          include: {
+            rawMaterial: {
+              include: {
+                stocks: { include: { warehouse: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    if (!requisition) {
+      return res.status(404).json({ success: false, error: "Material requisition not found" });
+    }
+
+    res.json({ success: true, requisition });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to fetch material requisition" });
+  }
+};
+
+export const createMaterialRequisition = async (req: Request, res: Response) => {
+  try {
+    const {
+      workOrderId,
+      type = "ADDITIONAL",
+      warehouseId,
+      requestedBy = "Admin",
+      reason,
+      notes,
+      items,
+    } = req.body;
+
+    if (!workOrderId || !items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, error: "Missing required requisition fields or items" });
+    }
+
+    const workOrder = await prisma.workOrder.findUnique({ where: { id: workOrderId } });
+    if (!workOrder) {
+      return res.status(404).json({ success: false, error: "Work Order not found" });
+    }
+
+    const count = await prisma.materialRequisition.count();
+    const currentYear = new Date().getFullYear();
+    const requisitionNo = "MR-" + currentYear + "-" + String(count + 1).padStart(4, "0");
+
+    const requisition = await prisma.materialRequisition.create({
+      data: {
+        requisitionNo,
+        workOrderId,
+        type,
+        status: "PENDING",
+        warehouseId: warehouseId || workOrder.warehouseId || null,
+        requestedBy,
+        reason,
+        notes,
+        items: {
+          create: items.map((item: any) => ({
+            rawMaterialId: item.rawMaterialId,
+            requestedQty: Number(item.requestedQty) || 0,
+            issuedQty: 0,
+            unit: item.unit || "kg",
+            unitCost: Number(item.unitCost) || 0,
+            isIssued: false,
+            notes: item.notes || null,
+          })),
+        },
+      },
+      include: {
+        workOrder: { select: { id: true, orderNo: true } },
+        items: { include: { rawMaterial: true } },
+      },
+    });
+
+    res.status(201).json({ success: true, requisition });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to create material requisition" });
+  }
+};
+
+export const issueMaterialRequisition = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const { issuedBy = "Warehouse Staff", notes, items } = req.body;
+
+    if (!items || !Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ success: false, error: "No items provided for issue" });
+    }
+
+    const requisition = await prisma.materialRequisition.findUnique({
+      where: { id },
+      include: {
+        items: { include: { rawMaterial: true } },
+        workOrder: {
+          include: {
+            materials: true,
+          },
+        },
+      },
+    });
+
+    if (!requisition) {
+      return res.status(404).json({ success: false, error: "Material requisition not found" });
+    }
+
+    if (requisition.status === "ISSUED") {
+      return res.status(400).json({ success: false, error: "This requisition has already been fully issued" });
+    }
+
+    if (requisition.status === "CANCELLED") {
+      return res.status(400).json({ success: false, error: "Cannot issue a cancelled requisition" });
+    }
+
+    // Process each issued item
+    for (const issueEntry of items) {
+      const { id: itemId, issueQty } = issueEntry;
+      const qty = Number(issueQty);
+      if (!qty || qty <= 0) continue;
+
+      const reqItem = requisition.items.find((i: any) => i.id === itemId);
+      if (!reqItem) continue;
+
+      const newIssuedQty = reqItem.issuedQty + qty;
+      const isNowComplete = newIssuedQty >= reqItem.requestedQty;
+
+      // 1. Update MaterialRequisitionItem
+      await prisma.materialRequisitionItem.update({
+        where: { id: itemId },
+        data: {
+          issuedQty: newIssuedQty,
+          isIssued: isNowComplete,
+        },
+      });
+
+      // 2. Record Stock Movement (INTERNAL_ISSUE)
+      const qtyInt = Math.round(qty);
+      if (qtyInt > 0) {
+        const targetWhId = reqItem.rawMaterial?.warehouseId || requisition.warehouseId || undefined;
+        await recordStockMovement({
+          productId: reqItem.rawMaterialId,
+          warehouseId: targetWhId,
+          type: "INTERNAL_ISSUE",
+          quantityDelta: -qtyInt,
+          referenceNo: requisition.requisitionNo,
+          notes: `เบิกจ่ายวัตถุดิบ (${requisition.requisitionNo}) ตามใบเบิกสำหรับ WO ${requisition.workOrder.orderNo}`,
+        });
+      }
+
+      // 3. Sync with WorkOrderMaterial if corresponding item exists
+      const woMat = requisition.workOrder.materials.find(
+        (m: any) => m.rawMaterialId === reqItem.rawMaterialId
+      );
+      if (woMat) {
+        await prisma.workOrderMaterial.update({
+          where: { id: woMat.id },
+          data: {
+            actualQty: woMat.actualQty + qty,
+            isDeducted: true,
+          },
+        });
+      }
+    }
+
+    // Refresh items to check overall requisition completion
+    const refreshedItems = await prisma.materialRequisitionItem.findMany({
+      where: { requisitionId: id },
+    });
+
+    const allCompleted = refreshedItems.every((item: any) => item.isIssued || item.issuedQty >= item.requestedQty);
+    const anyIssued = refreshedItems.some((item: any) => item.issuedQty > 0);
+
+    const newStatus = allCompleted ? "ISSUED" : anyIssued ? "PARTIAL" : "PENDING";
+
+    const updatedRequisition = await prisma.materialRequisition.update({
+      where: { id },
+      data: {
+        status: newStatus,
+        issuedBy,
+        issuedAt: allCompleted ? new Date() : requisition.issuedAt,
+        notes: notes !== undefined ? notes : requisition.notes,
+      },
+      include: {
+        workOrder: { select: { id: true, orderNo: true, status: true } },
+        items: { include: { rawMaterial: true } },
+      },
+    });
+
+    res.json({
+      success: true,
+      requisition: updatedRequisition,
+      message: allCompleted
+        ? "Material Requisition fully completed and issued"
+        : "Partial issue recorded successfully",
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to issue material requisition" });
+  }
+};
+
+export const cancelMaterialRequisition = async (req: Request, res: Response) => {
+  try {
+    const id = String(req.params.id);
+    const requisition = await prisma.materialRequisition.findUnique({
+      where: { id },
+      include: { items: true },
+    });
+
+    if (!requisition) {
+      return res.status(404).json({ success: false, error: "Material requisition not found" });
+    }
+
+    if (requisition.status === "ISSUED") {
+      return res.status(400).json({ success: false, error: "Cannot cancel a fully issued requisition" });
+    }
+
+    const hasIssuedItems = requisition.items.some((i: any) => i.issuedQty > 0);
+    if (hasIssuedItems) {
+      return res.status(400).json({
+        success: false,
+        error: "Cannot cancel a requisition with partially issued materials. Please reverse issues first.",
+      });
+    }
+
+    const updated = await prisma.materialRequisition.update({
+      where: { id },
+      data: { status: "CANCELLED" },
+    });
+
+    res.json({ success: true, requisition: updated, message: "Requisition cancelled successfully" });
+  } catch (error: any) {
+    res.status(500).json({ success: false, error: error.message || "Failed to cancel material requisition" });
   }
 };

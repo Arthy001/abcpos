@@ -87,6 +87,8 @@
   BillOfMaterial,
   BomItem,
   WorkOrder,
+  MaterialRequisition,
+  MaterialRequisitionItem,
   ProductionScrap,
   SalesOrder,
   SalesOrderItem,
@@ -122,6 +124,51 @@ export async function fetchDashboardStats(): Promise<DashboardStats> {
   if (!res.ok) throw new Error("Failed to fetch dashboard statistics");
   const data = await res.json();
   return data.data;
+}
+
+export interface SystemNotification {
+  id: string;
+  type: "warning" | "danger" | "success" | "info";
+  title: string;
+  message: string;
+  time: string;
+  category: "STOCK" | "EXPIRY" | "MANUFACTURING" | "SALE" | "SYSTEM";
+  link: string;
+  isRead?: boolean;
+  entityType?: string;
+  entityId?: string;
+}
+
+export interface NotificationResponse {
+  total: number;
+  unreadCount: number;
+  notifications: SystemNotification[];
+}
+
+export async function fetchSystemNotificationsApi(userId?: string): Promise<NotificationResponse> {
+  const query = userId ? `?userId=${encodeURIComponent(userId)}` : "";
+  const res = await fetch(`${API_BASE_URL}/notifications${query}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch notifications");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function markNotificationAsReadApi(id: string, userId?: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: userId || "default-user" }),
+  });
+  if (!res.ok) throw new Error("Failed to mark notification as read");
+}
+
+export async function markAllNotificationsAsReadApi(userId?: string): Promise<void> {
+  const res = await fetch(`${API_BASE_URL}/notifications/mark-all-read`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ userId: userId || "default-user" }),
+  });
+  if (!res.ok) throw new Error("Failed to mark all notifications as read");
 }
 
 // ==================== PRODUCTS ====================
@@ -3789,7 +3836,8 @@ export async function createWorkOrderApi(payload: {
   machineNo?: string;
   warehouseId?: string;
   notes?: string;
-}): Promise<WorkOrder> {
+  autoCreateRequisition?: boolean;
+}): Promise<{ workOrder: WorkOrder; requisition?: MaterialRequisition }> {
   const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -3797,7 +3845,7 @@ export async function createWorkOrderApi(payload: {
   });
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to create work order");
-  return data.workOrder;
+  return { workOrder: data.workOrder, requisition: data.requisition };
 }
 
 export async function updateWorkOrderStatusApi(
@@ -3807,6 +3855,8 @@ export async function updateWorkOrderStatusApi(
     producedQty?: number;
     scrapQty?: number;
     actualMaterials?: { id: string; actualQty: number }[];
+    forceStart?: boolean;
+    forceStartReason?: string;
   }
 ): Promise<WorkOrder> {
   const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders/${id}/status`, {
@@ -3815,7 +3865,12 @@ export async function updateWorkOrderStatusApi(
     body: JSON.stringify(payload),
   });
   const data = await res.json();
-  if (!res.ok || !data.success) throw new Error(data.error || "Failed to update work order status");
+  if (!res.ok || !data.success) {
+    const error: any = new Error(data.error || "Failed to update work order status");
+    error.requiresForceStart = data.requiresForceStart;
+    error.unissuedRequisitions = data.unissuedRequisitions;
+    throw error;
+  }
   return data.workOrder;
 }
 
@@ -3823,6 +3878,87 @@ export async function deleteWorkOrderApi(id: string): Promise<void> {
   const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders/${id}`, { method: "DELETE" });
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to delete work order");
+}
+
+
+// --- Material Requisition APIs ---
+export async function getMaterialRequisitionsApi(params?: {
+  workOrderId?: string;
+  status?: string;
+  type?: string;
+  warehouseId?: string;
+  search?: string;
+}): Promise<MaterialRequisition[]> {
+  const query = new URLSearchParams();
+  if (params?.workOrderId) query.append("workOrderId", params.workOrderId);
+  if (params?.status) query.append("status", params.status);
+  if (params?.type) query.append("type", params.type);
+  if (params?.warehouseId) query.append("warehouseId", params.warehouseId);
+  if (params?.search) query.append("search", params.search);
+
+  const res = await fetch(`${API_BASE_URL}/manufacturing/requisitions?${query.toString()}`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch material requisitions");
+  return data.requisitions || [];
+}
+
+export async function getMaterialRequisitionByIdApi(id: string): Promise<MaterialRequisition> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/requisitions/${id}`, { cache: "no-store" });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to fetch material requisition");
+  return data.requisition;
+}
+
+export async function createMaterialRequisitionApi(payload: {
+  workOrderId: string;
+  type?: string;
+  warehouseId?: string;
+  requestedBy?: string;
+  reason?: string;
+  notes?: string;
+  items: {
+    rawMaterialId: string;
+    requestedQty: number;
+    unit?: string;
+    unitCost?: number;
+    notes?: string;
+  }[];
+}): Promise<MaterialRequisition> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/requisitions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to create material requisition");
+  return data.requisition;
+}
+
+export async function issueMaterialRequisitionApi(
+  id: string,
+  payload: {
+    issuedBy?: string;
+    notes?: string;
+    items: { id: string; issueQty: number }[];
+  }
+): Promise<{ requisition: MaterialRequisition; message: string }> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/requisitions/${id}/issue`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to issue material requisition");
+  return { requisition: data.requisition, message: data.message };
+}
+
+export async function cancelMaterialRequisitionApi(id: string): Promise<MaterialRequisition> {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/requisitions/${id}/cancel`, {
+    method: "PATCH",
+  });
+  const data = await res.json();
+  if (!res.ok || !data.success) throw new Error(data.error || "Failed to cancel material requisition");
+  return data.requisition;
 }
 
 // --- Production Scrap APIs ---

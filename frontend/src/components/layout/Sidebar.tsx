@@ -21,6 +21,7 @@ import {
   Barcode,
   QrCode,
   Boxes,
+  ClipboardList,
   ArrowRightLeft,
   FileSpreadsheet,
   FileText,
@@ -127,15 +128,10 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
   }, [fetchModules, fetchRolePermissions]);
 
   const toggleSubMenu = (menuName: string) => {
-    setOpenSubMenus((prev) => {
-      const next = { ...prev, [menuName]: !prev[menuName] };
-      if (typeof window !== "undefined") {
-        try {
-          sessionStorage.setItem("sidebar_open_submenus", JSON.stringify(next));
-        } catch (e) {}
-      }
-      return next;
-    });
+    setOpenSubMenus((prev) => ({
+      ...prev,
+      [menuName]: !prev[menuName],
+    }));
   };
 
   const menuGroups: MenuGroup[] = [
@@ -220,6 +216,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
       title: "Manufacturing",
       items: [
         { name: "Work Orders (สั่งผลิต)", href: "/manufacturing/work-orders", icon: Factory },
+        { name: "Material Requisitions (ใบเบิกวัตถุดิบ)", href: "/manufacturing/requisitions", icon: ClipboardList },
         { name: "MRP Planning (วางแผนวัตถุดิบ)", href: "/manufacturing/mrp-planning", icon: Boxes },
         { name: "Bill of Materials (BOM)", href: "/manufacturing/bom", icon: Layers },
         { name: "Scrap & Recycling (เศษกาก)", href: "/manufacturing/scrap", icon: RotateCcw },
@@ -491,30 +488,30 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
     },
   ];
 
-  // Auto expand submenu for active route & restore saved open submenus
+  // Auto expand submenu ONLY for the active route when pathname changes
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      let savedOpen: { [key: string]: boolean } = {};
-      try {
-        const raw = sessionStorage.getItem("sidebar_open_submenus");
-        if (raw) savedOpen = JSON.parse(raw);
-      } catch (e) {}
+    const activeSubMenus: { [key: string]: boolean } = {};
 
-      // Check if current pathname is inside any submenu
-      menuGroups.forEach((group) => {
-        group.items.forEach((item) => {
-          if (item.hasSub && item.subItems) {
-            const hasActiveChild = item.subItems.some((sub) => pathname === sub.href);
-            if (hasActiveChild) {
-              savedOpen[item.name] = true;
-            }
+    // Check if current pathname is inside any submenu
+    menuGroups.forEach((group) => {
+      group.items.forEach((item) => {
+        if (item.hasSub && item.subItems) {
+          const hasActiveChild = item.subItems.some(
+            (sub) => pathname === sub.href || (sub.href !== "/" && pathname?.startsWith(sub.href))
+          );
+          if (hasActiveChild) {
+            activeSubMenus[item.name] = true;
           }
-        });
+        }
       });
+    });
 
-      setOpenSubMenus(savedOpen);
+    setOpenSubMenus(activeSubMenus);
+
+    // Clean up stale sticky storage from previous sessions
+    if (typeof window !== "undefined") {
       try {
-        sessionStorage.setItem("sidebar_open_submenus", JSON.stringify(savedOpen));
+        sessionStorage.removeItem("sidebar_open_submenus");
       } catch (e) {}
     }
   }, [pathname]);

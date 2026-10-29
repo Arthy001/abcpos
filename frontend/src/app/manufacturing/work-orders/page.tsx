@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import React, { useEffect, useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { WorkOrder, BillOfMaterial, Product, Warehouse } from "@/types";
@@ -36,6 +37,9 @@ import {
   Layers,
   Clock,
   ArrowRight,
+  ClipboardList,
+  AlertOctagon,
+  PackageCheck,
 } from "lucide-react";
 
 export default function WorkOrdersPage() {
@@ -75,6 +79,13 @@ export default function WorkOrdersPage() {
   const [formOperator, setFormOperator] = useState<string>("Admin");
   const [formWarehouseId, setFormWarehouseId] = useState<string>("");
   const [formNotes, setFormNotes] = useState<string>("");
+  const [formAutoCreateReq, setFormAutoCreateReq] = useState<boolean>(true);
+  const [forceStartTarget, setForceStartTarget] = useState<{
+    wo: WorkOrder;
+    unissued: any[];
+    reason: string;
+  } | null>(null);
+  const [isForceStarting, setIsForceStarting] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   // Complete Production Modal
@@ -193,7 +204,8 @@ export default function WorkOrdersPage() {
     setFormUnit("kg");
     setFormMachineNo("Extruder #1");
     setFormOperator("Admin");
-    setFormWarehouseId(warehouses[0]?.id || "");
+    const rawMatWh = warehouses.find(w => w.name.includes("วัตถุดิบ") || w.name.includes("RM")) || warehouses[0];
+    setFormWarehouseId(rawMatWh?.id || "");
     setFormNotes("");
     setShowAddModal(true);
   };
@@ -232,6 +244,7 @@ export default function WorkOrdersPage() {
         operator: formOperator,
         warehouseId: formWarehouseId || undefined,
         notes: formNotes,
+        autoCreateRequisition: formAutoCreateReq,
       });
 
       setShowAddModal(false);
@@ -266,12 +279,54 @@ export default function WorkOrdersPage() {
       });
       loadData();
     } catch (err: any) {
+      if (err.requiresForceStart) {
+        setForceStartTarget({
+          wo,
+          unissued: err.unissuedRequisitions || [],
+          reason: "",
+        });
+      } else {
+        setFeedbackModal({
+          isOpen: true,
+          type: "error",
+          title: "Failed to Start",
+          message: err.message || "เกิดข้อผิดพลาดในการเริ่มคำสั่งผลิต",
+        });
+      }
+    }
+  };
+
+  const handleConfirmForceStart = async () => {
+    if (!forceStartTarget) return;
+    if (!forceStartTarget.reason.trim()) {
+      alert("กรุณาระบุเหตุผลในการบังคับเริ่มผลิตฉุกเฉิน (Force Start Reason)");
+      return;
+    }
+    try {
+      setIsForceStarting(true);
+      await updateWorkOrderStatusApi(forceStartTarget.wo.id, {
+        status: "IN_PROGRESS",
+        forceStart: true,
+        forceStartReason: forceStartTarget.reason.trim(),
+      });
+      const orderNo = forceStartTarget.wo.orderNo;
+      setForceStartTarget(null);
+      setFeedbackModal({
+        isOpen: true,
+        type: "edit_success",
+        title: "Production Force-Started!",
+        message: `บังคับเริ่มเดินเครื่องคำสั่งผลิต "${orderNo}" สำเร็จแล้ว พร้อมบันทึกเหตุผลฉุกเฉินและตัดสต็อกส่วนที่เหลือเรียบร้อย`,
+      });
+      loadData();
+    } catch (err: any) {
       setFeedbackModal({
         isOpen: true,
         type: "error",
-        title: "Failed to Start",
-        message: err.message || "เกิดข้อผิดพลาดในการเริ่มคำสั่งผลิต",
+        title: "Force Start Failed",
+        message: err.message || "ไม่สามารถบังคับเริ่มผลิตได้",
       });
+    } finally {
+      setIsForceStarting(false);
     }
   };
 
@@ -536,8 +591,33 @@ export default function WorkOrdersPage() {
 
                     return (
                       <tr key={wo.id} className="hover:bg-gray-50/70 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-[#FE9F43]">
-                          {wo.orderNo}
+                        <td className="py-3 px-4 font-mono">
+                          <span className="font-bold text-[#FE9F43] block">{wo.orderNo}</span>
+                          {wo.requisitions && wo.requisitions.length > 0 && (
+                            <div className="mt-1 flex flex-wrap gap-1">
+                              {wo.requisitions.map((req: any) => (
+                                <Link
+                                  key={req.id}
+                                  href={
+                                    req.status === "ISSUED"
+                                      ? "/manufacturing/requisitions"
+                                      : `/manufacturing/requisitions/${req.id}/issue`
+                                  }
+                                  className={`inline-flex items-center gap-1 text-[10px] font-bold px-1.5 py-0.5 rounded transition-colors ${
+                                    req.status === "ISSUED"
+                                      ? "bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200"
+                                      : req.status === "PARTIAL"
+                                      ? "bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200"
+                                      : "bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200"
+                                  }`}
+                                  title={`ใบเบิก ${req.requisitionNo}: ${req.status}`}
+                                >
+                                  <ClipboardList className="w-2.5 h-2.5" />
+                                  <span>${req.requisitionNo} (${req.status})</span>
+                                </Link>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center space-x-2">
@@ -648,14 +728,25 @@ export default function WorkOrdersPage() {
                             >
                               <Eye className="w-3.5 h-3.5" />
                             </button>
-                            <button
-                              type="button"
-                              title="Delete Work Order"
-                              onClick={() => setDeletingWO(wo)}
-                              className="p-1.5 rounded-md hover:bg-rose-50 text-gray-600 hover:text-rose-600 transition-colors cursor-pointer"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            {wo.status === "IN_PROGRESS" && (
+                              <Link
+                                href="/manufacturing/requisitions"
+                                title="+ ขอเบิกวัตถุดิบเพิ่ม (Additional Requisition)"
+                                className="p-1.5 rounded-md hover:bg-amber-50 text-gray-600 hover:text-amber-600 transition-colors cursor-pointer"
+                              >
+                                <ClipboardList className="w-3.5 h-3.5 text-amber-500" />
+                              </Link>
+                            )}
+                            {wo.status !== "COMPLETED" && (
+                              <button
+                                type="button"
+                                title="Delete Work Order"
+                                onClick={() => setDeletingWO(wo)}
+                                className="p-1.5 rounded-md hover:bg-rose-50 text-gray-600 hover:text-rose-600 transition-colors cursor-pointer"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -765,6 +856,26 @@ export default function WorkOrdersPage() {
                       size="sm"
                     />
                   </div>
+
+                  {formBomId && (
+                    <div className="sm:col-span-2 p-3 bg-purple-50/70 border border-purple-200 rounded-xl flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id="autoCreateReqCheckbox"
+                          checked={formAutoCreateReq}
+                          onChange={(e) => setFormAutoCreateReq(e.target.checked)}
+                          className="w-4 h-4 text-[#FE9F43] rounded border-gray-300 focus:ring-[#FE9F43] cursor-pointer"
+                        />
+                        <label htmlFor="autoCreateReqCheckbox" className="text-xs font-semibold text-purple-900 cursor-pointer">
+                          สร้างใบเบิกวัตถุดิบอัตโนมัติ (Material Requisition) ตาม BOM
+                        </label>
+                      </div>
+                      <span className="text-[10px] text-purple-600 bg-purple-100 px-2 py-0.5 rounded-full font-bold">
+                        แนะนำ
+                      </span>
+                    </div>
+                  )}
 
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-gray-700 mb-1">

@@ -1,4 +1,4 @@
-﻿import { Router } from "express";
+import { Router } from "express";
 import {
   getSystemIncidents,
   getSystemIncidentByCode,
@@ -68,6 +68,11 @@ import {
   createProductionScrap,
   recycleProductionScrap,
   deleteProductionScrap,
+  getMaterialRequisitions,
+  getMaterialRequisitionById,
+  createMaterialRequisition,
+  issueMaterialRequisition,
+  cancelMaterialRequisition,
 } from "../controllers/manufacturing.controller.js";
 import {
   getSalesOrders,
@@ -354,6 +359,11 @@ import {
 } from "../controllers/pos-shift.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
 import {
+  getSystemNotifications,
+  markNotificationAsRead,
+  markAllNotificationsAsRead,
+} from "../controllers/notification.controller.js";
+import {
   getPurchases,
   getPurchaseById,
   createPurchase,
@@ -394,6 +404,10 @@ router.get("/health", (req, res) => {
 
 // Dashboard
 router.get("/dashboard/stats", getDashboardStats);
+// Notifications (Real Database & Per-User Read Tracking)
+router.get("/notifications", getSystemNotifications);
+router.patch("/notifications/:id/read", markNotificationAsRead);
+router.post("/notifications/mark-all-read", markAllNotificationsAsRead);
 
 // Customers
 router.get("/customers", getCustomers);
@@ -817,6 +831,13 @@ router.get("/manufacturing/scraps", getProductionScraps);
 router.post("/manufacturing/scraps", createProductionScrap);
 router.post("/manufacturing/scraps/:id/recycle", recycleProductionScrap);
 router.delete("/manufacturing/scraps/:id", deleteProductionScrap);
+
+// Material Requisitions (ใบเบิกวัตถุดิบเพื่อการผลิต)
+router.get("/manufacturing/requisitions", getMaterialRequisitions);
+router.get("/manufacturing/requisitions/:id", getMaterialRequisitionById);
+router.post("/manufacturing/requisitions", createMaterialRequisition);
+router.post("/manufacturing/requisitions/:id/issue", issueMaterialRequisition);
+router.patch("/manufacturing/requisitions/:id/cancel", cancelMaterialRequisition);
 
 // ==========================================
 // 🚚 B2B WHOLESALE & CREDIT MANAGEMENT

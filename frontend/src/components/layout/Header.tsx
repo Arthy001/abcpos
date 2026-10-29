@@ -11,6 +11,10 @@ import {
   Maximize,
   Mail,
   Bell,
+  AlertCircle,
+  AlertTriangle,
+  Clock,
+  CheckCircle2,
   Settings,
   ChevronsLeft,
   ChevronsRight,
@@ -32,6 +36,7 @@ import {
 
 import { useThemeStore } from "@/store/useThemeStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { fetchSystemNotificationsApi, markNotificationAsReadApi, markAllNotificationsAsReadApi, SystemNotification } from "@/lib/api";
 
 interface HeaderProps {
   sidebarOpen: boolean;
@@ -47,12 +52,63 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
   const [mounted, setMounted] = useState<boolean>(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState<boolean>(false);
   const [quickAddOpen, setQuickAddOpen] = useState<boolean>(false);
+  const [notificationDropdownOpen, setNotificationDropdownOpen] = useState<boolean>(false);
+  const [notifications, setNotifications] = useState<SystemNotification[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
+  const [loadingNotifications, setLoadingNotifications] = useState<boolean>(false);
   const userDropdownRef = useRef<HTMLDivElement>(null);
   const quickAddRef = useRef<HTMLDivElement>(null);
+  const notificationDropdownRef = useRef<HTMLDivElement>(null);
+
+  const loadNotifications = async () => {
+    const userId = user?.id || "default-user";
+    try {
+      setLoadingNotifications(true);
+      const res = await fetchSystemNotificationsApi(userId);
+      setNotifications(res.notifications || []);
+      setUnreadCount(res.unreadCount || 0);
+    } catch (err) {
+      console.error("Notification load error:", err);
+    } finally {
+      setLoadingNotifications(false);
+    }
+  };
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    loadNotifications();
+  }, [user?.id]);
+
+  const handleToggleNotificationDropdown = () => {
+    const nextState = !notificationDropdownOpen;
+    setNotificationDropdownOpen(nextState);
+    if (nextState) {
+      loadNotifications();
+    }
+  };
+
+  const handleNotificationClick = (n: SystemNotification) => {
+    setNotificationDropdownOpen(false);
+    if (!n.isRead) {
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item))
+      );
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      markNotificationAsReadApi(n.id, user?.id || "default-user").catch((err) => {
+        console.error("Failed to mark notification as read:", err);
+      });
+    }
+  };
+
+  const handleMarkAllAsRead = async () => {
+    setNotifications((prev) => prev.map((item) => ({ ...item, isRead: true })));
+    setUnreadCount(0);
+    try {
+      await markAllNotificationsAsReadApi(user?.id || "default-user");
+    } catch (err) {
+      console.error("Failed to mark all notifications as read:", err);
+    }
+  };
 
   // Close dropdowns on outside click
   useEffect(() => {
@@ -62,6 +118,9 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
       }
       if (quickAddRef.current && !quickAddRef.current.contains(event.target as Node)) {
         setQuickAddOpen(false);
+      }
+      if (notificationDropdownRef.current && !notificationDropdownRef.current.contains(event.target as Node)) {
+        setNotificationDropdownOpen(false);
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
@@ -238,24 +297,141 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
           <Maximize className="w-4 h-4" />
         </button>
 
-        {/* Email/Messages with red badge */}
-        <button
-          className="relative w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors"
-          title="Messages"
-        >
-          <Mail className="w-4 h-4" />
-          <span className="absolute top-1 right-1 w-3.5 h-3.5 bg-red-500 text-white rounded-full text-[9px] font-bold flex items-center justify-center">
-            1
-          </span>
-        </button>
+        {/* Email/Messages icon (hidden temporarily per user request) */}
 
-        {/* Notifications */}
-        <button
-          className="w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors"
-          title="Notifications"
-        >
-          <Bell className="w-4 h-4" />
-        </button>
+        {/* Notifications Real Dropdown Center */}
+        <div ref={notificationDropdownRef} className="relative">
+          <button
+            onClick={handleToggleNotificationDropdown}
+            className="relative w-8 h-8 rounded-lg hover:bg-gray-100 text-gray-500 flex items-center justify-center transition-colors cursor-pointer"
+            title="Notifications"
+          >
+            <Bell className="w-4 h-4" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-rose-500 text-white rounded-full text-[10px] font-bold flex items-center justify-center shadow-xs animate-pulse">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
+          </button>
+
+          {notificationDropdownOpen && (
+            <div className="absolute right-0 sm:-right-12 mt-2 w-[340px] sm:w-[380px] bg-white rounded-2xl shadow-2xl border border-gray-100 py-3 z-50 animate-in fade-in zoom-in-95 duration-100 text-xs">
+              {/* Header */}
+              <div className="flex items-center justify-between px-4 pb-2.5 border-b border-gray-100">
+                <div className="flex items-center space-x-2">
+                  <h4 className="font-bold text-gray-900 text-sm">การแจ้งเตือนระบบ</h4>
+                  {unreadCount > 0 && (
+                    <span className="px-2 py-0.5 bg-rose-50 text-rose-600 rounded-full text-[10px] font-bold">
+                      {unreadCount} รายการใหม่
+                    </span>
+                  )}
+                </div>
+                {unreadCount > 0 && (
+                  <button
+                    onClick={handleMarkAllAsRead}
+                    className="text-[11px] text-[#FE9F43] hover:underline font-semibold cursor-pointer"
+                  >
+                    อ่านทั้งหมด
+                  </button>
+                )}
+              </div>
+
+              {/* Notification List */}
+              <div className="max-h-[380px] overflow-y-auto divide-y divide-gray-50 py-1">
+                {loadingNotifications ? (
+                  <div className="py-8 text-center text-gray-400 flex flex-col items-center space-y-2">
+                    <RotateCcw className="w-5 h-5 animate-spin text-[#FE9F43]" />
+                    <span className="text-xs">กำลังโหลดการแจ้งเตือน...</span>
+                  </div>
+                ) : notifications.length === 0 ? (
+                  <div className="py-8 text-center text-gray-400 flex flex-col items-center space-y-2">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-400" />
+                    <span className="text-xs font-medium">ไม่มีการแจ้งเตือนใหม่ในขณะนี้</span>
+                  </div>
+                ) : (
+                  notifications.map((n) => (
+                    <Link
+                      key={n.id}
+                      href={n.link || "/dashboard"}
+                      onClick={() => handleNotificationClick(n)}
+                      className={`flex items-start space-x-3 px-4 py-3 transition-colors group cursor-pointer block ${
+                        !n.isRead
+                          ? "bg-orange-50/20 hover:bg-orange-50/40"
+                          : "hover:bg-gray-50/80 opacity-80 hover:opacity-100"
+                      }`}
+                    >
+                      <div className="mt-0.5 shrink-0 relative">
+                        {n.type === "danger" && (
+                          <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                            <AlertTriangle className="w-4 h-4" />
+                          </div>
+                        )}
+                        {n.type === "warning" && (
+                          <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <AlertCircle className="w-4 h-4" />
+                          </div>
+                        )}
+                        {n.type === "success" && (
+                          <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                            <CheckCircle2 className="w-4 h-4" />
+                          </div>
+                        )}
+                        {n.type === "info" && (
+                          <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+                            <Clock className="w-4 h-4" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center space-x-1.5 min-w-0">
+                            <p
+                              className={`truncate text-xs ${
+                                !n.isRead
+                                  ? "font-bold text-gray-900 group-hover:text-[#FE9F43]"
+                                  : "font-medium text-gray-700"
+                              }`}
+                            >
+                              {n.title}
+                            </p>
+                            {!n.isRead && (
+                              <span
+                                className="w-2 h-2 rounded-full bg-[#FE9F43] shrink-0"
+                                title="ยังไม่ได้อ่าน"
+                              />
+                            )}
+                          </div>
+                          <span className="text-[10px] text-gray-400 shrink-0 ml-1">{n.time}</span>
+                        </div>
+                        <p className="text-gray-500 text-[11px] mt-0.5 line-clamp-2 leading-relaxed">
+                          {n.message}
+                        </p>
+                      </div>
+                    </Link>
+                  ))
+                )}
+              </div>
+
+              {/* Footer Links */}
+              <div className="pt-2.5 px-4 border-t border-gray-100 flex items-center justify-between text-[11px]">
+                <Link
+                  href="/reports/products/quantity-alert"
+                  onClick={() => setNotificationDropdownOpen(false)}
+                  className="font-semibold text-gray-600 hover:text-[#FE9F43] transition-colors"
+                >
+                  รายงานสต็อกต่ำ
+                </Link>
+                <Link
+                  href="/reports/products/expiry"
+                  onClick={() => setNotificationDropdownOpen(false)}
+                  className="font-semibold text-gray-600 hover:text-[#FE9F43] transition-colors"
+                >
+                  รายงานวันหมดอายุ
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Settings */}
         <Link

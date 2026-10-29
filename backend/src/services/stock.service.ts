@@ -116,7 +116,7 @@ export async function recordStockMovement(params: AdjustStockParams) {
   }
 
   // 3. Upsert ProductStock in this warehouse
-  const existingStock = await prisma.productStock.findUnique({
+  let existingStock = await prisma.productStock.findUnique({
     where: {
       productId_warehouseId: {
         productId: product.id,
@@ -125,7 +125,40 @@ export async function recordStockMovement(params: AdjustStockParams) {
     },
   });
 
-  const currentWhQty = existingStock ? existingStock.quantity : 0;
+  // If deducting stock and this warehouse has zero or insufficient stock,
+  // find the warehouse that actually holds positive stock for this product!
+  if (quantityDelta < 0 && (!existingStock || existingStock.quantity <= 0)) {
+    const stockWithQty = await prisma.productStock.findFirst({
+      where: {
+        productId: product.id,
+        quantity: { gt: 0 },
+      },
+      orderBy: { quantity: "desc" },
+    });
+
+    if (stockWithQty) {
+      const actualWh = await prisma.warehouse.findUnique({ where: { id: stockWithQty.warehouseId } });
+      if (actualWh) {
+        warehouse = actualWh;
+        existingStock = stockWithQty;
+      }
+    } else if (product.warehouseId && product.warehouseId !== warehouse.id) {
+      const defaultWh = await prisma.warehouse.findUnique({ where: { id: product.warehouseId } });
+      if (defaultWh) {
+        warehouse = defaultWh;
+        existingStock = await prisma.productStock.findUnique({
+          where: {
+            productId_warehouseId: {
+              productId: product.id,
+              warehouseId: warehouse.id,
+            },
+          },
+        });
+      }
+    }
+  }
+
+  const currentWhQty = existingStock ? existingStock.quantity : Math.max(0, product.stock);
   const newWhQty = Math.max(0, currentWhQty + quantityDelta);
 
   await prisma.productStock.upsert({

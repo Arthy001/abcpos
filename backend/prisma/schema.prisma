@@ -90,6 +90,7 @@ model Warehouse {
   stockMovements StockMovement[]
   userWarehouses UserWarehouse[]
   workOrders    WorkOrder[]
+  materialRequisitions MaterialRequisition[]
   createdAt     DateTime        @default(now())
   updatedAt     DateTime        @updatedAt
 }
@@ -625,6 +626,7 @@ model Product {
   workOrderMaterials WorkOrderMaterial[] @relation("RawMaterialWO")
   productionScraps ProductionScrap[]   @relation("ScrapRecycledProduct")
   salesOrderItems  SalesOrderItem[]
+  requisitionMaterials MaterialRequisitionItem[] @relation("RequisitionRawMaterial")
   createdAt        DateTime        @default(now())
   updatedAt        DateTime        @updatedAt
 }
@@ -1634,6 +1636,8 @@ model WorkOrder {
   notes             String?
   materials         WorkOrderMaterial[]
   scraps            ProductionScrap[]
+  forceStartReason  String?
+  requisitions      MaterialRequisition[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 }
@@ -1651,6 +1655,49 @@ model WorkOrderMaterial {
   isDeducted    Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+}
+
+
+model MaterialRequisition {
+  id            String                    @id @default(uuid())
+  requisitionNo String                    @unique // e.g. MR-2026-0001
+  workOrderId   String
+  workOrder     WorkOrder                 @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  type          String                    @default("INITIAL") // INITIAL (ตาม BOM), ADDITIONAL (เบิกเพิ่ม)
+  status        String                    @default("PENDING") // PENDING, PARTIAL, ISSUED, CANCELLED
+  warehouseId   String?
+  warehouse     Warehouse?                @relation(fields: [warehouseId], references: [id], onDelete: SetNull)
+  requestedBy   String?                   @default("Admin")
+  issuedBy      String?
+  issuedAt      DateTime?
+  reason        String?
+  notes         String?
+  items         MaterialRequisitionItem[]
+  createdAt     DateTime                  @default(now())
+  updatedAt     DateTime                  @updatedAt
+
+  @@index([workOrderId])
+  @@index([status])
+  @@index([warehouseId])
+}
+
+model MaterialRequisitionItem {
+  id            String              @id @default(uuid())
+  requisitionId String
+  requisition   MaterialRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+  rawMaterialId String
+  rawMaterial   Product             @relation("RequisitionRawMaterial", fields: [rawMaterialId], references: [id], onDelete: Cascade)
+  requestedQty  Float               @default(0.0)
+  issuedQty     Float               @default(0.0)
+  unit          String              @default("kg")
+  unitCost      Float               @default(0.0)
+  isIssued      Boolean             @default(false)
+  notes         String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  @@index([requisitionId])
+  @@index([rawMaterialId])
 }
 
 model ProductionScrap {
@@ -1848,4 +1895,37 @@ model SystemIncidentLog {
   resolved     Boolean  @default(false)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+
+// ==========================================
+// 🔔 REAL-TIME SYSTEM NOTIFICATIONS (PER-USER READ TRACKING)
+// ==========================================
+
+model AppNotification {
+  id          String                 @id @default(uuid())
+  type        String                 @default("INFO") // WARNING, DANGER, SUCCESS, INFO
+  category    String                 // STOCK, EXPIRY, MANUFACTURING, SALE, SYSTEM
+  title       String
+  message     String
+  link        String?                // Direct link e.g. /products/edit/xyz
+  entityType  String?                // PRODUCT, WORK_ORDER, SALE, BATCH
+  entityId    String?                // Specific ID of the entity
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+  readLogs    UserNotificationRead[]
+
+  @@index([category])
+  @@index([createdAt])
+}
+
+model UserNotificationRead {
+  id             String          @id @default(uuid())
+  notificationId String
+  notification   AppNotification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+  userId         String
+  readAt         DateTime        @default(now())
+
+  @@unique([notificationId, userId])
+  @@index([userId])
 }
