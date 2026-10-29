@@ -547,15 +547,18 @@ export const createWorkOrder = async (req: Request, res: Response) => {
 
       if (bom) {
         const ratio = tQty / (bom.outputQty || 1);
-        materialsCreate = bom.items.map((item) => ({
-          rawMaterialId: item.rawMaterialId,
-          plannedQty: item.quantity * ratio,
-          actualQty: item.quantity * ratio, // Initial guess
-          unit: item.unit,
-          unitCost: item.unitCost,
-          isDeducted: false,
-        }));
-        estimatedTotalCost = bom.totalCost * ratio;
+        materialsCreate = bom.items.map((item) => {
+          const planned = Math.round(item.quantity * ratio * 10000) / 10000;
+          return {
+            rawMaterialId: item.rawMaterialId,
+            plannedQty: planned,
+            actualQty: planned,
+            unit: item.unit,
+            unitCost: item.unitCost,
+            isDeducted: false,
+          };
+        });
+        estimatedTotalCost = Math.round(bom.totalCost * ratio * 100) / 100;
       }
     }
 
@@ -1009,7 +1012,7 @@ export const createMaterialRequisition = async (req: Request, res: Response) => 
         items: {
           create: items.map((item: any) => ({
             rawMaterialId: item.rawMaterialId,
-            requestedQty: Number(item.requestedQty) || 0,
+            requestedQty: Math.round((Number(item.requestedQty) || 0) * 10000) / 10000,
             issuedQty: 0,
             unit: item.unit || "kg",
             unitCost: Number(item.unitCost) || 0,
@@ -1072,7 +1075,7 @@ export const issueMaterialRequisition = async (req: Request, res: Response) => {
       const reqItem = requisition.items.find((i: any) => i.id === itemId);
       if (!reqItem) continue;
 
-      const newIssuedQty = reqItem.issuedQty + qty;
+      const newIssuedQty = Math.round((reqItem.issuedQty + qty) * 10000) / 10000;
       const isNowComplete = newIssuedQty >= reqItem.requestedQty;
 
       // 1. Update MaterialRequisitionItem
@@ -1106,7 +1109,7 @@ export const issueMaterialRequisition = async (req: Request, res: Response) => {
         await prisma.workOrderMaterial.update({
           where: { id: woMat.id },
           data: {
-            actualQty: woMat.actualQty + qty,
+            actualQty: Math.round((woMat.actualQty + qty) * 10000) / 10000,
             isDeducted: true,
           },
         });

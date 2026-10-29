@@ -729,10 +729,10 @@ export default function MaterialRequisitionsPage() {
                               </span>
                             </td>
                             <td className="py-2.5 px-3 text-right font-semibold text-gray-900">
-                              {item.requestedQty}
+                              {Number(Number(item.requestedQty).toFixed(4))}
                             </td>
                             <td className="py-2.5 px-3 text-right font-bold text-emerald-600">
-                              {item.issuedQty}
+                              {Number(Number(item.issuedQty).toFixed(4))}
                             </td>
                             <td className="py-2.5 px-3 text-center">{item.unit}</td>
                             <td className="py-2.5 px-3 text-center">

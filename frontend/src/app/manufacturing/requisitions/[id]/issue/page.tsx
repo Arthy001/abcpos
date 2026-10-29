@@ -568,7 +568,7 @@ export default function MaterialIssuePage() {
                             onClick={() => handleFillItemRemaining(item.id)}
                             className="px-2.5 py-1 text-xs font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors cursor-pointer shrink-0"
                           >
-                            เบิกเต็ม {remaining} {item.unit}
+                            เบิกเต็ม {Number(remaining.toFixed(4))} {item.unit}
                           </button>
                         )}
                       </div>
@@ -577,11 +577,11 @@ export default function MaterialIssuePage() {
                       <div className="mt-3 space-y-1.5">
                         <div className="flex items-center justify-between text-xs">
                           <span className="text-gray-500 font-medium">
-                            ขอเบิก: <strong className="text-gray-900">{item.requestedQty}</strong> {item.unit}
+                            ขอเบิก: <strong className="text-gray-900">{Number(Number(item.requestedQty).toFixed(4))}</strong> {item.unit}
                           </span>
                           <span className="text-gray-500 font-medium">
-                            จ่ายแล้ว: <strong className="text-emerald-600">{item.issuedQty}</strong> / เหลือ:{" "}
-                            <strong className="text-amber-600">{remaining}</strong> {item.unit}
+                            จ่ายแล้ว: <strong className="text-emerald-600">{Number(Number(item.issuedQty).toFixed(4))}</strong> / เหลือ:{" "}
+                            <strong className="text-amber-600">{Number(remaining.toFixed(4))}</strong> {item.unit}
                           </span>
                         </div>
                         <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -649,7 +649,7 @@ export default function MaterialIssuePage() {
                           <div>
                             <p className="font-bold text-gray-900 text-xs">{item.name}</p>
                             <p className="text-[10px] text-gray-400">
-                              เหลือต้องเบิก: {item.remainingQty} {item.unit} | ในคลัง: {item.availableStock}
+                              เหลือต้องเบิก: {Number(item.remainingQty.toFixed(4))} {item.unit} | ในคลัง: {Number(item.availableStock.toFixed(4))}
                             </p>
                           </div>
                           <button
@@ -690,7 +690,7 @@ export default function MaterialIssuePage() {
                           </div>
 
                           <span className="text-xs font-bold text-emerald-600">
-                            เบิก {item.qtyToIssue} {item.unit}
+                            เบิก {Number(item.qtyToIssue.toFixed(4))} {item.unit}
                           </span>
                         </div>
 

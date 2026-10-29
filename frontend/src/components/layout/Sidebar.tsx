@@ -604,7 +604,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
                 const Icon = item.icon;
                 const isItemActive =
                   pathname === item.href ||
-                  (item.subItems && item.subItems.some((sub) => pathname === sub.href)) ||
+                  (item.href !== "/" && pathname?.startsWith(item.href + "/")) ||
+                  (item.subItems &&
+                    item.subItems.some(
+                      (sub) => pathname === sub.href || (sub.href !== "/" && pathname?.startsWith(sub.href + "/"))
+                    )) ||
                   (item.href === "/products" && pathname?.startsWith("/products/edit"));
                 const isSubMenuOpen = !!openSubMenus[item.name];
 
@@ -641,7 +645,9 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
                       {isSubMenuOpen && (
                         <div className="pl-6 pr-1 space-y-1 pt-1">
                           {item.subItems.map((sub) => {
-                            const isSubActive = pathname === sub.href;
+                            const isSubActive =
+                              pathname === sub.href ||
+                              (sub.href !== "/" && pathname?.startsWith(sub.href + "/"));
                             return (
                               <Link
                                 key={sub.href}
