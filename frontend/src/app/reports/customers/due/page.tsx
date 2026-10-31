@@ -69,7 +69,7 @@ export default function CustomerDueReportPage() {
   const handleExportCSV = () => {
     const headers = ["Reference,Code,Customer,Total Amount,Paid,Due,Status"];
     const rows = displayList.map(
-      (item) => `"${item.reference}","${item.customerCode}","${item.customerName}","$${item.totalAmount}","$${item.paid}","$${item.due}","${item.status}"`
+      (item) => `"${item.reference}","${item.customerCode}","${item.customerName}","$฿{item.totalAmount}","$฿{item.paid}","$฿{item.due}","${item.status}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -294,13 +294,13 @@ export default function CustomerDueReportPage() {
                       </td>
 
                       {/* Total Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">${item.totalAmount}</td>
+                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">฿{item.totalAmount}</td>
 
                       {/* Paid */}
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.paid}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.paid}</td>
 
                       {/* Due */}
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.due.toFixed(1)}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.due.toFixed(1)}</td>
 
                       {/* Status */}
                       <td className="py-3.5 px-4">

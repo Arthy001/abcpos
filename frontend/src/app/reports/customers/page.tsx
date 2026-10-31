@@ -65,7 +65,7 @@ export default function CustomerReportPage() {
   const handleExportCSV = () => {
     const headers = ["Reference,Code,Customer,Total Orders,Amount,Payment Method,Status"];
     const rows = displayList.map(
-      (item) => `"${item.reference}","${item.customerCode}","${item.customerName}","${item.totalOrders}","$${item.amount}","${item.paymentMethod}","${item.status}"`
+      (item) => `"${item.reference}","${item.customerCode}","${item.customerName}","฿{item.totalOrders}","$฿{item.amount}","${item.paymentMethod}","${item.status}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -292,7 +292,7 @@ export default function CustomerReportPage() {
                       <td className="py-3.5 px-4 text-[#64748B]">{item.totalOrders}</td>
 
                       {/* Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">${item.amount}</td>
+                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">฿{item.amount}</td>
 
                       {/* Payment Method */}
                       <td className="py-3.5 px-4 text-[#64748B]">{item.paymentMethod}</td>

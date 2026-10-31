@@ -1519,7 +1519,7 @@ export default function POSPage() {
                       {/* Price & Quantity Controls */}
                       <div className="mt-2.5 flex items-center justify-between pt-2 border-t border-gray-100">
                         <span className="text-xs font-extrabold text-[#FE9F43]">
-                          ${p.price.toLocaleString()}
+                          ฿{p.price.toLocaleString()}
                         </span>
 
                         {!isOutOfStock && inCart && (
@@ -1755,7 +1755,7 @@ export default function POSPage() {
                         Points: <span className="font-bold text-cyan-600">140 pts</span>
                       </span>
                       <span className="text-[10px] text-gray-500">
-                        Loyalty: <span className="font-bold text-emerald-600">$20 Off</span>
+                        Loyalty: <span className="font-bold text-emerald-600">฿20 Off</span>
                       </span>
                     </div>
                   </div>
@@ -2695,7 +2695,7 @@ export default function POSPage() {
                         Customer: <span className="font-semibold">{held.customer?.name || "Walk-in"}</span>
                       </p>
                       <p className="text-[10px] text-gray-500">
-                        {held.items.length} items &bull; Total: ${held.subtotal.toFixed(2)}
+                        {held.items.length} items &bull; Total: ฿{held.subtotal.toFixed(2)}
                       </p>
                     </div>
 
@@ -3083,7 +3083,7 @@ export default function POSPage() {
           <div className="bg-white rounded-2xl w-full max-w-xs shadow-2xl p-4 space-y-3 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between border-b border-gray-100 pb-2">
               <h3 className="text-xs font-bold text-gray-900 uppercase">
-                Edit {editingModifier} {editingModifier === "tax" ? "(%)" : "($)"}
+                Edit {editingModifier} {editingModifier === "tax" ? "(%)" : "(฿)"}
               </h3>
               <button onClick={() => setEditingModifier(null)} className="text-gray-400 hover:text-gray-600">
                 <X className="w-3.5 h-3.5" />

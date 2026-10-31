@@ -8,6 +8,7 @@ import { Sidebar } from "./Sidebar";
 import { ThemeCustomizer } from "./ThemeCustomizer";
 import { useThemeStore } from "@/store/useThemeStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { Settings, ShieldAlert, ArrowLeft } from "lucide-react";
 
 interface AppLayoutProps {
@@ -78,6 +79,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   useEffect(() => {
     setMounted(true);
     fetchRolePermissions();
+    useCurrencyStore.getState().fetchCurrencySettings();
 
     // Check window size on initial load and resize
     const checkScreenSize = () => {

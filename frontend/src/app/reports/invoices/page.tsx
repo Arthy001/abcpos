@@ -89,7 +89,7 @@ export default function InvoiceReportPage() {
   const handleExportCSV = () => {
     const headers = ["Invoice No,Customer,Due Date,Amount,Paid,Amount Due,Status"];
     const rows = displayList.map(
-      (item) => `"${item.invoiceNo}","${item.customer}","${item.dueDate}","$${item.amount}","$${item.paid}","$${item.amountDue}","${item.status}"`
+      (item) => `"${item.invoiceNo}","${item.customer}","฿{item.dueDate}","$฿{item.amount}","$฿{item.paid}","$฿{item.amountDue}","${item.status}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -340,13 +340,13 @@ export default function InvoiceReportPage() {
                       <td className="py-3.5 px-4 text-[#64748B]">{item.dueDate}</td>
 
                       {/* Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">${item.amount}</td>
+                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">฿{item.amount}</td>
 
                       {/* Paid */}
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.paid}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.paid}</td>
 
                       {/* Amount Due */}
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.amountDue}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.amountDue}</td>
 
                       {/* Status */}
                       <td className="py-3.5 px-4">

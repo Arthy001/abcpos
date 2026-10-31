@@ -608,11 +608,11 @@ export default function PurchaseReturnsPage() {
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">${item.totalAmount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">฿{item.totalAmount.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-emerald-600">${item.paidAmount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-emerald-600">฿{item.paidAmount.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-rose-600">${item.dueAmount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-rose-600">฿{item.dueAmount.toFixed(2)}</td>
 
                         {/* Payment Status Badge */}
                         <td className="py-3.5 px-4">
@@ -844,7 +844,7 @@ export default function PurchaseReturnsPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Refund Amount ($)</label>
+                    <label className="text-xs font-bold text-gray-700">Refund Amount (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -857,7 +857,7 @@ export default function PurchaseReturnsPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Paid / Refunded ($)</label>
+                    <label className="text-xs font-bold text-gray-700">Paid / Refunded (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -980,7 +980,7 @@ export default function PurchaseReturnsPage() {
 
                   <div className="space-y-1">
                     <span className="text-gray-400 font-medium">Refund Amount</span>
-                    <p className="font-bold text-[#FE9F43] text-sm">${viewReturn.totalAmount.toFixed(2)}</p>
+                    <p className="font-bold text-[#FE9F43] text-sm">฿{viewReturn.totalAmount.toFixed(2)}</p>
                   </div>
 
                   <div className="space-y-1">

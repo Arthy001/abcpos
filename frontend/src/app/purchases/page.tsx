@@ -470,7 +470,7 @@ export default function PurchasesPage() {
           isOpen: true,
           type: "add_success",
           title: "Purchase Created!",
-          message: `Purchase order "${formReference}" for ${formSupplierName} ($${calculatedTotal.toFixed(2)}) has been recorded${
+          message: `Purchase order "${formReference}" for ${formSupplierName} (฿${calculatedTotal.toFixed(2)}) has been recorded${
             formStatus === "RECEIVED" ? " and stock has been ingested into inventory" : ""
           }.`,
           itemName: formReference,
@@ -531,9 +531,9 @@ export default function PurchasesPage() {
       `"${p.warehouseName || "N/A"}"`,
       new Date(p.date).toLocaleDateString(),
       p.status,
-      `$${p.total.toFixed(2)}`,
-      `$${p.paid.toFixed(2)}`,
-      `$${p.due.toFixed(2)}`,
+      `฿฿{p.total.toFixed(2)}`,
+      `฿฿{p.paid.toFixed(2)}`,
+      `฿฿{p.due.toFixed(2)}`,
       p.paymentStatus,
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -801,11 +801,11 @@ export default function PurchasesPage() {
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">${item.total.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">฿{item.total.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-emerald-600">${item.paid.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-emerald-600">฿{item.paid.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-rose-600">${item.due.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-rose-600">฿{item.due.toFixed(2)}</td>
 
                         {/* Payment Status Badge */}
                         <td className="py-3.5 px-4">
@@ -1077,7 +1077,7 @@ export default function PurchasesPage() {
                         <tr>
                           <th className="py-2.5 px-3">Product Name</th>
                           <th className="py-2.5 px-3 w-24 text-center">Quantity</th>
-                          <th className="py-2.5 px-3 w-28 text-right">Unit Cost ($)</th>
+                          <th className="py-2.5 px-3 w-28 text-right">Unit Cost (฿)</th>
                           <th className="py-2.5 px-3 w-28 text-right">Subtotal</th>
                           <th className="py-2.5 px-2 w-10 text-center"></th>
                         </tr>
@@ -1127,7 +1127,7 @@ export default function PurchasesPage() {
                               />
                             </td>
                             <td className="py-2 px-3 text-right font-bold text-gray-900">
-                              ${(item.unitCost * item.quantity).toFixed(2)}
+                              ฿{(item.unitCost * item.quantity).toFixed(2)}
                             </td>
                             <td className="py-2 px-2 text-center">
                               <button
@@ -1162,7 +1162,7 @@ export default function PurchasesPage() {
                   <div className="space-y-1.5 text-xs text-gray-600">
                     <div className="flex justify-between">
                       <span>Subtotal:</span>
-                      <span className="font-bold text-gray-800">${calculatedSubtotal.toFixed(2)}</span>
+                      <span className="font-bold text-gray-800">฿{calculatedSubtotal.toFixed(2)}</span>
                     </div>
 
                     <div className="flex items-center justify-between">
@@ -1178,7 +1178,7 @@ export default function PurchasesPage() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span>Discount ($):</span>
+                      <span>Discount (฿):</span>
                       <input
                         type="number"
                         min={0}
@@ -1189,7 +1189,7 @@ export default function PurchasesPage() {
                     </div>
 
                     <div className="flex items-center justify-between">
-                      <span>Shipping ($):</span>
+                      <span>Shipping (฿):</span>
                       <input
                         type="number"
                         min={0}
@@ -1201,11 +1201,11 @@ export default function PurchasesPage() {
 
                     <div className="flex justify-between border-t border-gray-200 pt-1.5 text-sm font-bold text-gray-900">
                       <span>Grand Total:</span>
-                      <span className="text-[#FE9F43]">${calculatedTotal.toFixed(2)}</span>
+                      <span className="text-[#FE9F43]">฿{calculatedTotal.toFixed(2)}</span>
                     </div>
 
                     <div className="flex items-center justify-between pt-1">
-                      <span className="font-semibold text-emerald-700">Paid Amount ($):</span>
+                      <span className="font-semibold text-emerald-700">Paid Amount (฿):</span>
                       <input
                         type="number"
                         min={0}
@@ -1218,7 +1218,7 @@ export default function PurchasesPage() {
 
                     <div className="flex justify-between text-xs font-semibold text-rose-600">
                       <span>Due Amount:</span>
-                      <span>${calculatedDue.toFixed(2)}</span>
+                      <span>฿{calculatedDue.toFixed(2)}</span>
                     </div>
                   </div>
                 </div>
@@ -1332,9 +1332,9 @@ export default function PurchasesPage() {
                               </span>
                             </td>
                             <td className="py-2.5 px-3 text-center font-bold text-gray-700">{item.quantity}</td>
-                            <td className="py-2.5 px-3 text-right text-gray-600">${item.unitCost.toFixed(2)}</td>
+                            <td className="py-2.5 px-3 text-right text-gray-600">฿{item.unitCost.toFixed(2)}</td>
                             <td className="py-2.5 px-3 text-right font-bold text-gray-900">
-                              ${(item.unitCost * item.quantity).toFixed(2)}
+                              ฿{(item.unitCost * item.quantity).toFixed(2)}
                             </td>
                           </tr>
                         ))
@@ -1353,12 +1353,12 @@ export default function PurchasesPage() {
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1.5">
                   <div className="flex justify-between">
                     <span className="text-gray-500">Subtotal:</span>
-                    <span className="font-semibold text-gray-800">${viewPurchase.subtotal.toFixed(2)}</span>
+                    <span className="font-semibold text-gray-800">฿{viewPurchase.subtotal.toFixed(2)}</span>
                   </div>
                   {viewPurchase.discount > 0 && (
                     <div className="flex justify-between text-emerald-600">
                       <span>Discount:</span>
-                      <span>-${viewPurchase.discount.toFixed(2)}</span>
+                      <span>-฿{viewPurchase.discount.toFixed(2)}</span>
                     </div>
                   )}
                   {viewPurchase.tax > 0 && (
@@ -1369,15 +1369,15 @@ export default function PurchasesPage() {
                   )}
                   <div className="flex justify-between border-t border-gray-200 pt-1.5 font-bold text-sm text-gray-900">
                     <span>Grand Total:</span>
-                    <span className="text-[#FE9F43]">${viewPurchase.total.toFixed(2)}</span>
+                    <span className="text-[#FE9F43]">฿{viewPurchase.total.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-emerald-600">
                     <span>Amount Paid:</span>
-                    <span>${viewPurchase.paid.toFixed(2)}</span>
+                    <span>฿{viewPurchase.paid.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-semibold text-rose-600">
                     <span>Amount Due:</span>
-                    <span>${viewPurchase.due.toFixed(2)}</span>
+                    <span>฿{viewPurchase.due.toFixed(2)}</span>
                   </div>
                 </div>
 

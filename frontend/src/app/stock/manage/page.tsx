@@ -528,7 +528,7 @@ export default function ManageStockPage() {
 
                         {/* Price */}
                         <td className="py-3.5 px-4 font-semibold text-[#1E293B]">
-                          ${item.price.toFixed(2)}
+                          ฿{item.price.toFixed(2)}
                         </td>
 
                         {/* Qty with Badges */}
@@ -725,12 +725,12 @@ export default function ManageStockPage() {
 
                 <div className="space-y-1">
                   <span className="text-[11px] font-medium text-gray-400">Selling Price</span>
-                  <p className="text-xs font-semibold text-gray-800">${viewProduct.price.toFixed(2)}</p>
+                  <p className="text-xs font-semibold text-gray-800">฿{viewProduct.price.toFixed(2)}</p>
                 </div>
 
                 <div className="space-y-1">
                   <span className="text-[11px] font-medium text-gray-400">Cost Price</span>
-                  <p className="text-xs font-semibold text-gray-800">${(viewProduct.costPrice || 0).toFixed(2)}</p>
+                  <p className="text-xs font-semibold text-gray-800">฿{(viewProduct.costPrice || 0).toFixed(2)}</p>
                 </div>
 
                 <div className="space-y-1">

@@ -180,7 +180,7 @@ export default function B2bSalesOrdersPage() {
     return products.map((p) => ({
       value: p.id,
       label: `${p.name} (${p.sku})`,
-      subLabel: `ราคาขายส่ง: ฿${p.price.toFixed(2)} | คลัง: ${p.stock}`,
+      subLabel: `ราคาขายส่ง: ฿฿{p.price.toFixed(2)} | คลัง: ${p.stock}`,
     }));
   }, [products]);
 
@@ -404,7 +404,7 @@ export default function B2bSalesOrdersPage() {
       `"${o.customerName}"`,
       `"${o.customer?.taxId || ""}"`,
       `"${new Date(o.orderDate).toLocaleDateString("th-TH")}"`,
-      `"${o.dueDate ? new Date(o.dueDate).toLocaleDateString("th-TH") : "-"}"`,
+      `"฿{o.dueDate ? new Date(o.dueDate).toLocaleDateString("th-TH") : "-"}"`,
       o.creditTermDays,
       o.total,
       `"${o.status}"`,

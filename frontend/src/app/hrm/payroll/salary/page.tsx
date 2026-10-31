@@ -536,7 +536,7 @@ export default function EmployeeSalaryPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Monthly Salary ($)</label>
+                    <label className="text-xs font-bold text-gray-700">Monthly Salary (฿)</label>
                     <input
                       type="number"
                       required

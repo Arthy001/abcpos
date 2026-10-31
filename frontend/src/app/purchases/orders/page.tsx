@@ -730,7 +730,7 @@ export default function PurchaseOrderPage() {
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-gray-700">Unit Cost ($)</label>
+                    <label className="text-xs font-bold text-gray-700">Unit Cost (฿)</label>
                     <input
                       type="number"
                       step="0.01"

@@ -350,9 +350,9 @@ export default function QuotationsPage() {
       `"${q.reference}"`,
       `"${q.productName}"`,
       `"${q.customerName}"`,
-      `$${q.unitPrice.toFixed(2)}`,
+      `฿${q.unitPrice.toFixed(2)}`,
       q.quantity,
-      `$${q.total.toFixed(2)}`,
+      `฿฿{q.total.toFixed(2)}`,
       q.status,
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -589,11 +589,11 @@ export default function QuotationsPage() {
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 text-[#64748B]">${item.unitPrice.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 text-[#64748B]">฿{item.unitPrice.toFixed(2)}</td>
 
                         <td className="py-3.5 px-4 text-[#1E293B] font-bold">{item.quantity}</td>
 
-                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">${item.total.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">฿{item.total.toFixed(2)}</td>
 
                         {/* Action Buttons: Convert (ShoppingCart) -> View (Eye) -> Edit (Edit) -> Delete (Trash2) */}
                         <td className="py-3.5 px-4 text-right">
@@ -752,7 +752,7 @@ export default function QuotationsPage() {
                     placeholder="Select Product..."
                     value={formProduct}
                     onChange={(val) => handleProductChange(val)}
-                    options={products.map((p) => ({ value: p.name, label: `${p.name} ($${p.price})` }))}
+                    options={products.map((p) => ({ value: p.name, label: `${p.name} ($฿{p.price})` }))}
                   />
                 </div>
 
@@ -768,7 +768,7 @@ export default function QuotationsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Unit Price ($)</label>
+                    <label className="font-bold text-gray-700">Unit Price (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -778,7 +778,7 @@ export default function QuotationsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Tax ($)</label>
+                    <label className="font-bold text-gray-700">Tax (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -788,7 +788,7 @@ export default function QuotationsPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Discount ($)</label>
+                    <label className="font-bold text-gray-700">Discount (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -815,7 +815,7 @@ export default function QuotationsPage() {
 
                 <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 flex justify-between items-center text-xs">
                   <span className="text-gray-500 font-medium">Calculated Total:</span>
-                  <span className="text-base font-bold text-[#FE9F43]">${formCalculatedTotal.toFixed(2)}</span>
+                  <span className="text-base font-bold text-[#FE9F43]">฿{formCalculatedTotal.toFixed(2)}</span>
                 </div>
 
                 <div className="space-y-1">
@@ -903,7 +903,7 @@ export default function QuotationsPage() {
                 <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1.5">
                   <div className="flex justify-between text-sm font-bold">
                     <span className="text-gray-900">Total Quotation:</span>
-                    <span className="text-[#FE9F43]">${viewQuotation.total.toFixed(2)}</span>
+                    <span className="text-[#FE9F43]">฿{viewQuotation.total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

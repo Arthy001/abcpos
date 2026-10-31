@@ -182,9 +182,9 @@ export default function InvoicesPage() {
       `"${inv.invoiceNo}"`,
       `"${inv.customerName}"`,
       new Date(inv.dueDate).toLocaleDateString(),
-      `$${inv.amount.toFixed(2)}`,
-      `$${inv.paid.toFixed(2)}`,
-      `$${inv.amountDue.toFixed(2)}`,
+      `฿฿{inv.amount.toFixed(2)}`,
+      `฿฿{inv.paid.toFixed(2)}`,
+      `฿฿{inv.amountDue.toFixed(2)}`,
       inv.status,
     ]);
     const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map((e) => e.join(","))].join("\n");
@@ -377,11 +377,11 @@ export default function InvoicesPage() {
                           })}
                         </td>
 
-                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">${item.amount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">฿{item.amount.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-emerald-600">${item.paid.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-emerald-600">฿{item.paid.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-rose-600">${item.amountDue.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-rose-600">฿{item.amountDue.toFixed(2)}</td>
 
                         {/* Status Badge */}
                         <td className="py-3.5 px-4">
@@ -562,11 +562,11 @@ export default function InvoicesPage() {
                 <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1.5">
                   <div className="flex justify-between text-sm font-bold">
                     <span className="text-gray-900">Invoice Amount:</span>
-                    <span className="text-[#FE9F43]">${viewInvoice.amount.toFixed(2)}</span>
+                    <span className="text-[#FE9F43]">฿{viewInvoice.amount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Amount Paid:</span>
-                    <span className="font-semibold text-emerald-600">${viewInvoice.paid.toFixed(2)}</span>
+                    <span className="font-semibold text-emerald-600">฿{viewInvoice.paid.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Balance Due:</span>
@@ -623,11 +623,11 @@ export default function InvoicesPage() {
                 <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
                   <span className="text-gray-400">Invoice Reference:</span>
                   <p className="font-bold text-gray-900">{payInvoice.invoiceNo} • {payInvoice.customerName}</p>
-                  <p className="text-gray-500 font-medium">Total Billed: <span className="font-bold text-gray-800">${payInvoice.amount.toFixed(2)}</span></p>
+                  <p className="text-gray-500 font-medium">Total Billed: <span className="font-bold text-gray-800">฿{payInvoice.amount.toFixed(2)}</span></p>
                 </div>
 
                 <div className="space-y-1">
-                  <label className="font-bold text-gray-700">Amount Paid ($) *</label>
+                  <label className="font-bold text-gray-700">Amount Paid (฿) *</label>
                   <input
                     type="number"
                     step="0.01"

@@ -29,9 +29,12 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { BahtIcon, CircleBahtIcon } from "@/components/common/BahtIcon";
+import { DollarSign } from "lucide-react";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
+  const { formatMoney, currencySymbol } = useCurrencyStore();
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -98,16 +101,16 @@ export default function DashboardPage() {
           <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div className="w-12 h-12 rounded-xl bg-orange-50 flex items-center justify-center text-orange-500">
-                <BahtIcon className="w-6 h-6" />
+                {currencySymbol === "$" ? <DollarSign className="w-6 h-6" /> : <BahtIcon className="w-6 h-6" />}
               </div>
               <span className="flex items-center text-xs font-semibold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-md">
-                Today: ฿{(stats?.summary.todaySales ?? 0).toLocaleString()}
+                Today: {formatMoney(stats?.summary.todaySales ?? 0, 0)}
               </span>
             </div>
             <div className="mt-4">
               <p className="text-xs font-medium text-gray-400 uppercase tracking-wider">Total Revenue</p>
               <h3 className="text-2xl font-bold text-gray-900 mt-1">
-                ฿{stats?.summary.totalSales.toLocaleString() ?? "0"}
+                {formatMoney(stats?.summary.totalSales ?? 0, 0)}
               </h3>
             </div>
           </div>

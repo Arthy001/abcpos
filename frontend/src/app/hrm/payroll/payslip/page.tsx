@@ -248,27 +248,27 @@ function PayslipContent() {
               <tbody className="divide-y divide-[#F8F9FA] text-[#334155]">
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Basic Salary</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.basicSalary || p.salary || 32000).toLocaleString()}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.basicSalary || p.salary || 32000).toLocaleString()}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">HRA Allowance</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.hra || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.hra || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Conveyance</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.conveyance || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.conveyance || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Medical Allowance</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.medical || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.medical || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Bonus</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.bonus || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.bonus || 0).toFixed(2)}</td>
                 </tr>
                 <tr className="bg-[#F8F9FA] font-bold text-[#1E293B]">
                   <td className="py-3 px-4">Total Earnings</td>
-                  <td className="py-3 px-4 text-right">${totalEarnings.toLocaleString()}</td>
+                  <td className="py-3 px-4 text-right">฿{totalEarnings.toLocaleString()}</td>
                 </tr>
               </tbody>
             </table>
@@ -289,27 +289,27 @@ function PayslipContent() {
               <tbody className="divide-y divide-[#F8F9FA] text-[#334155]">
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">PF</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.pf || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.pf || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Professional Tax</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.professionalTax || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.professionalTax || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">TDS</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.tds || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.tds || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Loans &amp; Others</td>
-                  <td className="py-2.5 px-4 text-right font-medium">${(p.loans || 0).toFixed(2)}</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿{(p.loans || 0).toFixed(2)}</td>
                 </tr>
                 <tr>
                   <td className="py-2.5 px-4 text-[#64748B]">Bonus</td>
-                  <td className="py-2.5 px-4 text-right font-medium">$0.00</td>
+                  <td className="py-2.5 px-4 text-right font-medium">฿0.00</td>
                 </tr>
                 <tr className="bg-[#F8F9FA] font-bold text-[#1E293B]">
                   <td className="py-3 px-4">Total Deductions</td>
-                  <td className="py-3 px-4 text-right">${totalDeductions.toFixed(2)}</td>
+                  <td className="py-3 px-4 text-right">฿{totalDeductions.toFixed(2)}</td>
                 </tr>
               </tbody>
             </table>
@@ -319,7 +319,7 @@ function PayslipContent() {
         {/* Net Salary Summary */}
         <div className="space-y-1 pt-2">
           <p className="text-sm font-bold text-[#1E293B]">
-            Net Salary <span className="ml-2 font-extrabold">${netSalary.toLocaleString()}</span>
+            Net Salary <span className="ml-2 font-extrabold">฿{netSalary.toLocaleString()}</span>
           </p>
           <p className="text-xs text-[#64748B]">
             <span className="font-medium">Inwords</span> Thirty Two Thousand Only

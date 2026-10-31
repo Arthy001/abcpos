@@ -134,7 +134,7 @@ export default function BOMPage() {
     return products.map((p) => ({
       value: p.id,
       label: `${p.name} (${p.sku})`,
-      subLabel: `ต้นทุน: ฿${p.costPrice.toFixed(2)} | คงเหลือ: ${p.stock}`,
+      subLabel: `ต้นทุน: ฿฿{p.costPrice.toFixed(2)} | คงเหลือ: ${p.stock}`,
     }));
   }, [products]);
 

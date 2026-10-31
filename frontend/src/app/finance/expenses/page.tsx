@@ -584,7 +584,7 @@ export default function ExpensesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-gray-700 mb-1">
-                      Amount ($) <span className="text-rose-500">*</span>
+                      Amount (฿) <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="number"

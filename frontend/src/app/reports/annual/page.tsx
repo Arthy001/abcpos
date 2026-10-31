@@ -140,10 +140,10 @@ export default function AnnualReportPage() {
                   return (
                     <tr key={item.id} className="hover:bg-[#F9FAFB] transition-colors">
                       <td className="py-3.5 px-4 text-[#64748B] font-medium">{item.monthName}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.jan2026.toLocaleString()}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.feb2026.toLocaleString()}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.mar2026.toLocaleString()}</td>
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.apr2026.toLocaleString()}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.jan2026.toLocaleString()}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.feb2026.toLocaleString()}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.mar2026.toLocaleString()}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">฿{item.apr2026.toLocaleString()}</td>
                     </tr>
                   );
                 })}
@@ -151,10 +151,10 @@ export default function AnnualReportPage() {
                 {/* Total Row */}
                 <tr className="border-t-2 border-[#E2E8F0] bg-white font-bold">
                   <td className="py-4 px-4 text-sm text-[#1E293B]">Total</td>
-                  <td className="py-4 px-4 text-sm text-[#1E293B]">$8,000</td>
-                  <td className="py-4 px-4 text-sm text-[#1E293B]">$8,000</td>
-                  <td className="py-4 px-4 text-sm text-[#1E293B]">$8,000</td>
-                  <td className="py-4 px-4 text-sm text-[#1E293B]">$8,000</td>
+                  <td className="py-4 px-4 text-sm text-[#1E293B]">฿8,000</td>
+                  <td className="py-4 px-4 text-sm text-[#1E293B]">฿8,000</td>
+                  <td className="py-4 px-4 text-sm text-[#1E293B]">฿8,000</td>
+                  <td className="py-4 px-4 text-sm text-[#1E293B]">฿8,000</td>
                 </tr>
               </tbody>
             </table>

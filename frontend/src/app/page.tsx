@@ -34,6 +34,7 @@ import {
 } from "recharts";
 import Link from "next/link";
 import { BahtIcon, CircleBahtIcon } from "@/components/common/BahtIcon";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 export default function Dashboard1Page() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -60,11 +61,11 @@ export default function Dashboard1Page() {
   }, []);
 
   const summary = stats?.summary;
+  const { formatMoney, currencySymbol } = useCurrencyStore();
 
-  // Format currency
+  // Dynamic format currency based on system settings
   const formatCur = (val: number | undefined) => {
-    if (val === undefined || isNaN(val)) return "฿0";
-    return "฿" + val.toLocaleString("th-TH", { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return formatMoney(val, 0);
   };
 
   // Customers Donut Data (Real)
@@ -376,8 +377,8 @@ export default function Dashboard1Page() {
                   <Tooltip
                     contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", fontSize: "11px" }}
                   />
-                  <Bar dataKey="purchase" name="Purchase (฿)" fill="#FED7AA" radius={[4, 4, 0, 0]} barSize={18} />
-                  <Bar dataKey="sales" name="Sales (฿)" fill="#FE9F43" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Bar dataKey="purchase" name={`Purchase (${currencySymbol})`} fill="#FED7AA" radius={[4, 4, 0, 0]} barSize={18} />
+                  <Bar dataKey="sales" name={`Sales (${currencySymbol})`} fill="#FE9F43" radius={[4, 4, 0, 0]} barSize={18} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -634,7 +635,7 @@ export default function Dashboard1Page() {
                       <div>
                         <div className="text-xs font-semibold text-gray-900 truncate max-w-[140px]">{p.name}</div>
                         <div className="text-[10px] text-gray-400">
-                          ฿{p.sellingPrice || p.price || 0} • {p.totalSold || 0} Sold
+                          {formatCur(p.sellingPrice || p.price || 0)} • {p.totalSold || 0} Sold
                         </div>
                       </div>
                     </div>
@@ -712,7 +713,7 @@ export default function Dashboard1Page() {
                         <div>
                           <div className="text-xs font-semibold text-gray-900 truncate max-w-[130px]">{prodName}</div>
                           <div className="text-[10px] text-gray-400">
-                            ฿{ord.total || 0}
+                            {formatCur(ord.total || 0)}
                           </div>
                         </div>
                       </div>
@@ -789,8 +790,8 @@ export default function Dashboard1Page() {
                   <Tooltip
                     contentStyle={{ borderRadius: "12px", border: "none", boxShadow: "0 4px 12px rgba(0,0,0,0.1)", fontSize: "11px" }}
                   />
-                  <Bar dataKey="revenue" name="Revenue (฿)" fill="#0D9488" stackId="stack" barSize={14} radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expense" name="Expense (฿)" fill="#EA580C" stackId="stack" barSize={14} radius={[0, 0, 4, 4]} />
+                  <Bar dataKey="revenue" name={`Revenue (${currencySymbol})`} fill="#0D9488" stackId="stack" barSize={14} radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="expense" name={`Expense (${currencySymbol})`} fill="#EA580C" stackId="stack" barSize={14} radius={[0, 0, 4, 4]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

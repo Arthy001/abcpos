@@ -594,11 +594,11 @@ export default function SalesReturnPage() {
                           </span>
                         </td>
 
-                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">${item.totalAmount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-bold text-[#1E293B]">฿{item.totalAmount.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-emerald-600">${item.paidAmount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-emerald-600">฿{item.paidAmount.toFixed(2)}</td>
 
-                        <td className="py-3.5 px-4 font-medium text-rose-600">${item.dueAmount.toFixed(2)}</td>
+                        <td className="py-3.5 px-4 font-medium text-rose-600">฿{item.dueAmount.toFixed(2)}</td>
 
                         {/* Payment Status Badge */}
                         <td className="py-3.5 px-4">
@@ -771,7 +771,7 @@ export default function SalesReturnPage() {
                     placeholder="Select Product..."
                     value={formProduct}
                     onChange={(val) => handleProductChange(val)}
-                    options={products.map((p) => ({ value: p.name, label: `${p.name} ($${p.price})` }))}
+                    options={products.map((p) => ({ value: p.name, label: `${p.name} (฿${p.price})` }))}
                   />
                 </div>
 
@@ -787,7 +787,7 @@ export default function SalesReturnPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Total Amount ($)</label>
+                    <label className="font-bold text-gray-700">Total Amount (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -797,7 +797,7 @@ export default function SalesReturnPage() {
                     />
                   </div>
                   <div className="space-y-1">
-                    <label className="font-bold text-gray-700">Paid / Refund ($)</label>
+                    <label className="font-bold text-gray-700">Paid / Refund (฿)</label>
                     <input
                       type="number"
                       step="0.01"
@@ -935,16 +935,16 @@ export default function SalesReturnPage() {
                 <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1.5">
                   <div className="flex justify-between text-sm font-bold">
                     <span className="text-gray-900">Total Return Amount:</span>
-                    <span className="text-[#FE9F43]">${viewReturn.totalAmount.toFixed(2)}</span>
+                    <span className="text-[#FE9F43]">฿{viewReturn.totalAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Refunded / Paid:</span>
-                    <span className="font-semibold text-emerald-600">${viewReturn.paidAmount.toFixed(2)}</span>
+                    <span className="font-semibold text-emerald-600">฿{viewReturn.paidAmount.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between text-xs">
                     <span className="text-gray-500">Balance Due:</span>
                     <span className={`font-semibold ${viewReturn.dueAmount > 0 ? "text-red-500" : "text-gray-700"}`}>
-                      ${viewReturn.dueAmount.toFixed(2)}
+                      ฿{viewReturn.dueAmount.toFixed(2)}
                     </span>
                   </div>
                 </div>
