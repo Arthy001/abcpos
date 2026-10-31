@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -12,6 +13,7 @@ import {
 } from "lucide-react";
 
 export default function CashFlowPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [incomes, setIncomes] = useState<Income[]>([]);
@@ -83,7 +85,7 @@ export default function CashFlowPage() {
               <span className="text-xs font-semibold text-gray-500">Cash Inflow (Revenue)</span>
               <TrendingUp className="w-4 h-4 text-emerald-500" />
             </div>
-            <p className="text-lg font-bold text-emerald-600 mt-2">+฿{totalInflow.toLocaleString()}</p>
+            <p className="text-lg font-bold text-emerald-600 mt-2">+{formatMoney(totalInflow)}</p>
           </div>
 
           <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs">
@@ -91,7 +93,7 @@ export default function CashFlowPage() {
               <span className="text-xs font-semibold text-gray-500">Cash Outflow (Expenses)</span>
               <TrendingDown className="w-4 h-4 text-rose-500" />
             </div>
-            <p className="text-lg font-bold text-rose-600 mt-2">-฿{totalOutflow.toLocaleString()}</p>
+            <p className="text-lg font-bold text-rose-600 mt-2">-{formatMoney(totalOutflow)}</p>
           </div>
 
           <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-2xs">
@@ -100,7 +102,7 @@ export default function CashFlowPage() {
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-orange-50 text-[#FE9F43]">YTD</span>
             </div>
             <p className={"text-lg font-bold mt-2 " + (netCashFlow >= 0 ? "text-emerald-600" : "text-rose-600")}>
-              ฿{netCashFlow.toLocaleString()}
+              {formatMoney(netCashFlow)}
             </p>
           </div>
         </div>

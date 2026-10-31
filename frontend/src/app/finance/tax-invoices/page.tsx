@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 
 export default function TaxInvoicesPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [invoices, setInvoices] = useState<TaxInvoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -300,7 +302,7 @@ export default function TaxInvoicesPage() {
             </div>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-2xl font-bold text-gray-900 dark:text-white">
-                ฿{totalSubtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                {formatMoney(totalSubtotal)}
               </span>
               <span className="text-xs text-gray-400">{filteredInvoices.length} ฉบับ</span>
             </div>
@@ -311,7 +313,7 @@ export default function TaxInvoicesPage() {
             </div>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                ฿{totalVat.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                {formatMoney(totalVat)}
               </span>
               <span className="text-xs text-blue-600 bg-blue-50 dark:bg-blue-950/40 px-2 py-0.5 rounded-full font-medium">
                 ภาษีขาย
@@ -324,7 +326,7 @@ export default function TaxInvoicesPage() {
             </div>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
-                ฿{totalGrand.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                {formatMoney(totalGrand)}
               </span>
               <span className="text-xs text-gray-400">รวม VAT แล้ว</span>
             </div>
@@ -422,13 +424,13 @@ export default function TaxInvoicesPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
-                        ฿{inv.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(inv.subtotal)}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-blue-600 dark:text-blue-400">
-                        ฿{inv.vatAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(inv.vatAmount)}
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-emerald-600 dark:text-emerald-400">
-                        ฿{inv.grandTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(inv.grandTotal)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span
@@ -670,7 +672,7 @@ export default function TaxInvoicesPage() {
                       VAT 7% (฿)
                     </label>
                     <div className="px-3 py-2 text-base font-bold text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-900 rounded-xl border border-blue-200 dark:border-blue-700">
-                      ฿{calculatedVatAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                      {formatMoney(calculatedVatAmount)}
                     </div>
                   </div>
                 </div>
@@ -678,7 +680,7 @@ export default function TaxInvoicesPage() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-sm">
                   <span className="font-medium text-gray-600 dark:text-gray-300">ยอดรวมสุทธิ (Grand Total):</span>
                   <span className="text-xl font-bold text-emerald-600 dark:text-emerald-400">
-                    ฿{calculatedGrandTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                    {formatMoney(calculatedGrandTotal)}
                   </span>
                 </div>
 
@@ -731,15 +733,15 @@ export default function TaxInvoicesPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-500">มูลค่าก่อนภาษี:</span>
-                  <span className="font-semibold">฿{viewInvoice.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                  <span className="font-semibold">{formatMoney(viewInvoice.subtotal)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-500">ภาษีมูลค่าเพิ่ม (VAT {viewInvoice.vatRate}%):</span>
-                  <span className="font-bold text-blue-600">฿{viewInvoice.vatAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                  <span className="font-bold text-blue-600">{formatMoney(viewInvoice.vatAmount)}</span>
                 </div>
                 <div className="flex justify-between py-2 bg-emerald-50 dark:bg-emerald-950/30 px-3 rounded-xl font-bold">
                   <span className="text-emerald-800 dark:text-emerald-300">ยอดรวมสุทธิ:</span>
-                  <span className="text-emerald-700 dark:text-emerald-400">฿{viewInvoice.grandTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-emerald-700 dark:text-emerald-400">{formatMoney(viewInvoice.grandTotal)}</span>
                 </div>
               </div>
               <div className="mt-5 flex justify-end gap-2">
@@ -820,10 +822,10 @@ export default function TaxInvoicesPage() {
                       </td>
                       <td className="p-2 border-r border-gray-400 text-center">1</td>
                       <td className="p-2 border-r border-gray-400 text-right font-mono">
-                        ฿{printInvoice.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printInvoice.subtotal)}
                       </td>
                       <td className="p-2 text-right font-mono">
-                        ฿{printInvoice.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printInvoice.subtotal)}
                       </td>
                     </tr>
                     <tr className="h-16">
@@ -839,21 +841,21 @@ export default function TaxInvoicesPage() {
                       </td>
                       <td className="p-2 border-r border-gray-400 text-right font-semibold">รวมมูลค่าสินค้า:</td>
                       <td className="p-2 text-right font-mono font-semibold">
-                        ฿{printInvoice.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printInvoice.subtotal)}
                       </td>
                     </tr>
                     <tr>
                       <td colSpan={3} className="border-r border-gray-400"></td>
                       <td className="p-2 border-r border-gray-400 text-right font-semibold">ภาษีมูลค่าเพิ่ม 7%:</td>
                       <td className="p-2 text-right font-mono font-semibold text-blue-600">
-                        ฿{printInvoice.vatAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printInvoice.vatAmount)}
                       </td>
                     </tr>
                     <tr className="bg-gray-100 font-bold border-t border-gray-400">
                       <td colSpan={3} className="p-2 border-r border-gray-400"></td>
                       <td className="p-2 border-r border-gray-400 text-right">จำนวนเงินรวมทั้งสิ้น:</td>
                       <td className="p-2 text-right font-mono text-emerald-700 text-sm">
-                        ฿{printInvoice.grandTotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printInvoice.grandTotal)}
                       </td>
                     </tr>
                   </tbody>

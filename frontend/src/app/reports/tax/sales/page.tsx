@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SalesTaxReportItem } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { fetchSalesTaxReport } from "@/lib/api";
 import {
   RotateCcw,
@@ -15,6 +16,7 @@ import {
 
 export default function SalesTaxReportPage() {
   const router = useRouter();
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [items, setItems] = useState<SalesTaxReportItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedStore, setSelectedStore] = useState<string>("All");
@@ -63,7 +65,7 @@ export default function SalesTaxReportPage() {
   const handleExportCSV = () => {
     const headers = ["Reference,Customer,Date,Store,Amount,Payment Method,Discount,Tax Amount"];
     const rows = displayList.map(
-      (item) => `"${item.reference}","${item.customer}","${item.taxDate}","${item.store}","$${item.amount}","${item.paymentMethod}","$${item.discount}","$${item.taxAmount}"`
+      (item) => `"${item.reference}","${item.customer}","${item.taxDate}","${item.store}","${formatMoney(item.amount)}","${item.paymentMethod}","${formatMoney(item.discount)}","${formatMoney(item.taxAmount)}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -284,16 +286,16 @@ export default function SalesTaxReportPage() {
                       <td className="py-3.5 px-4 text-[#64748B]">{item.store}</td>
 
                       {/* Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">${item.amount}</td>
+                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">{formatMoney(item.amount)}</td>
 
                       {/* Payment Method */}
                       <td className="py-3.5 px-4 text-[#64748B]">{item.paymentMethod}</td>
 
                       {/* Discount */}
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.discount}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">{formatMoney(item.discount)}</td>
 
                       {/* Tax Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">${item.taxAmount}</td>
+                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">{formatMoney(item.taxAmount)}</td>
                     </tr>
                   );
                 })}

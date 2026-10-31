@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -30,6 +31,7 @@ import {
 } from "lucide-react";
 
 export default function WithholdingTaxPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [records, setRecords] = useState<WithholdingTax[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
@@ -307,7 +309,7 @@ export default function WithholdingTaxPage() {
             </div>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                ฿{totalBase.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                {formatMoney(totalBase)}
               </span>
               <span className="text-xs text-gray-400">ก่อนหักภาษี</span>
             </div>
@@ -318,7 +320,7 @@ export default function WithholdingTaxPage() {
             </div>
             <div className="mt-2 flex items-baseline justify-between">
               <span className="text-2xl font-bold text-rose-600 dark:text-rose-400">
-                ฿{totalTax.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                {formatMoney(totalTax)}
               </span>
               <span className="text-xs text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded-full font-medium">
                 นำส่งสรรพากร
@@ -472,7 +474,7 @@ export default function WithholdingTaxPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900 dark:text-white">
-                        ฿{r.baseAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(r.baseAmount)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span className="inline-block px-2 py-0.5 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs font-semibold text-gray-700 dark:text-gray-300">
@@ -480,10 +482,10 @@ export default function WithholdingTaxPage() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right font-bold text-rose-600 dark:text-rose-400">
-                        ฿{r.taxAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(r.taxAmount)}
                       </td>
                       <td className="px-4 py-3 text-right font-semibold text-emerald-600 dark:text-emerald-400">
-                        ฿{r.netPaid.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(r.netPaid)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <span
@@ -746,7 +748,7 @@ export default function WithholdingTaxPage() {
                       ภาษีที่หัก (฿)
                     </label>
                     <div className="px-3 py-2 text-base font-bold text-rose-600 dark:text-rose-400 bg-white dark:bg-gray-900 rounded-xl border border-emerald-200 dark:border-emerald-700">
-                      ฿{calculatedTaxAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                      {formatMoney(calculatedTaxAmount)}
                     </div>
                   </div>
                 </div>
@@ -754,7 +756,7 @@ export default function WithholdingTaxPage() {
                 <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-sm">
                   <span className="font-medium text-gray-600 dark:text-gray-300">ยอดเงินที่ต้องจ่ายสุทธิ (Net Paid):</span>
                   <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
-                    ฿{calculatedNetPaid.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                    {formatMoney(calculatedNetPaid)}
                   </span>
                 </div>
 
@@ -811,7 +813,7 @@ export default function WithholdingTaxPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-500">ฐานภาษี:</span>
-                  <span className="font-semibold">฿{viewRecord.baseAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                  <span className="font-semibold">{formatMoney(viewRecord.baseAmount)}</span>
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-500">อัตราภาษี:</span>
@@ -819,11 +821,11 @@ export default function WithholdingTaxPage() {
                 </div>
                 <div className="flex justify-between py-1 border-b border-gray-100 dark:border-gray-700">
                   <span className="text-gray-500">ภาษีที่หัก:</span>
-                  <span className="font-bold text-rose-600">฿{viewRecord.taxAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                  <span className="font-bold text-rose-600">{formatMoney(viewRecord.taxAmount)}</span>
                 </div>
                 <div className="flex justify-between py-2 bg-emerald-50 dark:bg-emerald-950/30 px-3 rounded-xl font-bold">
                   <span className="text-emerald-800 dark:text-emerald-300">ยอดจ่ายสุทธิ:</span>
-                  <span className="text-emerald-700 dark:text-emerald-400">฿{viewRecord.netPaid.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                  <span className="text-emerald-700 dark:text-emerald-400">{formatMoney(viewRecord.netPaid)}</span>
                 </div>
               </div>
               <div className="mt-5 flex justify-end gap-2">
@@ -902,10 +904,10 @@ export default function WithholdingTaxPage() {
                         {new Date(printCertificate.date).toLocaleDateString("th-TH")}
                       </td>
                       <td className="p-2 border-r border-gray-400 text-right font-mono">
-                        ฿{printCertificate.baseAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printCertificate.baseAmount)}
                       </td>
                       <td className="p-2 text-right font-mono font-bold text-rose-600">
-                        ฿{printCertificate.taxAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printCertificate.taxAmount)}
                       </td>
                     </tr>
                     <tr className="bg-gray-50 font-bold">
@@ -913,10 +915,10 @@ export default function WithholdingTaxPage() {
                         รวมเงินที่จ่ายและภาษีที่หักนำส่ง:
                       </td>
                       <td className="p-2 border-r border-gray-400 text-right font-mono">
-                        ฿{printCertificate.baseAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printCertificate.baseAmount)}
                       </td>
                       <td className="p-2 text-right font-mono text-rose-600">
-                        ฿{printCertificate.taxAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+                        {formatMoney(printCertificate.taxAmount)}
                       </td>
                     </tr>
                   </tbody>

@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -23,6 +24,7 @@ import {
 } from "lucide-react";
 
 export default function AccountantHubPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [data, setData] = useState<AccountantExportData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [period, setPeriod] = useState<string>(new Date().toISOString().slice(0, 7)); // YYYY-MM
@@ -178,10 +180,10 @@ export default function AccountantHubPage() {
               ภาษีขายสุทธิ (Output VAT)
             </div>
             <div className="mt-2 text-2xl font-bold text-blue-600">
-              ฿{(summary?.totalOutputVat || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+              {formatMoney((summary?.totalOutputVat || 0))}
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              จากยอดขาย ฿{(summary?.totalSalesRevenue || 0).toLocaleString("th-TH", { minimumFractionDigits: 0 })}
+              จากยอดขาย {formatMoney((summary?.totalSalesRevenue || 0))}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
@@ -189,10 +191,10 @@ export default function AccountantHubPage() {
               ภาษีซื้อสุทธิ (Input VAT)
             </div>
             <div className="mt-2 text-2xl font-bold text-emerald-600">
-              ฿{(summary?.totalInputVat || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+              {formatMoney((summary?.totalInputVat || 0))}
             </div>
             <div className="text-xs text-gray-500 mt-1">
-              จากยอดจัดซื้อ ฿{(summary?.totalPurchaseCost || 0).toLocaleString("th-TH", { minimumFractionDigits: 0 })}
+              จากยอดจัดซื้อ {formatMoney((summary?.totalPurchaseCost || 0))}
             </div>
           </div>
           <div className="bg-white dark:bg-gray-800 p-5 rounded-2xl border border-gray-100 dark:border-gray-700 shadow-sm">
@@ -200,7 +202,7 @@ export default function AccountantHubPage() {
               ภาษีมูลค่าเพิ่มที่ต้องนำส่ง (ภ.พ.30)
             </div>
             <div className="mt-2 text-2xl font-bold text-rose-600">
-              ฿{(summary?.netVatPayable || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+              {formatMoney((summary?.netVatPayable || 0))}
             </div>
             <div className="text-xs text-gray-500 mt-1">ภาษีขาย - ภาษีซื้อ</div>
           </div>
@@ -209,7 +211,7 @@ export default function AccountantHubPage() {
               มูลค่าสต็อกคงเหลือปลายงวด
             </div>
             <div className="mt-2 text-2xl font-bold text-purple-600">
-              ฿{(summary?.totalInventoryValue || 0).toLocaleString("th-TH", { minimumFractionDigits: 2 })}
+              {formatMoney((summary?.totalInventoryValue || 0))}
             </div>
             <div className="text-xs text-gray-500 mt-1">สินค้าสำเร็จรูปและวัตถุดิบ</div>
           </div>
@@ -312,23 +314,23 @@ export default function AccountantHubPage() {
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ยอดขายรวมทั้งสิ้น:</span>
-                        <span className="font-medium">฿{summary?.totalSalesRevenue.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-medium">{formatMoney(summary?.totalSalesRevenue)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ภาษีขาย (Output VAT 7%):</span>
-                        <span className="font-semibold text-blue-600">฿{summary?.totalOutputVat.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-blue-600">{formatMoney(summary?.totalOutputVat)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ยอดจัดซื้อรวมทั้งสิ้น:</span>
-                        <span className="font-medium">฿{summary?.totalPurchaseCost.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-medium">{formatMoney(summary?.totalPurchaseCost)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ภาษีซื้อ (Input VAT 7%):</span>
-                        <span className="font-semibold text-emerald-600">฿{summary?.totalInputVat.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-emerald-600">{formatMoney(summary?.totalInputVat)}</span>
                       </div>
                       <div className="pt-2 border-t border-gray-200 dark:border-gray-600 flex justify-between font-bold">
                         <span className="text-gray-900 dark:text-white">ภาษีมูลค่าเพิ่มสุทธิที่ต้องนำส่ง:</span>
-                        <span className="text-rose-600">฿{summary?.netVatPayable.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="text-rose-600">{formatMoney(summary?.netVatPayable)}</span>
                       </div>
                     </div>
 
@@ -340,23 +342,23 @@ export default function AccountantHubPage() {
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ฐานภาษีหัก ณ ที่จ่าย (WHT Base):</span>
-                        <span className="font-medium">฿{summary?.totalWhtBase.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-medium">{formatMoney(summary?.totalWhtBase)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ภาษีหัก ณ ที่จ่ายนำส่ง (ภ.ง.ด.3/53):</span>
-                        <span className="font-semibold text-rose-600">฿{summary?.totalWhtDeducted.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-rose-600">{formatMoney(summary?.totalWhtDeducted)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>มูลค่าสินค้าและวัตถุดิบคงเหลือ (Inventory):</span>
-                        <span className="font-semibold text-purple-600">฿{summary?.totalInventoryValue.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-purple-600">{formatMoney(summary?.totalInventoryValue)}</span>
                       </div>
                       <div className="flex justify-between text-gray-600 dark:text-gray-300">
                         <span>ยอดเงินในบัญชีธนาคาร (Bank Balance):</span>
-                        <span className="font-semibold text-emerald-600">฿{summary?.totalBankBalance.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="font-semibold text-emerald-600">{formatMoney(summary?.totalBankBalance)}</span>
                       </div>
                       <div className="pt-2 border-t border-gray-200 dark:border-gray-600 flex justify-between font-bold">
                         <span>ลูกหนี้การค้าคงค้าง (AR):</span>
-                        <span className="text-blue-600">฿{summary?.accountsReceivable.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</span>
+                        <span className="text-blue-600">{formatMoney(summary?.accountsReceivable)}</span>
                       </div>
                     </div>
                   </div>
@@ -428,9 +430,9 @@ export default function AccountantHubPage() {
                           <td className="px-4 py-2.5">{new Date(item.date).toLocaleDateString("th-TH")}</td>
                           <td className="px-4 py-2.5 font-mono font-semibold text-blue-600">{item.reference}</td>
                           <td className="px-4 py-2.5">{item.customer}</td>
-                          <td className="px-4 py-2.5 text-right">฿{item.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-blue-600">฿{item.tax.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold">฿{item.total.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2.5 text-right">{formatMoney(item.subtotal)}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-blue-600">{formatMoney(item.tax)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold">{formatMoney(item.total)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -472,9 +474,9 @@ export default function AccountantHubPage() {
                           <td className="px-4 py-2.5">{new Date(item.date).toLocaleDateString("th-TH")}</td>
                           <td className="px-4 py-2.5 font-mono font-semibold text-emerald-600">{item.reference}</td>
                           <td className="px-4 py-2.5">{item.supplier}</td>
-                          <td className="px-4 py-2.5 text-right">฿{item.subtotal.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-emerald-600">฿{item.tax.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold">฿{item.total.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2.5 text-right">{formatMoney(item.subtotal)}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-emerald-600">{formatMoney(item.tax)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold">{formatMoney(item.total)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -519,10 +521,10 @@ export default function AccountantHubPage() {
                           <td className="px-4 py-2.5 font-bold">{w.formType}</td>
                           <td className="px-4 py-2.5">{w.payeeName}</td>
                           <td className="px-4 py-2.5 max-w-[200px] truncate">{w.description}</td>
-                          <td className="px-4 py-2.5 text-right font-medium">฿{w.baseAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2.5 text-right font-medium">{formatMoney(w.baseAmount)}</td>
                           <td className="px-4 py-2.5 text-center">{w.taxRate}%</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-rose-600">฿{w.taxAmount.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right font-semibold">฿{w.netPaid.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-rose-600">{formatMoney(w.taxAmount)}</td>
+                          <td className="px-4 py-2.5 text-right font-semibold">{formatMoney(w.netPaid)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -565,8 +567,8 @@ export default function AccountantHubPage() {
                           <td className="px-4 py-2.5 font-semibold text-gray-900 dark:text-white">{p.name}</td>
                           <td className="px-4 py-2.5 text-gray-500">{p.category}</td>
                           <td className="px-4 py-2.5 text-right font-medium">{p.stock.toLocaleString()}</td>
-                          <td className="px-4 py-2.5 text-right font-mono">฿{p.unitCost.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
-                          <td className="px-4 py-2.5 text-right font-bold text-purple-600">฿{p.totalValue.toLocaleString("th-TH", { minimumFractionDigits: 2 })}</td>
+                          <td className="px-4 py-2.5 text-right font-mono">{formatMoney(p.unitCost)}</td>
+                          <td className="px-4 py-2.5 text-right font-bold text-purple-600">{formatMoney(p.totalValue)}</td>
                         </tr>
                       ))}
                     </tbody>

@@ -33,6 +33,17 @@ import {
   getTrialBalanceData,
 } from "../controllers/finance.controller.js";
 import {
+  getWithholdingTaxes,
+  createWithholdingTax,
+  updateWithholdingTax,
+  deleteWithholdingTax,
+  getTaxInvoices,
+  createTaxInvoice,
+  updateTaxInvoice,
+  deleteTaxInvoice,
+  getAccountantExportPackage,
+} from "../controllers/accounting.controller.js";
+import {
   getCoupons,
   createCoupon,
   updateCoupon,
@@ -897,5 +908,20 @@ router.post("/manufacturing/mrp-auto-po", autoGeneratePurchaseOrderFromMRP);
 router.get("/incidents", getSystemIncidents);
 router.get("/incidents/:code", getSystemIncidentByCode);
 router.patch("/incidents/:id/resolve", markIncidentResolved);
+
+
+// ==========================================
+// 📊 ACCOUNTING, TAX & ACCOUNTANT HUB
+// ==========================================
+router.get("/accounting/export-package", getAccountantExportPackage);
+router.get("/accounting/withholding-taxes", getWithholdingTaxes);
+router.post("/accounting/withholding-taxes", createWithholdingTax);
+router.put("/accounting/withholding-taxes/:id", updateWithholdingTax);
+router.delete("/accounting/withholding-taxes/:id", deleteWithholdingTax);
+
+router.get("/accounting/tax-invoices", getTaxInvoices);
+router.post("/accounting/tax-invoices", createTaxInvoice);
+router.put("/accounting/tax-invoices/:id", updateTaxInvoice);
+router.delete("/accounting/tax-invoices/:id", deleteTaxInvoice);
 
 export default router;

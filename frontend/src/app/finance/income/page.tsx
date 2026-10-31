@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Income, IncomeCategory, Store } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import {
   fetchIncomes,
   createIncomeApi,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 
 export default function IncomePage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [incomes, setIncomes] = useState<Income[]>([]);
   const [categories, setCategories] = useState<IncomeCategory[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -407,7 +409,7 @@ export default function IncomePage() {
                         </td>
                         <td className="py-3.5 px-4 text-[#4B5563]">{item.date}</td>
                         <td className="py-3.5 px-4 font-bold text-emerald-600">
-                          +฿{item.amount.toLocaleString()}
+                          +{formatMoney(item.amount)}
                         </td>
                         <td className="py-3.5 px-4">
                           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">
@@ -621,7 +623,7 @@ export default function IncomePage() {
                 </div>
                 <div className="flex justify-between py-1.5">
                   <span className="text-gray-500 font-medium">Amount:</span>
-                  <span className="text-sm font-bold text-emerald-600">+฿{viewIncome.amount.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-emerald-600">+{formatMoney(viewIncome.amount)}</span>
                 </div>
                 <div className="flex justify-between py-1.5">
                   <span className="text-gray-500 font-medium">Date:</span>

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { BankAccount } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import {
   fetchBankAccounts,
   createBankAccountApi,
@@ -27,6 +28,7 @@ import {
 } from "lucide-react";
 
 export default function BankAccountsPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [accounts, setAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
@@ -284,7 +286,7 @@ export default function BankAccountsPage() {
                         {item.branch || "-"}
                       </td>
                       <td className="py-3.5 px-4 font-bold text-emerald-600">
-                        ฿{item.balance.toLocaleString()}
+                        {formatMoney(item.balance)}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-600 border border-emerald-200">

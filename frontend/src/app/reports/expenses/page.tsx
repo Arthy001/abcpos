@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { ExpenseReportItem } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { fetchExpenseReport } from "@/lib/api";
 import {
   RotateCcw,
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 export default function ExpenseReportPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [items, setItems] = useState<ExpenseReportItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -61,7 +63,7 @@ export default function ExpenseReportPage() {
   const handleExportCSV = () => {
     const headers = ["Expense Name,Category,Description,Date,Amount,Status"];
     const rows = displayList.map(
-      (item) => `"${item.expenseName}","${item.category}","${item.description}","${item.expenseDate}","$${item.amount}","${item.status}"`
+      (item) => `"${item.expenseName}","${item.category}","${item.description}","${item.expenseDate}","${formatMoney(item.amount)}","${item.status}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -264,7 +266,7 @@ export default function ExpenseReportPage() {
                       <td className="py-3.5 px-4 text-[#64748B]">{item.expenseDate}</td>
 
                       {/* Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">${item.amount}</td>
+                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">{formatMoney(item.amount)}</td>
 
                       {/* Status */}
                       <td className="py-3.5 px-4">

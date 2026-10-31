@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -26,6 +27,7 @@ interface StatementRow {
 }
 
 export default function AccountStatementPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [selectedAccountId, setSelectedAccountId] = useState<string>("");
   const [expenses, setExpenses] = useState<Expense[]>([]);
@@ -174,7 +176,7 @@ export default function AccountStatementPage() {
                 </div>
                 <div>
                   <span className="text-[11px] text-gray-500 block">Current Balance</span>
-                  <span className="text-sm font-bold text-emerald-600">฿{selectedAccount.balance.toLocaleString()}</span>
+                  <span className="text-sm font-bold text-emerald-600">{formatMoney(selectedAccount.balance)}</span>
                 </div>
               </div>
             )}
@@ -228,7 +230,7 @@ export default function AccountStatementPage() {
                         {r.description}
                       </td>
                       <td className={"py-3.5 px-4 font-bold " + (r.type === "Credit" ? "text-emerald-600" : "text-rose-600")}>
-                        {r.type === "Credit" ? "+" : "-"}฿{r.amount.toLocaleString()}
+                        {r.type === "Credit" ? "+" : "-"}{formatMoney(r.amount)}
                       </td>
                       <td className="py-3.5 px-4">
                         <span className={"inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold " + (r.type === "Credit" ? "bg-emerald-50 text-emerald-600 border border-emerald-200" : "bg-rose-50 text-rose-600 border border-rose-200")}>
@@ -237,7 +239,7 @@ export default function AccountStatementPage() {
                         </span>
                       </td>
                       <td className="py-3.5 px-4 font-bold text-gray-900">
-                        ฿{r.balanceAfter.toLocaleString()}
+                        {formatMoney(r.balanceAfter)}
                       </td>
                     </tr>
                   ))

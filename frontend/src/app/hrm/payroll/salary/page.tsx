@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Payroll } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import {
   fetchPayrolls,
   createPayrollApi,
@@ -26,6 +27,7 @@ import {
 
 export default function EmployeeSalaryPage() {
   const router = useRouter();
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [payrolls, setPayrolls] = useState<Payroll[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
@@ -176,7 +178,7 @@ export default function EmployeeSalaryPage() {
   const handleExportCSV = () => {
     const headers = ["ID,Employee,Role,Email,Salary,Status"];
     const rows = filteredDisplay.map(
-      (p) => `"${p.empCode}","${p.employeeName}","${p.employeeRole}","${p.email}","$${p.salary.toLocaleString()}","${p.status}"`
+      (p) => `"${p.empCode}","${p.employeeName}","${p.employeeRole}","${p.email}","${formatMoney(p.salary)}","${p.status}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -363,7 +365,7 @@ export default function EmployeeSalaryPage() {
 
                       {/* Salary */}
                       <td className="py-3 px-4 text-[#1E293B] font-medium">
-                        ${item.salary.toLocaleString()}
+                        {formatMoney(item.salary)}
                       </td>
 
                       {/* Status */}

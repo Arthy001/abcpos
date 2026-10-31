@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -13,6 +14,7 @@ import {
 } from "lucide-react";
 
 export default function TrialBalancePage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [data, setData] = useState<TrialBalanceData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -83,7 +85,7 @@ export default function TrialBalancePage() {
                 {isBalanced ? "Trial Balance Perfectly Balanced" : "Balance Mismatch Detected"}
               </p>
               <p className="text-emerald-700 text-[11px]">
-                Debits (฿{totalDebit.toLocaleString()}) &equals; Credits (฿{totalCredit.toLocaleString()}) &bull; Double-entry identity satisfied
+                Debits ({formatMoney(totalDebit)}) &equals; Credits ({formatMoney(totalCredit)}) &bull; Double-entry identity satisfied
               </p>
             </div>
           </div>
@@ -153,10 +155,10 @@ export default function TrialBalancePage() {
                       Total Ledger Balance (ยอดรวมงบทดลอง)
                     </td>
                     <td className="py-3.5 px-4 text-right text-emerald-600 text-sm font-mono">
-                      ฿{totalDebit.toLocaleString()}
+                      {formatMoney(totalDebit)}
                     </td>
                     <td className="py-3.5 px-4 text-right text-emerald-600 text-sm font-mono">
-                      ฿{totalCredit.toLocaleString()}
+                      {formatMoney(totalCredit)}
                     </td>
                   </tr>
                 </tfoot>

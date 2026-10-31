@@ -1,4 +1,4 @@
-﻿import { Request, Response } from "express";
+import { Request, Response } from "express";
 import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
@@ -430,15 +430,30 @@ export const deleteTaxInvoice = async (req: Request, res: Response) => {
 export const getAccountantExportPackage = async (req: Request, res: Response) => {
   try {
     const { period = new Date().toISOString().slice(0, 7) } = req.query; // YYYY-MM
+    const periodStr = String(period);
 
-    // 1. Sales & Output VAT
+    // Calculate start and end date for the selected month in UTC
+    const [yearStr, monthStr] = periodStr.split("-");
+    const year = parseInt(yearStr, 10);
+    const month = parseInt(monthStr, 10);
+
+    const startDate = new Date(Date.UTC(year, month - 1, 1, 0, 0, 0, 0));
+    const endDate = new Date(Date.UTC(year, month, 0, 23, 59, 59, 999));
+
+    // 1. Sales & Output VAT for the selected month
     const [sales, taxInvoices] = await Promise.all([
       prisma.sale.findMany({
-        where: { status: { not: "CANCELLED" } },
+        where: {
+          status: { not: "CANCELLED" },
+          date: { gte: startDate, lte: endDate },
+        },
         orderBy: { date: "desc" },
       }),
       prisma.taxInvoice.findMany({
-        where: { status: "ISSUED" },
+        where: {
+          status: "ISSUED",
+          date: { gte: startDate, lte: endDate },
+        },
         orderBy: { date: "desc" },
       }),
     ]);
@@ -446,9 +461,12 @@ export const getAccountantExportPackage = async (req: Request, res: Response) =>
     const totalSalesRevenue = sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0);
     const totalOutputVat = sales.reduce((sum, s) => sum + (s.tax || 0), 0);
 
-    // 2. Purchases & Input VAT
+    // 2. Purchases & Input VAT for the selected month
     const purchases = await prisma.purchase.findMany({
-      where: { status: { not: "CANCELLED" } },
+      where: {
+        status: { not: "CANCELLED" },
+        date: { gte: startDate, lte: endDate },
+      },
       orderBy: { date: "desc" },
     });
     const totalPurchaseCost = purchases.reduce((sum, p) => sum + (p.total || 0), 0);
@@ -457,9 +475,12 @@ export const getAccountantExportPackage = async (req: Request, res: Response) =>
     // Net VAT Payable to Revenue Dept
     const netVatPayable = totalOutputVat - totalInputVat;
 
-    // 3. Withholding Tax Summary
+    // 3. Withholding Tax Summary for the selected month
     const whtRecords = await prisma.withholdingTax.findMany({
-      where: { status: "ISSUED" },
+      where: {
+        status: "ISSUED",
+        date: { gte: startDate, lte: endDate },
+      },
       orderBy: { date: "desc" },
     });
     const totalWhtBase = whtRecords.reduce((sum, w) => sum + (w.baseAmount || 0), 0);

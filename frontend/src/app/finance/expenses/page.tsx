@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Expense, ExpenseCategory, Store } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import {
   fetchExpenses,
   createExpenseApi,
@@ -28,6 +29,7 @@ import {
 } from "lucide-react";
 
 export default function ExpensesPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -428,7 +430,7 @@ export default function ExpensesPage() {
                       <td className="py-3 px-4 text-gray-600">{item.storeName || "-"}</td>
                       <td className="py-3 px-4 text-gray-500">{item.date}</td>
                       <td className="py-3 px-4 font-bold text-gray-900">
-                        ${Number(item.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                        {formatMoney(Number(item.amount) || 0)}
                       </td>
                       <td className="py-3 px-4">
                         <span
@@ -687,7 +689,7 @@ export default function ExpensesPage() {
                 <div className="flex justify-between py-1.5 border-b border-gray-100">
                   <span className="text-gray-500 font-medium">Amount:</span>
                   <span className="font-bold text-lg text-emerald-600">
-                    ${Number(viewExpense.amount).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                    {formatMoney(Number(viewExpense.amount) || 0)}
                   </span>
                 </div>
                 <div className="flex justify-between py-1.5 border-b border-gray-100">

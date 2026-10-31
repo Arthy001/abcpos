@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -19,6 +20,7 @@ import {
 } from "lucide-react";
 
 export default function BalanceSheetPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [data, setData] = useState<BalanceSheetData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -91,7 +93,7 @@ export default function BalanceSheetPage() {
                 {isBalanced ? "Accounting Equation Balanced" : "Balance Reconciliation in Progress"}
               </p>
               <p className="text-emerald-700 text-[11px]">
-                Total Assets (฿{totalAssets.toLocaleString()}) = Liabilities (฿{(liabilities?.totalLiabilities || 0).toLocaleString()}) + Equity (฿{(equity?.totalEquity || 0).toLocaleString()})
+                Total Assets ({formatMoney(totalAssets)}) = Liabilities ({formatMoney((liabilities?.totalLiabilities || 0))}) + Equity ({formatMoney((equity?.totalEquity || 0))})
               </p>
             </div>
           </div>
@@ -114,7 +116,7 @@ export default function BalanceSheetPage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
                   <h2 className="text-sm font-bold text-[#111827]">Current Assets (สินทรัพย์หมุนเวียน)</h2>
                 </div>
-                <span className="text-emerald-600 font-extrabold text-base">฿{totalAssets.toLocaleString()}</span>
+                <span className="text-emerald-600 font-extrabold text-base">{formatMoney(totalAssets)}</span>
               </div>
 
               {/* Sub-item: Liquid Bank Accounts */}
@@ -124,13 +126,13 @@ export default function BalanceSheetPage() {
                     <CreditCard className="w-3.5 h-3.5 text-blue-600" />
                     Liquid Bank Balances & Cash
                   </span>
-                  <span>฿{(assets?.totalBankBalance || 0).toLocaleString()}</span>
+                  <span>{formatMoney((assets?.totalBankBalance || 0))}</span>
                 </div>
                 <div className="pl-4 space-y-1.5 text-[11px]">
                   {assets?.bankAccounts.map((acc) => (
                     <div key={acc.id} className="flex justify-between py-0.5 text-gray-600 border-b border-gray-50">
                       <span>{acc.accountName} <span className="text-gray-400">({acc.bankName})</span></span>
-                      <span className="font-semibold text-gray-900">฿{(acc.balance || 0).toLocaleString()}</span>
+                      <span className="font-semibold text-gray-900">{formatMoney((acc.balance || 0))}</span>
                     </div>
                   ))}
                 </div>
@@ -143,7 +145,7 @@ export default function BalanceSheetPage() {
                     <Package className="w-3.5 h-3.5 text-amber-600" />
                     Current Inventory Asset (มูลค่าสต็อกจริง)
                   </span>
-                  <span className="text-amber-900 font-extrabold">฿{(assets?.inventoryValue || 0).toLocaleString()}</span>
+                  <span className="text-amber-900 font-extrabold">{formatMoney((assets?.inventoryValue || 0))}</span>
                 </div>
                 <div className="pl-4 space-y-1 text-[11px] text-gray-600">
                   <div className="flex justify-between">
@@ -168,7 +170,7 @@ export default function BalanceSheetPage() {
                     <Users className="w-3.5 h-3.5 text-indigo-600" />
                     Accounts Receivable (ลูกหนี้การค้า)
                   </span>
-                  <span>฿{(assets?.accountsReceivable || 0).toLocaleString()}</span>
+                  <span>{formatMoney((assets?.accountsReceivable || 0))}</span>
                 </div>
                 <p className="pl-4 text-[10px] text-gray-400">Outstanding balances from unpaid customer sales</p>
               </div>
@@ -181,19 +183,19 @@ export default function BalanceSheetPage() {
                   <span className="w-2.5 h-2.5 rounded-full bg-blue-500"></span>
                   <h2 className="text-sm font-bold text-[#111827]">Liabilities & Equity (หนี้สินและทุน)</h2>
                 </div>
-                <span className="text-blue-600 font-extrabold text-base">฿{totalLiabilitiesAndEquity.toLocaleString()}</span>
+                <span className="text-blue-600 font-extrabold text-base">{formatMoney(totalLiabilitiesAndEquity)}</span>
               </div>
 
               {/* 1. Liabilities */}
               <div className="space-y-2">
                 <div className="flex items-center justify-between text-xs font-bold text-gray-800 bg-rose-50/60 p-2 rounded-lg border border-rose-100">
                   <span className="text-rose-900">Current Liabilities & Accounts Payable</span>
-                  <span className="text-rose-700 font-extrabold">฿{(liabilities?.totalLiabilities || 0).toLocaleString()}</span>
+                  <span className="text-rose-700 font-extrabold">{formatMoney((liabilities?.totalLiabilities || 0))}</span>
                 </div>
                 <div className="pl-4 space-y-1 text-[11px] text-gray-600">
                   <div className="flex justify-between">
                     <span>Supplier Dues Payable:</span>
-                    <span className="font-semibold text-rose-600">฿{(liabilities?.accountsPayable || 0).toLocaleString()}</span>
+                    <span className="font-semibold text-rose-600">{formatMoney((liabilities?.accountsPayable || 0))}</span>
                   </div>
                 </div>
               </div>
@@ -202,20 +204,20 @@ export default function BalanceSheetPage() {
               <div className="space-y-2 pt-2 border-t border-gray-100">
                 <div className="flex items-center justify-between text-xs font-bold text-gray-800 bg-blue-50/60 p-2 rounded-lg border border-blue-100">
                   <span className="text-blue-900">Shareholder Equity & Reserves (ส่วนของเจ้าของ)</span>
-                  <span className="text-blue-700 font-extrabold">฿{(equity?.totalEquity || 0).toLocaleString()}</span>
+                  <span className="text-blue-700 font-extrabold">{formatMoney((equity?.totalEquity || 0))}</span>
                 </div>
                 <div className="pl-4 space-y-2 text-[11px]">
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-600">Retained Earnings (Net Profit YTD)</span>
-                    <span className="font-bold text-emerald-600">฿{(equity?.retainedEarnings || 0).toLocaleString()}</span>
+                    <span className="font-bold text-emerald-600">{formatMoney((equity?.retainedEarnings || 0))}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
                     <span className="text-gray-600">Owner's Capital & Net Worth</span>
-                    <span className="font-bold text-gray-900">฿{(equity?.ownerCapital || 0).toLocaleString()}</span>
+                    <span className="font-bold text-gray-900">{formatMoney((equity?.ownerCapital || 0))}</span>
                   </div>
                   <div className="flex justify-between py-1 text-gray-500 text-[10px]">
-                    <span>Total Sales Income: ฿{(equity?.totalIncome || 0).toLocaleString()}</span>
-                    <span>Total Operating Expenses: ฿{(equity?.totalExpense || 0).toLocaleString()}</span>
+                    <span>Total Sales Income: {formatMoney((equity?.totalIncome || 0))}</span>
+                    <span>Total Operating Expenses: {formatMoney((equity?.totalExpense || 0))}</span>
                   </div>
                 </div>
               </div>

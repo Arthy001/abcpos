@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { SoldStockItem } from "@/types";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 import { fetchSoldStockReport } from "@/lib/api";
 import {
   RotateCcw,
@@ -15,6 +16,7 @@ import {
 
 export default function SoldStockPage() {
   const router = useRouter();
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [items, setItems] = useState<SoldStockItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -61,7 +63,7 @@ export default function SoldStockPage() {
   const handleExportCSV = () => {
     const headers = ["SKU,Product Name,Unit,Quantity,Tax Value,Total"];
     const rows = displayList.map(
-      (item) => `"${item.sku}","${item.productName}","${item.unit}","${item.quantity}","$${item.taxValue}","$${item.total}"`
+      (item) => `"${item.sku}","${item.productName}","${item.unit}","${item.quantity}","${formatMoney(item.taxValue)}","${formatMoney(item.total)}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -275,11 +277,11 @@ export default function SoldStockPage() {
                       <td className="py-3.5 px-4 text-[#64748B] font-medium">{item.quantity}</td>
 
                       {/* Tax Value */}
-                      <td className="py-3.5 px-4 text-[#64748B]">${item.taxValue}</td>
+                      <td className="py-3.5 px-4 text-[#64748B]">{formatMoney(item.taxValue)}</td>
 
                       {/* Total */}
                       <td className="py-3.5 px-4 text-[#1E293B] font-semibold">
-                        ${item.total}
+                        {formatMoney(item.total)}
                       </td>
                     </tr>
                   );

@@ -1,4 +1,5 @@
 "use client";
+import { useCurrencyStore } from "@/store/useCurrencyStore";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
@@ -22,6 +23,7 @@ import {
 } from "lucide-react";
 
 export default function MoneyTransferPage() {
+  const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [transfers, setTransfers] = useState<MoneyTransfer[]>([]);
   const [bankAccounts, setBankAccounts] = useState<BankAccount[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -238,7 +240,7 @@ export default function MoneyTransferPage() {
                       </td>
                       <td className="py-3.5 px-4 text-[#4B5563]">{item.date}</td>
                       <td className="py-3.5 px-4 font-bold text-[#111827]">
-                        ฿{item.amount.toLocaleString()}
+                        {formatMoney(item.amount)}
                       </td>
                       <td className="py-3.5 px-4 text-[#6B7280]">
                         {item.notes || "-"}
