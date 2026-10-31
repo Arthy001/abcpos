@@ -599,6 +599,10 @@ model Product {
   status           String      @default("ACTIVE") // ACTIVE, INACTIVE, OUT_OF_STOCK
   manufacturedDate DateTime?
   expiredDate      DateTime?
+  lastPurchaseCost Float?
+  averageCost      Float?
+  reservedStock    Int         @default(0)
+  trackingType     String      @default("NONE") // NONE, SERIAL, BATCH
   
   categoryId       String?
   category         Category?   @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -618,6 +622,7 @@ model Product {
   stocks           ProductStock[]
   variants         ProductVariant[]
   expiryBatches    ProductExpiryBatch[]
+  serialNumbers    ProductSerialNumber[]
   movements        StockMovement[]
   orderItems       OrderItem[]
   bomsAsFinished   BillOfMaterial[]    @relation("FinishedProductBOM")
@@ -1336,6 +1341,7 @@ model PosShift {
   notes               String?
   orders              Order[]
   movements           PosShiftMovement[]
+  heldOrders          PosHeldOrder[]
   createdAt           DateTime           @default(now())
   updatedAt           DateTime           @updatedAt
 }
@@ -1486,6 +1492,7 @@ model PreferenceSettings {
   orderPrefix           String   @default("ORD-")
   enableDiscountPerItem Boolean  @default(true)
   enableTaxCalculation  Boolean  @default(true)
+  enableStockReservation Boolean @default(false)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -1928,4 +1935,114 @@ model UserNotificationRead {
 
   @@unique([notificationId, userId])
   @@index([userId])
+}
+
+
+// ==========================================
+// ⏸️ POS HELD ORDERS (PARKING BILLS)
+// ==========================================
+
+model PosHeldOrder {
+  id              String    @id @default(uuid())
+  orderRef        String    @unique // e.g. #HLD-1029-001
+  shiftId         String?
+  shift           PosShift? @relation(fields: [shiftId], references: [id], onDelete: SetNull)
+  cashierName     String    @default("Admin")
+  customerId      String?
+  customerName    String?
+  customerPhone   String?
+  cartData        String    // JSON stringified items and line-discounts
+  subtotal        Float     @default(0.0)
+  tax             Float     @default(0.0)
+  discount        Float     @default(0.0)
+  shipping        Float     @default(0.0)
+  total           Float     @default(0.0)
+  couponCode      String?
+  notes           String?
+  status          String    @default("HELD") // HELD, RESUMED, CANCELLED
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@index([status])
+  @@index([shiftId])
+  @@index([createdAt])
+}
+
+// ==========================================
+// 🔁 STOCK CYCLE COUNT (STOCK TAKE AUDIT)
+// ==========================================
+
+model CycleCount {
+  id            String           @id @default(uuid())
+  countNumber   String           @unique // e.g. CC-20261031-001
+  warehouseId   String
+  warehouseName String
+  countDate     DateTime         @default(now())
+  countType     String           @default("FULL") // FULL, CATEGORY, PARTIAL
+  categoryFilter String?
+  status        String           @default("DRAFT") // DRAFT, IN_PROGRESS, COMPLETED, CANCELLED
+  assignedTo    String?
+  approvedBy    String?
+  totalItems    Int              @default(0)
+  matchedItems  Int              @default(0)
+  discrepancies Int              @default(0)
+  totalVarianceCost Float        @default(0.0)
+  notes         String?
+  completedAt   DateTime?
+  items         CycleCountItem[]
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  @@index([warehouseId])
+  @@index([status])
+  @@index([countDate])
+}
+
+model CycleCountItem {
+  id           String     @id @default(uuid())
+  cycleCountId String
+  cycleCount   CycleCount @relation(fields: [cycleCountId], references: [id], onDelete: Cascade)
+  productId    String
+  productName  String
+  sku          String?
+  systemQty    Int        // Snapshot of stock at creation
+  countedQty   Int?       // Actual counted quantity
+  variance     Int?       // countedQty - systemQty
+  unitCost     Float      @default(0.0)
+  varianceCost Float?     // variance * unitCost
+  status       String     @default("PENDING") // PENDING, COUNTED, ADJUSTED
+  notes        String?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@index([cycleCountId])
+  @@index([productId])
+}
+
+// ==========================================
+// 🔢 SERIAL NUMBER TRACKING
+// ==========================================
+
+model ProductSerialNumber {
+  id             String    @id @default(uuid())
+  serialNo       String    @unique // Unique serial code across system
+  productId      String
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  warehouseId    String?
+  status         String    @default("AVAILABLE") // AVAILABLE, RESERVED, SOLD, DEFECTIVE, RETURNED
+  purchaseRef    String?   // Sourced from PO
+  purchaseDate   DateTime?
+  saleRef        String?   // Sold via Order
+  saleDate       DateTime?
+  customerId     String?
+  customerName   String?
+  warrantyMonths Int       @default(12)
+  warrantyExpiry DateTime?
+  notes          String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([productId])
+  @@index([status])
+  @@index([serialNo])
 }

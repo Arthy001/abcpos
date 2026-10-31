@@ -71,6 +71,12 @@ import {
   fetchCompanySettings,
   fetchPosSettings,
   verifyGiftCardApi,
+  fetchHeldOrdersApi,
+  createHeldOrderApi,
+  resumeHeldOrderApi,
+  deleteHeldOrderApi,
+  lookupSerialNumberApi,
+  assignSerialNumbersToSaleApi,
 } from "@/lib/api";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -179,7 +185,10 @@ export default function POSPage() {
   const [isSavingCustomer, setIsSavingCustomer] = useState<boolean>(false);
 
   // Barcode Scanner Modal
-  const [showScannerModal, setShowScannerModal] = useState<boolean>(false);
+    const [showScannerModal, setShowScannerModal] = useState<boolean>(false);
+  const [serialModalProduct, setSerialModalProduct] = useState<Product | null>(null);
+  const [serialInput, setSerialInput] = useState<string>("");
+  const [selectedSerials, setSelectedSerials] = useState<{ [productId: string]: string[] }>({});
   const [scannedBarcode, setScannedBarcode] = useState<string>("");
 
   // Orders / History Slide-over Modal
@@ -470,7 +479,7 @@ export default function POSPage() {
   const loadMasterData = async () => {
     try {
       setLoadingProducts(true);
-      const [prodsData, catsData, custsData, ordersData, _shift, couponsData, companyData, posData] = await Promise.all([
+      const [prodsData, catsData, custsData, ordersData, _shift, couponsData, companyData, posData, heldsRes] = await Promise.all([
         fetchProducts(),
         fetchCategories(),
         fetchCustomers(),
@@ -479,12 +488,14 @@ export default function POSPage() {
         fetchCoupons().catch(() => []),
         fetchCompanySettings().catch(() => null),
         fetchPosSettings().catch(() => null),
+        fetchHeldOrdersApi().catch(() => ({ data: [] })),
       ]);
       setProducts(prodsData || []);
       setCategories(catsData || []);
       setCustomers(custsData || []);
       setRecentOrders(ordersData || []);
       setCoupons(couponsData || []);
+      if (heldsRes?.data) setHeldOrders(heldsRes.data);
       if (companyData) setCompanySettings(companyData);
       if (posData) {
         setPosSettings(posData);
@@ -502,7 +513,13 @@ export default function POSPage() {
   }, []);
 
   // Add to cart with live stock check
-  const handleAddToCart = (product: Product, quantityToAdd: number = 1) => {
+    const handleAddToCart = (product: Product, quantityToAdd: number = 1) => {
+    // If product tracks Serial Numbers, require S/N scan modal
+    if (product.trackingType === "SERIAL") {
+      setSerialModalProduct(product);
+      setSerialInput("");
+      return;
+    }
     if (product.stock <= 0) {
       playSound("error");
       alert(`"${product.name}" is out of stock!`);
@@ -615,6 +632,70 @@ export default function POSPage() {
     }
   };
 
+  // Handle Serial Number Confirm & Add to Cart
+  const handleConfirmSerialAdd = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!serialModalProduct || !serialInput.trim()) return;
+
+    try {
+      const res = await lookupSerialNumberApi(serialInput.trim());
+      if (res.success && res.data) {
+        const snRecord = res.data;
+        if (snRecord.productId !== serialModalProduct.id) {
+          playSound("error");
+          alert(`Serial number "${serialInput.trim()}" belongs to "${snRecord.product?.name || "another product"}", not "${serialModalProduct.name}"!`);
+          return;
+        }
+
+        if (snRecord.status !== "AVAILABLE") {
+          playSound("error");
+          alert(`Serial number "${serialInput.trim()}" is already ${snRecord.status} and cannot be sold.`);
+          return;
+        }
+
+        // Check if already in cart
+        const currentSelected = selectedSerials[serialModalProduct.id] || [];
+        if (currentSelected.includes(snRecord.serialNo)) {
+          alert(`Serial number "${snRecord.serialNo}" is already in the cart.`);
+          return;
+        }
+
+        // Add to selectedSerials
+        setSelectedSerials((prev) => ({
+          ...prev,
+          [serialModalProduct.id]: [...(prev[serialModalProduct.id] || []), snRecord.serialNo],
+        }));
+
+        // Add to cart directly
+        setCartItems((prev) => {
+          const existing = prev.find((item) => item.id === serialModalProduct.id);
+          playSound("beep");
+          if (existing) {
+            return prev.map((item) =>
+              item.id === serialModalProduct.id ? { ...item, qty: item.qty + 1 } : item
+            );
+          } else {
+            return [
+              ...prev,
+              {
+                id: serialModalProduct.id,
+                product: serialModalProduct,
+                qty: 1,
+                unitPrice: serialModalProduct.price,
+              },
+            ];
+          }
+        });
+
+        setSerialModalProduct(null);
+        setSerialInput("");
+      }
+    } catch (err: any) {
+      playSound("error");
+      alert(err.message || "Failed to lookup Serial Number");
+    }
+  };
+
   // Math Calculations
   const rawSubtotal = cartItems.reduce((acc, item) => acc + item.unitPrice * item.qty, 0);
   const taxAmount = (rawSubtotal * taxPercent) / 100;
@@ -701,42 +782,85 @@ export default function POSPage() {
     playSound("beep");
   };
 
-  // Hold Order
-  const handleHoldOrder = () => {
+  // Hold Order (Persisted to Database)
+  const handleHoldOrder = async () => {
     if (cartItems.length === 0) {
       alert("Cart is empty! Nothing to hold.");
       return;
     }
-    const newHold: HeldOrder = {
-      id: "HOLD-" + Date.now(),
-      orderRef: `#HLD${Math.floor(100 + Math.random() * 900)}`,
-      items: [...cartItems],
-      customer: selectedCustomer,
-      timestamp: new Date().toLocaleTimeString(),
-      subtotal: rawSubtotal,
-      tax: taxAmount,
-      discount: totalDiscount,
-      shipping: shippingFee,
-      coupon: activeCouponDiscount,
-      appliedCoupon: appliedCoupon,
-    };
-    setHeldOrders((prev) => [newHold, ...prev]);
-    clearCart();
-    playSound("chime");
-    alert(`Order ${newHold.orderRef} placed on Hold!`);
+    try {
+      const payload = {
+        shiftId: currentShiftData.shift?.id || null,
+        cashierName: cashierName,
+        customerId: selectedCustomer?.id || null,
+        customerName: selectedCustomer?.name || "Walk-in",
+        customerPhone: selectedCustomer?.phone || null,
+        items: cartItems,
+        subtotal: rawSubtotal,
+        tax: taxAmount,
+        discount: totalDiscount,
+        shipping: shippingFee,
+        total: finalPayable,
+        couponCode: appliedCoupon?.code || null,
+        notes: null,
+      };
+
+      const res = await createHeldOrderApi(payload);
+      if (res.success && res.data) {
+        // Refresh held orders list from DB
+        const refreshed = await fetchHeldOrdersApi().catch(() => null);
+        if (refreshed?.data) {
+          setHeldOrders(refreshed.data);
+        } else {
+          setHeldOrders((prev) => [res.data, ...prev]);
+        }
+        clearCart();
+        playSound("chime");
+        alert(`Order ${res.data.orderRef} placed on Hold and saved to database!`);
+      }
+    } catch (err: any) {
+      console.error("Failed to hold order:", err);
+      alert(err.message || "Failed to hold order");
+    }
   };
 
-  const handleResumeHeldOrder = (held: HeldOrder) => {
-    setCartItems(held.items);
-    setSelectedCustomer(held.customer);
-    setShippingFee(held.shipping);
-    setCouponDiscount(held.coupon);
-    if (held.appliedCoupon) {
-      setAppliedCoupon(held.appliedCoupon);
+  const handleResumeHeldOrder = async (held: HeldOrder) => {
+    try {
+      const res = await resumeHeldOrderApi(held.id);
+      if (res.success) {
+        setCartItems(held.items);
+        if (held.customer) {
+          setSelectedCustomer(held.customer);
+        } else if ((held as any).customerId) {
+          const found = customers.find((c) => c.id === (held as any).customerId);
+          setSelectedCustomer(found || null);
+        }
+        setShippingFee(held.shipping || 0);
+        setCouponDiscount(held.coupon || 0);
+        if (held.appliedCoupon) {
+          setAppliedCoupon(held.appliedCoupon);
+        }
+        setHeldOrders((prev) => prev.filter((h) => h.id !== held.id));
+        setShowHeldOrdersModal(false);
+        playSound("beep");
+      }
+    } catch (err: any) {
+      console.error("Failed to resume held order:", err);
+      alert(err.message || "Failed to resume held order");
     }
-    setHeldOrders((prev) => prev.filter((h) => h.id !== held.id));
-    setShowHeldOrdersModal(false);
-    playSound("beep");
+  };
+
+  const handleDeleteHeldOrder = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!confirm("Are you sure you want to discard this held order?")) return;
+    try {
+      await deleteHeldOrderApi(id);
+      setHeldOrders((prev) => prev.filter((h) => h.id !== id));
+      playSound("beep");
+    } catch (err: any) {
+      console.error("Failed to delete held order:", err);
+      alert(err.message || "Failed to delete held order");
+    }
   };
 
   // Gift Card Verification Handler
@@ -2433,6 +2557,59 @@ export default function POSPage() {
       )}
 
       {/* --- BARCODE SCANNER MODAL --- */}
+            {/* --- SERIAL NUMBER SCAN MODAL --- */}
+      {serialModalProduct && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <span className="p-1.5 rounded-lg bg-indigo-50 text-indigo-600 font-black text-xs">S/N</span>
+                <h3 className="text-sm font-bold text-gray-900">Scan Product Serial Number</h3>
+              </div>
+              <button onClick={() => setSerialModalProduct(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 text-xs">
+              <p className="font-bold text-indigo-950">{serialModalProduct.name}</p>
+              <p className="text-[11px] text-indigo-600 font-mono mt-0.5">SKU: {serialModalProduct.sku}</p>
+            </div>
+
+            <form onSubmit={handleConfirmSerialAdd} className="space-y-3 text-xs">
+              <div>
+                <label className="font-bold text-gray-700 block mb-1">Enter / Scan Serial Number *</label>
+                <input
+                  type="text"
+                  autoFocus
+                  required
+                  placeholder="e.g. SN-IP16-998811"
+                  value={serialInput}
+                  onChange={(e) => setSerialInput(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-indigo-500 text-sm font-mono"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setSerialModalProduct(null)}
+                  className="px-3.5 py-2 border border-gray-200 text-gray-600 rounded-lg font-semibold hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold shadow-xs cursor-pointer"
+                >
+                  Verify & Add
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {showScannerModal && (
         <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
           <div className="bg-white rounded-2xl w-full max-w-sm shadow-2xl p-5 space-y-4 animate-in fade-in zoom-in-95 duration-150">
@@ -2531,7 +2708,7 @@ export default function POSPage() {
                         <span>Resume</span>
                       </button>
                       <button
-                        onClick={() => setHeldOrders((prev) => prev.filter((h) => h.id !== held.id))}
+                        onClick={(e) => handleDeleteHeldOrder(held.id, e)}
                         className="p-1.5 text-gray-400 hover:text-red-500"
                         title="Discard"
                       >

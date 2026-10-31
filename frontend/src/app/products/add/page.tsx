@@ -71,6 +71,7 @@ export default function AddProductPage() {
 
   // Pricing & Stocks
   const [productType, setProductType] = useState<"SINGLE" | "VARIABLE">("SINGLE");
+  const [trackingType, setTrackingType] = useState<"NONE" | "SERIAL">("NONE");
   const [quantity, setQuantity] = useState<number>(20);
   const [price, setPrice] = useState<number>(0);
   const [costPrice, setCostPrice] = useState<number>(0);
@@ -531,6 +532,7 @@ export default function AddProductPage() {
           productType: "SINGLE",
           price: Number(price || 0),
           costPrice: Number(costPrice || 0),
+        trackingType,
           stock: validBatchesPayload && totalBatchStock > 0 ? totalBatchStock : Number(quantity || 0),
           minStockAlert: Number(minStockAlert || 5),
           categoryId: categoryId || undefined,

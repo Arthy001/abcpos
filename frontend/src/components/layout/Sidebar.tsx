@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -165,6 +165,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
         { name: "Manage Stock", href: "/stock/manage", icon: Boxes },
         { name: "Stock Adjustment", href: "/stock/adjustment", icon: FileSpreadsheet },
         { name: "Stock Transfer", href: "/stock/transfer", icon: ArrowRightLeft },
+        { name: "Cycle Count", href: "/stock/cycle-count", icon: FileSpreadsheet },
       ],
     },
     {

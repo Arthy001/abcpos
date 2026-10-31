@@ -358,6 +358,9 @@ import {
   getShiftById,
 } from "../controllers/pos-shift.controller.js";
 import { getDashboardStats } from "../controllers/dashboard.controller.js";
+import { getHeldOrders, createHeldOrder, resumeHeldOrder, deleteHeldOrder } from "../controllers/pos-hold.controller.js";
+import { getCycleCounts, getCycleCountById, createCycleCount, updateCycleCountItems, reconcileCycleCount, deleteCycleCount } from "../controllers/cycle-count.controller.js";
+import { getProductSerialNumbers, addProductSerialNumbers, lookupSerialNumber, assignSerialNumbersToSale } from "../controllers/serial.controller.js";
 import {
   getSystemNotifications,
   markNotificationAsRead,
@@ -551,6 +554,26 @@ router.get("/orders", getOrders);
 router.get("/orders/:id", getOrderById);
 router.post("/orders", createOrder);
 router.put("/orders/:id/void", voidOrder);
+
+// POS Held Orders (Parking Bills)
+router.get("/pos/hold-orders", getHeldOrders);
+router.post("/pos/hold-orders", createHeldOrder);
+router.put("/pos/hold-orders/:id/resume", resumeHeldOrder);
+router.delete("/pos/hold-orders/:id", deleteHeldOrder);
+
+// Stock Cycle Count (Stock Take Audit)
+router.get("/cycle-counts", getCycleCounts);
+router.get("/cycle-counts/:id", getCycleCountById);
+router.post("/cycle-counts", createCycleCount);
+router.put("/cycle-counts/:id/items", updateCycleCountItems);
+router.post("/cycle-counts/:id/reconcile", reconcileCycleCount);
+router.delete("/cycle-counts/:id", deleteCycleCount);
+
+// Serial Number Tracking
+router.get("/products/:id/serial-numbers", getProductSerialNumbers);
+router.post("/products/:id/serial-numbers", addProductSerialNumbers);
+router.get("/serial-numbers/lookup", lookupSerialNumber);
+router.post("/serial-numbers/sell", assignSerialNumbersToSale);
 
 // POS Shifts & Cash Drawer
 router.get("/pos-shifts/current", getCurrentShift);

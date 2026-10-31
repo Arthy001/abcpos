@@ -41,6 +41,7 @@ export default function PreferenceSettingsPage() {
     orderPrefix: "ORD-",
     enableDiscountPerItem: true,
     enableTaxCalculation: true,
+    enableStockReservation: false,
   });
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
@@ -315,6 +316,28 @@ export default function PreferenceSettingsPage() {
                             type="checkbox"
                             checked={formData.enableTaxCalculation}
                             onChange={(e) => setFormData({ ...formData, enableTaxCalculation: e.target.checked })}
+                            className="sr-only peer"
+                          />
+                          <div className="w-10 h-5 bg-gray-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FE9F43]"></div>
+                        </label>
+                      </div>
+
+                      {/* Stock Reservation */}
+                      <div className="flex items-start justify-between p-4 bg-gray-50/80 rounded-xl border border-gray-100">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 mt-0.5">
+                            <Package className="w-4 h-4" />
+                          </div>
+                          <div>
+                            <span className="text-xs font-bold text-gray-900">B2B Stock Reservation</span>
+                            <p className="text-[11px] text-gray-500 mt-0.5">Automatically hold and reserve inventory when B2B Sales Orders are confirmed to prevent POS overselling</p>
+                          </div>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+                          <input
+                            type="checkbox"
+                            checked={formData.enableStockReservation ?? false}
+                            onChange={(e) => setFormData({ ...formData, enableStockReservation: e.target.checked })}
                             className="sr-only peer"
                           />
                           <div className="w-10 h-5 bg-gray-200 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#FE9F43]"></div>

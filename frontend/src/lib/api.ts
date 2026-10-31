@@ -1,4 +1,4 @@
-﻿import {
+import {
   Brand,
   Category,
   DashboardStats,
@@ -210,6 +210,7 @@ export async function createProductApi(payload: {
   barcode?: string;
   description?: string;
   productType?: "SINGLE" | "VARIABLE";
+  trackingType?: "NONE" | "SERIAL" | "BATCH";
   price: number;
   costPrice?: number;
   stock: number;
@@ -246,6 +247,7 @@ export async function updateProductApi(
     barcode?: string | null;
     description?: string | null;
     productType?: "SINGLE" | "VARIABLE";
+  trackingType?: "NONE" | "SERIAL" | "BATCH";
     price?: number;
     costPrice?: number;
     stock?: number;
@@ -3475,6 +3477,7 @@ export interface PreferenceSettings {
   orderPrefix: string;
   enableDiscountPerItem: boolean;
   enableTaxCalculation: boolean;
+  enableStockReservation?: boolean;
 }
 
 export async function getPreferenceSettingsApi(): Promise<PreferenceSettings> {
@@ -4284,4 +4287,194 @@ export async function markIncidentResolvedApi(id: string): Promise<SystemInciden
   const data = await res.json();
   if (!res.ok || !data.success) throw new Error(data.error || "Failed to resolve incident");
   return data.data;
+}
+
+
+// ==========================================
+// ⏸️ POS HELD ORDERS (PARKING BILLS)
+// ==========================================
+
+export async function fetchHeldOrdersApi(shiftId?: string) {
+  const url = shiftId
+    ? `${API_BASE_URL}/pos/hold-orders?shiftId=${encodeURIComponent(shiftId)}`
+    : `${API_BASE_URL}/pos/hold-orders`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch held orders");
+  return res.json();
+}
+
+export async function createHeldOrderApi(payload: any) {
+  const res = await fetch(`${API_BASE_URL}/pos/hold-orders`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to hold order");
+  }
+  return res.json();
+}
+
+export async function resumeHeldOrderApi(id: string) {
+  const res = await fetch(`${API_BASE_URL}/pos/hold-orders/${id}/resume`, {
+    method: "PUT",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to resume held order");
+  }
+  return res.json();
+}
+
+export async function deleteHeldOrderApi(id: string) {
+  const res = await fetch(`${API_BASE_URL}/pos/hold-orders/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete held order");
+  }
+  return res.json();
+}
+// ==========================================
+// 🔁 STOCK CYCLE COUNT (STOCK TAKE AUDIT)
+// ==========================================
+
+export async function fetchCycleCountsApi(params?: { warehouseId?: string; status?: string }) {
+  const query = new URLSearchParams();
+  if (params?.warehouseId && params.warehouseId !== "all") query.set("warehouseId", params.warehouseId);
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+
+  const url = `${API_BASE_URL}/cycle-counts${query.toString() ? `?${query.toString()}` : ""}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch cycle counts");
+  return res.json();
+}
+
+export async function fetchCycleCountByIdApi(id: string) {
+  const res = await fetch(`${API_BASE_URL}/cycle-counts/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch cycle count details");
+  return res.json();
+}
+
+export async function createCycleCountApi(payload: {
+  warehouseId: string;
+  countType?: string;
+  categoryId?: string;
+  assignedTo?: string;
+  notes?: string;
+}) {
+  const res = await fetch(`${API_BASE_URL}/cycle-counts`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create cycle count");
+  }
+  return res.json();
+}
+
+export async function updateCycleCountItemsApi(
+  id: string,
+  items: Array<{ id: string; countedQty: number | null; notes?: string }>
+) {
+  const res = await fetch(`${API_BASE_URL}/cycle-counts/${id}/items`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ items }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update cycle count records");
+  }
+  return res.json();
+}
+
+export async function reconcileCycleCountApi(
+  id: string,
+  payload?: { approvedBy?: string; autoAdjust?: boolean }
+) {
+  const res = await fetch(`${API_BASE_URL}/cycle-counts/${id}/reconcile`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload || {}),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to reconcile cycle count");
+  }
+  return res.json();
+}
+
+export async function deleteCycleCountApi(id: string) {
+  const res = await fetch(`${API_BASE_URL}/cycle-counts/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete cycle count");
+  }
+  return res.json();
+}
+// ==========================================
+// 🔢 SERIAL NUMBER TRACKING
+// ==========================================
+
+export async function fetchProductSerialNumbersApi(productId: string, params?: { status?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.status && params.status !== "all") query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const url = `${API_BASE_URL}/products/${productId}/serial-numbers${query.toString() ? `?${query.toString()}` : ""}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch serial numbers");
+  return res.json();
+}
+
+export async function addProductSerialNumbersApi(
+  productId: string,
+  payload: { serialNumbers: string[]; warrantyMonths?: number; notes?: string }
+) {
+  const res = await fetch(`${API_BASE_URL}/products/${productId}/serial-numbers`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to add serial numbers");
+  }
+  return res.json();
+}
+
+export async function lookupSerialNumberApi(sn: string) {
+  const res = await fetch(`${API_BASE_URL}/serial-numbers/lookup?sn=${encodeURIComponent(sn.trim())}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Serial number not found");
+  }
+  return res.json();
+}
+
+export async function assignSerialNumbersToSaleApi(payload: {
+  serialNumbers: string[];
+  saleRef: string;
+  customerId?: string;
+  customerName?: string;
+}) {
+  const res = await fetch(`${API_BASE_URL}/serial-numbers/sell`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to assign serial numbers");
+  }
+  return res.json();
 }

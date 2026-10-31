@@ -1,4 +1,4 @@
-﻿import { logActivity } from "../services/audit.service.js";
+import { logActivity } from "../services/audit.service.js";
 import { Request, Response } from "express";
 import { prisma } from "../lib/prisma.js";
 import { recordStockMovement } from "../services/stock.service.js";

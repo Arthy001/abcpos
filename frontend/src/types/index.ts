@@ -581,6 +581,10 @@ export interface ProductVariant {
   price: number;
   costPrice: number;
   stock: number;
+  reservedStock?: number;
+  trackingType?: "NONE" | "SERIAL" | "BATCH";
+  lastPurchaseCost?: number | null;
+  averageCost?: number | null;
   minStockAlert: number;
   image?: string | null;
   status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
@@ -613,6 +617,10 @@ export interface Product {
   price: number;
   costPrice: number;
   stock: number;
+  reservedStock?: number;
+  trackingType?: "NONE" | "SERIAL" | "BATCH";
+  lastPurchaseCost?: number | null;
+  averageCost?: number | null;
   minStockAlert: number;
   image?: string | null;
   status: "ACTIVE" | "INACTIVE" | "OUT_OF_STOCK";
@@ -1728,6 +1736,10 @@ export interface AccountantExportData {
     name: string;
     category: string;
     stock: number;
+  reservedStock?: number;
+  trackingType?: "NONE" | "SERIAL" | "BATCH";
+  lastPurchaseCost?: number | null;
+  averageCost?: number | null;
     unitCost: number;
     totalValue: number;
   }>;
@@ -1756,4 +1768,23 @@ export interface SystemIncident {
   resolved: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ProductSerialNumber {
+  id: string;
+  serialNo: string;
+  productId: string;
+  warehouseId?: string | null;
+  status: "AVAILABLE" | "RESERVED" | "SOLD" | "DEFECTIVE" | "RETURNED";
+  purchaseRef?: string | null;
+  purchaseDate?: string | null;
+  saleRef?: string | null;
+  saleDate?: string | null;
+  customerId?: string | null;
+  customerName?: string | null;
+  warrantyMonths: number;
+  warrantyExpiry?: string | null;
+  notes?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }

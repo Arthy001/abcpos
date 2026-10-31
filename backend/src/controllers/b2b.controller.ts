@@ -239,6 +239,31 @@ export const createSalesOrder = async (req: Request, res: Response) => {
     const dueDate = new Date();
     dueDate.setDate(dueDate.getDate() + termDays);
 
+    // Check if Stock Reservation is enabled in Preference Settings
+    const preferences = await prisma.preferenceSettings.findFirst();
+    const isReservationEnabled = preferences?.enableStockReservation ?? false;
+
+    if (isReservationEnabled) {
+      for (const it of itemsData) {
+        if (it.productId) {
+          const prod = await prisma.product.findUnique({
+            where: { id: it.productId },
+            include: { stocks: true },
+          });
+
+          if (prod) {
+            const availableStock = prod.stock - prod.reservedStock;
+            if (availableStock < it.quantity) {
+              return res.status(400).json({
+                success: false,
+                error: `Cannot confirm Sales Order: Insufficient available stock for "${prod.name}". Available: ${availableStock}, Requested: ${it.quantity} (Total On-Hand: ${prod.stock}, Already Reserved: ${prod.reservedStock})`,
+              });
+            }
+          }
+        }
+      }
+    }
+
     const salesOrder = await prisma.salesOrder.create({
       data: {
         orderNo,
@@ -267,6 +292,20 @@ export const createSalesOrder = async (req: Request, res: Response) => {
         items: true,
       },
     });
+
+    // If Stock Reservation is enabled, reserve the quantities for the confirmed items
+    if (isReservationEnabled) {
+      for (const it of itemsData) {
+        if (it.productId) {
+          await prisma.product.update({
+            where: { id: it.productId },
+            data: {
+              reservedStock: { increment: Math.round(it.quantity) },
+            },
+          });
+        }
+      }
+    }
 
     // Update customer current credit used if credit term > 0
     if (termDays > 0) {
@@ -301,6 +340,20 @@ export const updateSalesOrderStatus = async (req: Request, res: Response) => {
       return res.status(404).json({ success: false, error: "Sales Order not found" });
     }
 
+    // Release stock reservation if order is cancelled
+    if (status === "CANCELLED" && existing.status !== "CANCELLED") {
+      for (const item of existing.items) {
+        if (item.productId) {
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              reservedStock: { decrement: Math.round(item.quantity) },
+            },
+          }).catch(() => null);
+        }
+      }
+    }
+
     // If order was cancelled, revert customer credit
     if (status === "CANCELLED" && existing.status !== "CANCELLED") {
       if (existing.creditTermDays > 0 && existing.paymentStatus !== "PAID") {
@@ -316,6 +369,14 @@ export const updateSalesOrderStatus = async (req: Request, res: Response) => {
       for (const item of existing.items) {
         if (item.productId) {
           const qtyToDeduct = Math.round(item.quantity);
+          // Release reserved stock now that it's physically fulfilled/issued
+          await prisma.product.update({
+            where: { id: item.productId },
+            data: {
+              reservedStock: { decrement: qtyToDeduct },
+            },
+          }).catch(() => null);
+
           await recordStockMovement({
             productId: item.productId,
             type: "SALE_ISSUE",
