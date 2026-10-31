@@ -1188,7 +1188,7 @@ export async function fetchEmployees(params?: {
   const data = await res.json();
   return {
     employees: data.data || [],
-    stats: data.stats || { total: 1007, active: 1007, inactive: 1007, newJoiners: 67 },
+    stats: data.stats || { total: 0, active: 0, inactive: 0, newJoiners: 0 },
   };
 }
 
@@ -1244,12 +1244,12 @@ export async function fetchAttendanceRecords(params?: {
     return {
       records: [],
       summary: {
-        totalWorkingDays: 31,
-        absentDays: 5,
-        presentDays: 28,
-        halfDays: 2,
-        lateDays: 1,
-        holidays: 2,
+        totalWorkingDays: 0,
+        absentDays: 0,
+        presentDays: 0,
+        halfDays: 0,
+        lateDays: 0,
+        holidays: 0,
       },
     };
   }
@@ -1257,12 +1257,12 @@ export async function fetchAttendanceRecords(params?: {
   return {
     records: data.data || [],
     summary: data.summary || {
-      totalWorkingDays: 31,
-      absentDays: 5,
-      presentDays: 28,
-      halfDays: 2,
-      lateDays: 1,
-      holidays: 2,
+      totalWorkingDays: 0,
+      absentDays: 0,
+      presentDays: 0,
+      halfDays: 0,
+      lateDays: 0,
+      holidays: 0,
     },
   };
 }

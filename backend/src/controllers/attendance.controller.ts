@@ -23,12 +23,12 @@ export const getAttendanceRecords = async (req: Request, res: Response) => {
       orderBy: { createdAt: "desc" },
     });
 
-    const totalWorkingDays = 31;
-    const absentDays = 5;
-    const presentDays = 28;
-    const halfDays = 2;
-    const lateDays = 1;
-    const holidays = 2;
+    const presentDays = await prisma.attendance.count({ where: { status: "PRESENT" } });
+    const absentDays = await prisma.attendance.count({ where: { status: "ABSENT" } });
+    const halfDays = await prisma.attendance.count({ where: { status: "HALF_DAY" } });
+    const lateDays = await prisma.attendance.count({ where: { status: "LATE" } });
+    const holidays = await prisma.holiday.count();
+    const totalWorkingDays = presentDays + absentDays + halfDays + lateDays;
 
     res.json({
       success: true,

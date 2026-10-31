@@ -40,10 +40,10 @@ export const getEmployees = async (req: Request, res: Response) => {
       success: true,
       data: employees,
       stats: {
-        total: totalCount || 1007,
-        active: activeCount || 1007,
-        inactive: inactiveCount || 1007,
-        newJoiners: newJoinersCount || 67,
+        total: totalCount,
+        active: activeCount,
+        inactive: inactiveCount,
+        newJoiners: newJoinersCount,
       },
     });
   } catch (error: any) {

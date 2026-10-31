@@ -21,12 +21,12 @@ import {
 export default function AttendanceEmployeePage() {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [summary, setSummary] = useState({
-    totalWorkingDays: 31,
-    absentDays: 5,
-    presentDays: 28,
-    halfDays: 2,
-    lateDays: 1,
-    holidays: 2,
+    totalWorkingDays: 0,
+    absentDays: 0,
+    presentDays: 0,
+    halfDays: 0,
+    lateDays: 0,
+    holidays: 0,
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");

@@ -37,10 +37,10 @@ import {
 export default function EmployeesPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [stats, setStats] = useState({
-    total: 1007,
-    active: 1007,
-    inactive: 1007,
-    newJoiners: 67,
+    total: 0,
+    active: 0,
+    inactive: 0,
+    newJoiners: 0,
   });
   const [loading, setLoading] = useState<boolean>(true);
   const [search, setSearch] = useState<string>("");
