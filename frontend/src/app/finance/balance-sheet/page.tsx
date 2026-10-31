@@ -17,21 +17,23 @@ import {
   Loader2,
   CreditCard,
   Users,
+  Calendar,
 } from "lucide-react";
 
 export default function BalanceSheetPage() {
   const formatMoney = useCurrencyStore((state) => state.formatMoney);
   const [data, setData] = useState<BalanceSheetData | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [asOfDate, setAsOfDate] = useState<string>("");
 
   useEffect(() => {
     loadData();
-  }, []);
+  }, [asOfDate]);
 
   const loadData = async () => {
     try {
       setLoading(true);
-      const res = await fetchBalanceSheetApi();
+      const res = await fetchBalanceSheetApi(asOfDate || undefined);
       if (res) {
         setData(res);
       }
@@ -66,6 +68,25 @@ export default function BalanceSheetPage() {
           </div>
 
           <div className="flex items-center space-x-2">
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-white border border-[#E5E7EB] rounded-lg text-xs">
+              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-gray-500 font-medium">As of:</span>
+              <input
+                type="date"
+                value={asOfDate}
+                onChange={(e) => setAsOfDate(e.target.value)}
+                className="bg-transparent font-semibold text-gray-800 outline-none text-xs"
+              />
+              {asOfDate && (
+                <button
+                  onClick={() => setAsOfDate("")}
+                  className="text-[10px] text-gray-400 hover:text-rose-500 font-bold ml-1"
+                  title="Reset to Today"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
             <button
               title="Print"
               onClick={() => window.print()}
@@ -208,16 +229,34 @@ export default function BalanceSheetPage() {
                 </div>
                 <div className="pl-4 space-y-2 text-[11px]">
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-600">Retained Earnings (Net Profit YTD)</span>
+                    <span className="text-gray-600 font-medium">Retained Earnings (กำไรสะสมสุทธิ)</span>
                     <span className="font-bold text-emerald-600">{formatMoney((equity?.retainedEarnings || 0))}</span>
                   </div>
                   <div className="flex justify-between py-1 border-b border-gray-50">
-                    <span className="text-gray-600">Owner's Capital & Net Worth</span>
+                    <span className="text-gray-600 font-medium">Owner's Capital & Net Worth (ทุนจดทะเบียนและส่วนของผู้ถือหุ้น)</span>
                     <span className="font-bold text-gray-900">{formatMoney((equity?.ownerCapital || 0))}</span>
                   </div>
-                  <div className="flex justify-between py-1 text-gray-500 text-[10px]">
-                    <span>Total Sales Income: {formatMoney((equity?.totalIncome || 0))}</span>
-                    <span>Total Operating Expenses: {formatMoney((equity?.totalExpense || 0))}</span>
+                  <div className="bg-gray-50/80 p-2.5 rounded-lg space-y-1 text-gray-500 text-[10px]">
+                    <div className="flex justify-between font-medium text-gray-700">
+                      <span>• Revenue from Sales (ยอดขายสินค้า):</span>
+                      <span>{formatMoney((equity?.totalSalesRevenue || 0))}</span>
+                    </div>
+                    <div className="flex justify-between font-medium text-rose-600">
+                      <span>• Less: Cost of Goods Sold (ต้นทุนขาย COGS):</span>
+                      <span>-{formatMoney((equity?.costOfGoodsSold || 0))}</span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-emerald-700 pt-0.5 border-t border-gray-200">
+                      <span>• Gross Profit (กำไรขั้นต้น):</span>
+                      <span>{formatMoney((equity?.grossProfit || 0))}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600 pt-0.5">
+                      <span>• Other Operating Income (รายได้อื่นๆ):</span>
+                      <span>+{formatMoney((equity?.totalIncome || 0))}</span>
+                    </div>
+                    <div className="flex justify-between text-gray-600">
+                      <span>• Operating Expenses (ค่าใช้จ่ายดำเนินงาน):</span>
+                      <span>-{formatMoney((equity?.totalExpense || 0))}</span>
+                    </div>
                   </div>
                 </div>
               </div>

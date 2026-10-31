@@ -379,23 +379,86 @@ export const createMoneyTransfer = async (req: Request, res: Response) => {
 
 export const getBalanceSheetData = async (req: Request, res: Response) => {
   try {
-    // 1. Liquid Bank Accounts
+    const { asOfDate } = req.query;
+    const cutoffDate = asOfDate ? new Date(String(asOfDate) + "T23:59:59.999Z") : null;
+
+    // 1. Bank Accounts (Historical As-of-Date Cash Rollback)
     const bankAccounts = await prisma.bankAccount.findMany({
       orderBy: { accountName: "asc" },
     });
-    const totalBankBalance = bankAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
+    const currentTotalBank = bankAccounts.reduce((sum, a) => sum + (a.balance || 0), 0);
 
-    // 2. Real Inventory Valuation from Products
+    let totalBankBalance = currentTotalBank;
+    let adjustedBankAccounts = bankAccounts;
+
+    if (cutoffDate) {
+      // Cash Flows that occurred AFTER cutoffDate must be rolled back:
+      const [afterSales, afterPurchases, afterIncomes, afterExpenses, afterPayrolls] = await Promise.all([
+        prisma.sale.findMany({ where: { status: { not: "CANCELLED" }, date: { gt: cutoffDate } } }),
+        prisma.purchase.findMany({ where: { status: { not: "CANCELLED" }, date: { gt: cutoffDate } } }),
+        prisma.income.findMany({ where: { status: { not: "Pending" }, createdAt: { gt: cutoffDate } } }),
+        prisma.expense.findMany({ where: { status: { not: "Pending" }, createdAt: { gt: cutoffDate } } }),
+        prisma.payroll.findMany({ where: { status: "PAID", createdAt: { gt: cutoffDate } } }),
+      ]);
+
+      const postCutoffInflow = afterSales.reduce((sum, s) => sum + (s.paid || 0), 0) + afterIncomes.reduce((sum, i) => sum + (i.amount || 0), 0);
+      const postCutoffOutflow = afterPurchases.reduce((sum, p) => sum + (p.paid || 0), 0) + afterExpenses.reduce((sum, e) => sum + (e.amount || 0), 0) + afterPayrolls.reduce((sum, pr) => sum + (pr.salary || 0), 0);
+
+      totalBankBalance = Math.max(0, currentTotalBank - postCutoffInflow + postCutoffOutflow);
+
+      // Distribute proportionally across accounts for display
+      const ratio = currentTotalBank > 0 ? totalBankBalance / currentTotalBank : 1;
+      adjustedBankAccounts = bankAccounts.map((acc) => ({
+        ...acc,
+        balance: Math.round((acc.balance || 0) * ratio * 100) / 100,
+      }));
+    }
+
+    // 2. Real Inventory Valuation (Historical Stock Movement Rollback)
     const products = await prisma.product.findMany();
-    const inventoryValue = products.reduce((sum, p) => {
-      const cost = p.costPrice > 0 ? p.costPrice : p.price * 0.7;
-      return sum + (p.stock > 0 ? p.stock * cost : 0);
-    }, 0);
-    const totalProductsCount = products.length;
-    const totalStockQty = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+    let inventoryValue = 0;
+    let totalStockQty = 0;
 
-    // 3. Accounts Receivable (Customer Unpaid Sales)
-    const sales = await prisma.sale.findMany();
+    if (cutoffDate) {
+      // Calculate historical physical stock as of cutoffDate
+      for (const p of products) {
+        const [pItemsAfter, sItemsAfter] = await Promise.all([
+          prisma.purchaseItem.findMany({
+            where: { productId: p.id, purchase: { date: { gt: cutoffDate }, status: { not: "CANCELLED" } } },
+          }),
+          prisma.saleItem.findMany({
+            where: { productId: p.id, sale: { date: { gt: cutoffDate }, status: { not: "CANCELLED" } } },
+          }),
+        ]);
+
+        const purchasedAfter = pItemsAfter.reduce((sum, it) => sum + (it.receivedQty || it.quantity || 0), 0);
+        const soldAfter = sItemsAfter.reduce((sum, it) => sum + (it.quantity || 0), 0);
+
+        const stockAtCutoff = Math.max(0, p.stock - purchasedAfter + soldAfter);
+        const cost = p.costPrice > 0 ? p.costPrice : p.price * 0.7;
+
+        inventoryValue += stockAtCutoff * cost;
+        totalStockQty += stockAtCutoff;
+      }
+    } else {
+      // Current Stock Value
+      inventoryValue = products.reduce((sum, p) => {
+        const cost = p.costPrice > 0 ? p.costPrice : p.price * 0.7;
+        return sum + (p.stock > 0 ? p.stock * cost : 0);
+      }, 0);
+      totalStockQty = products.reduce((sum, p) => sum + (p.stock || 0), 0);
+    }
+    const totalProductsCount = products.length;
+
+    // 3. Accounts Receivable (Customer Unpaid Sales up to cutoffDate)
+    const salesWhere: any = { status: { not: "CANCELLED" } };
+    if (cutoffDate) {
+      salesWhere.date = { lte: cutoffDate };
+    }
+    const sales = await prisma.sale.findMany({
+      where: salesWhere,
+      include: { items: true },
+    });
     const accountsReceivable = sales.reduce((sum, s) => {
       const due = s.due ?? (s.grandTotal - (s.paid || 0));
       return sum + (due > 0 ? due : 0);
@@ -404,22 +467,56 @@ export const getBalanceSheetData = async (req: Request, res: Response) => {
     // Total Current Assets
     const totalAssets = totalBankBalance + inventoryValue + accountsReceivable;
 
-    // 4. Accounts Payable (Supplier Unpaid Purchases)
-    const purchases = await prisma.purchase.findMany();
+    // 4. Accounts Payable (Supplier Unpaid Purchases up to cutoffDate)
+    const purchasesWhere: any = { status: { not: "CANCELLED" } };
+    if (cutoffDate) {
+      purchasesWhere.date = { lte: cutoffDate };
+    }
+    const purchases = await prisma.purchase.findMany({
+      where: purchasesWhere,
+    });
     const accountsPayable = purchases.reduce((sum, p) => {
       const due = p.due ?? (p.total - (p.paid || 0));
       return sum + (due > 0 ? due : 0);
     }, 0);
     const totalLiabilities = accountsPayable;
 
-    // 5. Incomes & Expenses (Retained Earnings)
-    const incomes = await prisma.income.findMany();
-    const expenses = await prisma.expense.findMany();
-    const totalIncome = incomes.reduce((sum, i) => sum + (i.amount || 0), 0);
-    const totalExpense = expenses.reduce((sum, e) => sum + (e.amount || 0), 0);
-    const netIncome = totalIncome - totalExpense;
+    // 5. Real Gross Profit & Operating Expenses (Retained Earnings up to cutoffDate)
+    const productMap = new Map(products.map((p) => [p.id, p]));
+    const totalSalesRevenue = sales.reduce((sum, s) => sum + (s.grandTotal || 0), 0);
 
-    // Total Equity = Total Assets - Total Liabilities
+    let costOfGoodsSold = 0;
+    for (const sale of sales) {
+      for (const item of sale.items || []) {
+        const prod = item.productId ? productMap.get(item.productId) : null;
+        const itemCost = prod && prod.costPrice > 0 ? prod.costPrice : (item.unitPrice || 0) * 0.7;
+        costOfGoodsSold += (item.quantity || 1) * itemCost;
+      }
+    }
+    const grossProfit = totalSalesRevenue - costOfGoodsSold;
+
+    // Other Incomes, Operating Expenses & Payrolls up to cutoffDate
+    const incomesWhere: any = { status: { not: "Pending" } };
+    const expensesWhere: any = { status: { not: "Pending" } };
+    const payrollWhere: any = { status: "PAID" };
+    if (cutoffDate) {
+      incomesWhere.createdAt = { lte: cutoffDate };
+      expensesWhere.createdAt = { lte: cutoffDate };
+      payrollWhere.createdAt = { lte: cutoffDate };
+    }
+    const [incomes, expenses, payrolls] = await Promise.all([
+      prisma.income.findMany({ where: incomesWhere }),
+      prisma.expense.findMany({ where: expensesWhere }),
+      prisma.payroll.findMany({ where: payrollWhere }),
+    ]);
+
+    const totalIncome = incomes.reduce((sum, i) => sum + (i.amount || 0), 0);
+    const totalExpense = expenses.reduce((sum, e) => sum + (e.amount || 0), 0) + payrolls.reduce((sum, pr) => sum + (pr.salary || 0), 0);
+
+    // Net Income = Gross Profit + Other Incomes - Operating Expenses
+    const netIncome = grossProfit + totalIncome - totalExpense;
+
+    // Total Equity = Total Assets - Total Liabilities (Fundamental Accounting Equation)
     const totalEquity = totalAssets - totalLiabilities;
     const retainedEarnings = netIncome;
     const ownerCapital = totalEquity - retainedEarnings;
@@ -427,9 +524,10 @@ export const getBalanceSheetData = async (req: Request, res: Response) => {
     res.json({
       success: true,
       data: {
+        asOfDate: cutoffDate ? cutoffDate.toISOString().slice(0, 10) : "Latest",
         assets: {
           totalAssets,
-          bankAccounts,
+          bankAccounts: adjustedBankAccounts,
           totalBankBalance,
           inventoryValue,
           totalProductsCount,
@@ -444,6 +542,9 @@ export const getBalanceSheetData = async (req: Request, res: Response) => {
           totalEquity,
           retainedEarnings,
           ownerCapital,
+          totalSalesRevenue,
+          costOfGoodsSold,
+          grossProfit,
           totalIncome,
           totalExpense,
           netIncome,

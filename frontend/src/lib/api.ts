@@ -2192,8 +2192,9 @@ export async function togglePaymentGatewayApi(id: string, isEnabled: boolean): P
 }
 
 // ==================== BALANCE SHEET & TRIAL BALANCE ====================
-export async function fetchBalanceSheetApi(): Promise<BalanceSheetData> {
-  const res = await fetch(`${API_BASE_URL}/finance/balance-sheet`, { cache: "no-store" });
+export async function fetchBalanceSheetApi(asOfDate?: string): Promise<BalanceSheetData> {
+  const query = asOfDate ? `?asOfDate=${encodeURIComponent(asOfDate)}` : "";
+  const res = await fetch(`${API_BASE_URL}/finance/balance-sheet${query}`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch balance sheet data");
   const data = await res.json();
   return data.data;

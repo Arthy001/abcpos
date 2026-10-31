@@ -988,6 +988,9 @@ export interface BalanceSheetData {
     totalEquity: number;
     retainedEarnings: number;
     ownerCapital: number;
+    totalSalesRevenue?: number;
+    costOfGoodsSold?: number;
+    grossProfit?: number;
     totalIncome: number;
     totalExpense: number;
     netIncome: number;
