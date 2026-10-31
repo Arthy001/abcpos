@@ -752,8 +752,18 @@ export interface PosShiftCurrentResponse {
 export interface DashboardStats {
   summary: {
     totalSales: number;
+    totalSalesReturn?: number;
+    totalPurchases?: number;
+    totalPurchaseReturn?: number;
+    profit?: number;
+    invoiceDue?: number;
+    totalExpenses?: number;
+    totalPaymentReturns?: number;
     totalOrders: number;
     totalProducts: number;
+    totalCategories?: number;
+    totalSuppliers?: number;
+    totalCustomers?: number;
     lowStockCount: number;
     todaySales?: number;
     todayOrders?: number;
@@ -762,7 +772,31 @@ export interface DashboardStats {
     month: string;
     sales: number;
     purchase: number;
+    revenue?: number;
+    expense?: number;
   }[];
+  topCategories?: {
+    name: string;
+    sales: number;
+    productCount: number;
+    color: string;
+  }[];
+  topCustomers?: {
+    id: string;
+    name: string;
+    country: string;
+    ordersCount: number;
+    totalSpent: number;
+    avatar: string;
+  }[];
+  heatmapCounts?: Record<string, number>;
+  recentTransactions?: {
+    Sale: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+    Purchase: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+    Quotation: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+    Expenses: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+    Invoices: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+  };
   recentOrders: Order[];
   lowStockProducts: Product[];
   topSellingProducts: Product[];

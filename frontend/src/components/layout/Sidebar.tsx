@@ -139,7 +139,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
     {
       title: "Main",
       items: [
-        { name: "Dashboard", href: "/", icon: LayoutDashboard },
+        { name: "Dashboard 1", href: "/", icon: LayoutDashboard },
+        { name: "Dashboard 2", href: "/dashboard-2", icon: LayoutGrid },
         { name: "Super Admin", href: "/admin", icon: Shield },
       ],
     },
