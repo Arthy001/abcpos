@@ -26,10 +26,15 @@ import {
   Sparkles,
   CheckCircle2,
   AlertTriangle,
+  Receipt,
+  Clock,
+  Calendar,
+  Layers,
 } from "lucide-react";
 
 export default function ExpensesPage() {
   const formatMoney = useCurrencyStore((state) => state.formatMoney);
+  const currencySymbol = useCurrencyStore((state) => state.currencySymbol);
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [categories, setCategories] = useState<ExpenseCategory[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
@@ -38,6 +43,7 @@ export default function ExpensesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [storeFilter, setStoreFilter] = useState<string>("all");
   const [statusFilter, setStatusFilter] = useState<string>("all");
+  const [monthFilter, setMonthFilter] = useState<string>("all");
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [pageSize, setPageSize] = useState<number>(10);
   const [currentPage, setCurrentPage] = useState<number>(1);
@@ -93,8 +99,8 @@ export default function ExpensesPage() {
   const handleOpenAddModal = () => {
     setEditingExpense(null);
     setFormName("");
-    setFormStore(stores.length > 0 ? stores[0].name : "Electro Mart");
-    setFormCategory(categories.length > 0 ? categories[0].name : "Utilities");
+    setFormStore("");
+    setFormCategory("");
     setFormAmount("");
     setFormDate(new Date().toISOString().split("T")[0]);
     setFormStatus("Approved");
@@ -105,8 +111,8 @@ export default function ExpensesPage() {
   const handleOpenEditModal = (exp: Expense) => {
     setEditingExpense(exp);
     setFormName(exp.expenseName);
-    setFormStore(exp.storeName || (stores.length > 0 ? stores[0].name : "Electro Mart"));
-    setFormCategory(exp.categoryName || (categories.length > 0 ? categories[0].name : "Utilities"));
+    setFormStore(exp.storeName || "");
+    setFormCategory(exp.categoryName || "");
     setFormAmount(String(exp.amount));
     setFormDate(exp.date);
     setFormStatus(exp.status);
@@ -122,6 +128,15 @@ export default function ExpensesPage() {
         type: "error",
         title: "Missing Information",
         message: "Please enter Expense Name.",
+      });
+      return;
+    }
+    if (!formCategory) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Missing Information",
+        message: "Please select an Expense Category.",
       });
       return;
     }
@@ -205,6 +220,39 @@ export default function ExpensesPage() {
     }
   };
 
+  const stats = useMemo(() => {
+    const totalAmount = expenses.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const approvedList = expenses.filter((e) => e.status.toLowerCase() === "approved");
+    const approvedAmount = approvedList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+    const pendingList = expenses.filter((e) => e.status.toLowerCase() === "pending");
+    const pendingAmount = pendingList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    const currentYearMonth = new Date().toISOString().slice(0, 7);
+    const thisMonthList = expenses.filter((e) => e.date && e.date.startsWith(currentYearMonth));
+    const thisMonthAmount = thisMonthList.reduce((sum, e) => sum + (Number(e.amount) || 0), 0);
+
+    return {
+      totalAmount,
+      totalCount: expenses.length,
+      approvedAmount,
+      approvedCount: approvedList.length,
+      pendingAmount,
+      pendingCount: pendingList.length,
+      thisMonthAmount,
+      thisMonthCount: thisMonthList.length,
+    };
+  }, [expenses]);
+
+  const availableMonths = useMemo(() => {
+    const months = new Set<string>();
+    expenses.forEach((e) => {
+      if (e.date && e.date.length >= 7) {
+        months.add(e.date.slice(0, 7));
+      }
+    });
+    return Array.from(months).sort().reverse();
+  }, [expenses]);
+
   const filteredDisplay = useMemo(() => {
     return expenses.filter((item) => {
       const term = search.toLowerCase();
@@ -217,10 +265,11 @@ export default function ExpensesPage() {
       const matchesCat = categoryFilter === "all" || item.categoryName === categoryFilter;
       const matchesStore = storeFilter === "all" || item.storeName === storeFilter;
       const matchesStatus = statusFilter === "all" || item.status.toLowerCase() === statusFilter.toLowerCase();
+      const matchesMonth = monthFilter === "all" || (item.date && item.date.startsWith(monthFilter));
 
-      return matchesSearch && matchesCat && matchesStore && matchesStatus;
+      return matchesSearch && matchesCat && matchesStore && matchesStatus && matchesMonth;
     });
-  }, [expenses, search, categoryFilter, storeFilter, statusFilter]);
+  }, [expenses, search, categoryFilter, storeFilter, statusFilter, monthFilter]);
 
   const totalEntries = filteredDisplay.length;
   const totalPages = Math.ceil(totalEntries / pageSize) || 1;
@@ -303,9 +352,56 @@ export default function ExpensesPage() {
           </div>
         </div>
 
+        {/* Summary KPI Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-500">Total Expenses</p>
+              <h3 className="text-lg font-bold text-gray-900 mt-1">{formatMoney(stats.totalAmount)}</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5">{stats.totalCount} transactions</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-orange-50 text-[#FE9F43] flex items-center justify-center shrink-0">
+              <Receipt className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-500">Approved</p>
+              <h3 className="text-lg font-bold text-emerald-600 mt-1">{formatMoney(stats.approvedAmount)}</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5">{stats.approvedCount} approved</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-500">Pending Approval</p>
+              <h3 className="text-lg font-bold text-amber-600 mt-1">{formatMoney(stats.pendingAmount)}</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5">{stats.pendingCount} pending</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
+              <Clock className="w-5 h-5" />
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs flex items-center justify-between">
+            <div>
+              <p className="text-xs font-medium text-gray-500">This Month</p>
+              <h3 className="text-lg font-bold text-blue-600 mt-1">{formatMoney(stats.thisMonthAmount)}</h3>
+              <p className="text-[11px] text-gray-400 mt-0.5">{stats.thisMonthCount} expenses</p>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
+              <Calendar className="w-5 h-5" />
+            </div>
+          </div>
+        </div>
+
         {/* Filter Bar */}
         <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-2xs space-y-3">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
             {/* Search */}
             <div className="relative">
               <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
@@ -324,40 +420,51 @@ export default function ExpensesPage() {
             {/* Category Filter */}
             <div>
               <SearchableSelect
-                options={[
-                  { value: "all", label: "Category: All" },
-                  ...categories.map((c) => ({ value: c.name, label: c.name })),
-                ]}
+                showAllOption
+                allOptionLabel="Category: All"
+                options={categories.map((c) => ({ value: c.name, label: c.name }))}
                 value={categoryFilter}
                 onChange={(val) => {
                   setCategoryFilter(val);
                   setCurrentPage(1);
                 }}
-                placeholder="Category: All"
               />
             </div>
 
             {/* Store Filter */}
             <div>
               <SearchableSelect
-                options={[
-                  { value: "all", label: "Store: All" },
-                  ...stores.map((s) => ({ value: s.name, label: s.name })),
-                ]}
+                showAllOption
+                allOptionLabel="Store: All"
+                options={stores.map((s) => ({ value: s.name, label: s.name }))}
                 value={storeFilter}
                 onChange={(val) => {
                   setStoreFilter(val);
                   setCurrentPage(1);
                 }}
-                placeholder="Store: All"
+              />
+            </div>
+
+            {/* Month Filter */}
+            <div>
+              <SearchableSelect
+                showAllOption
+                allOptionLabel="Period: All Months"
+                options={availableMonths.map((m) => ({ value: m, label: m }))}
+                value={monthFilter}
+                onChange={(val) => {
+                  setMonthFilter(val);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
             {/* Status Filter */}
             <div>
               <SearchableSelect
+                showAllOption
+                allOptionLabel="Status: All"
                 options={[
-                  { value: "all", label: "Status: All" },
                   { value: "approved", label: "Approved" },
                   { value: "pending", label: "Pending" },
                 ]}
@@ -366,7 +473,6 @@ export default function ExpensesPage() {
                   setStatusFilter(val);
                   setCurrentPage(1);
                 }}
-                placeholder="Status: All"
               />
             </div>
           </div>
@@ -586,7 +692,7 @@ export default function ExpensesPage() {
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block font-semibold text-gray-700 mb-1">
-                      Amount (฿) <span className="text-rose-500">*</span>
+                      Amount ({currencySymbol}) <span className="text-rose-500">*</span>
                     </label>
                     <input
                       type="number"

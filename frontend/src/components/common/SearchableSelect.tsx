@@ -54,12 +54,58 @@ export function SearchableSelect({
   // Selected Option display
   const selectedOption = options.find((opt) => opt.value === value);
 
-  // Filter options based on search query
-  const filteredOptions = options.filter(
-    (opt) =>
-      opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (opt.subLabel && opt.subLabel.toLowerCase().includes(searchQuery.toLowerCase()))
+  const defaultSelectText =
+    selectOptionLabel || (placeholder && placeholder !== "Select an option..." ? placeholder : "Select...");
+
+  // Check whether options list already contains an "All" or "Select/Empty" option
+  const hasAllInOptions = options.some(
+    (opt) => opt.value === "all" || opt.label.trim().toLowerCase() === "all"
   );
+  const hasEmptyInOptions = options.some((opt) => opt.value === "");
+  const hasDefaultTextInOptions = options.some(
+    (opt) =>
+      opt.label.trim().toLowerCase() === defaultSelectText.trim().toLowerCase() ||
+      (defaultSelectText.toLowerCase().includes("all") && opt.label.toLowerCase().includes("all"))
+  );
+
+  // Top "Select..." option should only render when:
+  // 1. showSelectOption is enabled
+  // 2. showAllOption is disabled
+  // 3. options does NOT already include an "all", empty, or default-text option
+  const shouldRenderSelectOption =
+    showSelectOption &&
+    !showAllOption &&
+    !hasAllInOptions &&
+    !hasEmptyInOptions &&
+    !hasDefaultTextInOptions;
+
+  // Filter and deduplicate options
+  const seenValues = new Set<string>();
+  const displayOptions = options.filter((opt) => {
+    // If showAllOption is enabled, do not duplicate "all" from options
+    if (showAllOption) {
+      if (
+        opt.value === "all" ||
+        opt.label.trim().toLowerCase() === allOptionLabel.trim().toLowerCase() ||
+        opt.label.trim().toLowerCase() === "all"
+      ) {
+        return false;
+      }
+    }
+
+    // Deduplicate identical values in options array
+    if (seenValues.has(opt.value)) {
+      return false;
+    }
+    seenValues.add(opt.value);
+
+    // Filter based on search query
+    if (!searchQuery) return true;
+    return (
+      opt.label.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      Boolean(opt.subLabel && opt.subLabel.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
+  });
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -97,9 +143,6 @@ export function SearchableSelect({
     md: "min-h-[38px] px-3.5 py-2 text-xs rounded-xl bg-gray-50",
     lg: "min-h-[44px] px-4 py-2.5 text-sm rounded-xl bg-gray-50",
   };
-
-  const defaultSelectText =
-    selectOptionLabel || (placeholder && placeholder !== "Select an option..." ? placeholder : "Select...");
 
   return (
     <div className={`relative w-full ${className}`} ref={dropdownRef}>
@@ -197,7 +240,7 @@ export function SearchableSelect({
           {/* Options List */}
           <div className="max-h-56 overflow-y-auto py-1 divide-y divide-gray-50 text-xs">
             {/* 1. Show "All" Option (e.g. for filter bars) */}
-            {showAllOption && (
+            {showAllOption && (!searchQuery || allOptionLabel.toLowerCase().includes(searchQuery.toLowerCase())) && (
               <div
                 onClick={() => handleSelect("all")}
                 className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
@@ -212,7 +255,7 @@ export function SearchableSelect({
             )}
 
             {/* 2. Show "Select" Option as the first item (for form selects) */}
-            {showSelectOption && !showAllOption && (
+            {shouldRenderSelectOption && (!searchQuery || defaultSelectText.toLowerCase().includes(searchQuery.toLowerCase())) && (
               <div
                 onClick={() => handleSelect("")}
                 className={`px-3 py-2 flex items-center justify-between cursor-pointer transition-colors ${
@@ -226,12 +269,12 @@ export function SearchableSelect({
               </div>
             )}
 
-            {filteredOptions.length === 0 ? (
+            {displayOptions.length === 0 && !showAllOption && !shouldRenderSelectOption ? (
               <div className="px-3.5 py-4 text-center text-gray-400 text-xs">
                 No matching options found
               </div>
             ) : (
-              filteredOptions.map((opt) => {
+              displayOptions.map((opt) => {
                 const isSelected = opt.value === value;
                 return (
                   <div
