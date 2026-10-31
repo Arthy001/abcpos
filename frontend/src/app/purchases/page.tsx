@@ -8,6 +8,8 @@ import {
   createPurchaseApi,
   updatePurchaseApi,
   deletePurchaseApi,
+  receivePurchaseGoodsApi,
+  fetchGoodsReceiptNotesApi,
   fetchSuppliers,
   fetchProducts,
   fetchWarehouses,
@@ -33,6 +35,8 @@ import {
   ChevronLeft,
   ChevronRight,
   ShoppingBag,
+  Inbox,
+  Truck,
   Building2,
   Receipt,
   Plus,
@@ -84,7 +88,7 @@ export default function PurchasesPage() {
   const [formStore, setFormStore] = useState<string>("Electro Mart");
   const [formReference, setFormReference] = useState<string>("");
   const [formDate, setFormDate] = useState<string>(new Date().toISOString().split("T")[0]);
-  const [formStatus, setFormStatus] = useState<"RECEIVED" | "PENDING" | "ORDERED" | "CANCELLED">("RECEIVED");
+  const [formStatus, setFormStatus] = useState<"RECEIVED" | "PENDING" | "ORDERED" | "CANCELLED" | "PARTIAL_RECEIVED">("RECEIVED");
   const [formPaymentStatus, setFormPaymentStatus] = useState<"PAID" | "UNPAID" | "OVERDUE" | "PARTIAL">("PAID");
   const [formDiscount, setFormDiscount] = useState<number>(0);
   const [formTax, setFormTax] = useState<number>(0);
@@ -96,6 +100,10 @@ export default function PurchasesPage() {
 
   // View Modal State
   const [viewPurchase, setViewPurchase] = useState<Purchase | null>(null);
+  const [receivingPurchase, setReceivingPurchase] = useState<Purchase | null>(null);
+  const [receiveInputs, setReceiveInputs] = useState<{ [itemId: string]: { received: number; rejected: number; reason: string } }>({});
+  const [receiveNotes, setReceiveNotes] = useState<string>("");
+  const [isReceivingSubmitting, setIsReceivingSubmitting] = useState<boolean>(false);
 
   // Delete Confirmation State
   const [deletingPurchase, setDeletingPurchase] = useState<Purchase | null>(null);
@@ -199,61 +207,103 @@ export default function PurchasesPage() {
   const calculatedTotal = useMemo(() => {
     const afterDiscount = Math.max(0, calculatedSubtotal - formDiscount);
     const taxAmount = (afterDiscount * formTax) / 100;
-    return afterDiscount + taxAmount + formShipping;
+    return Math.max(0, afterDiscount + taxAmount + formShipping);
   }, [calculatedSubtotal, formDiscount, formTax, formShipping]);
+
+  // Keep Paid Amount in sync with Payment Status and Total
+  useEffect(() => {
+    if (formPaymentStatus === "PAID") {
+      setFormPaid(calculatedTotal);
+    } else if (formPaymentStatus === "UNPAID") {
+      setFormPaid(0);
+    } else if (formPaymentStatus === "PARTIAL") {
+      if (formPaid > calculatedTotal) {
+        setFormPaid(calculatedTotal);
+      }
+    }
+  }, [calculatedTotal, formPaymentStatus]);
 
   const calculatedDue = useMemo(() => {
     return Math.max(0, calculatedTotal - formPaid);
   }, [calculatedTotal, formPaid]);
 
-  // Open Add Modal
+  // Open Add Modal (Clean & Standard Procurement Flow)
   const handleOpenAddModal = () => {
     setEditingPurchase(null);
-    setFormSupplierName(suppliers.length > 0 ? suppliers[0].name : "");
-    // Default to user's assigned warehouse if available
-    setFormWarehouse(user?.warehouseName || (warehouses.length > 0 ? warehouses[0].name : "Lavish Warehouse"));
+    setFormSupplierName(""); // Empty - must be selected by user
+    setFormWarehouse(user?.warehouseName || (warehouses.length > 0 ? warehouses[0].name : ""));
     setFormStore(stores.length > 0 ? stores[0].name : "Electro Mart");
-    setFormReference(`PT${Math.floor(100 + Math.random() * 900)}`);
+    setFormReference(`PO-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}-${Math.floor(100 + Math.random() * 900)}`);
     setFormDate(new Date().toISOString().split("T")[0]);
-    setFormStatus("RECEIVED");
-    setFormPaymentStatus("PAID");
+    setFormStatus("ORDERED"); // Standard: Order placed, awaiting goods delivery
+    setFormPaymentStatus("UNPAID"); // Standard: Pay on or after receiving invoice
     setFormDiscount(0);
-    setFormTax(7); // 7% VAT
+    setFormTax(7); // 7% VAT standard
     setFormShipping(0);
+    setFormPaid(0); // Paid starts at 0
     setFormNotes("");
-
-    // Initial Item
-    if (products.length > 0) {
-      const firstP = products[0];
-      setFormItems([
-        {
-          productId: firstP.id,
-          productName: firstP.name,
-          productImage: firstP.image || "/assets/images/product-01.jpg",
-          sku: firstP.sku,
-          quantity: 10,
-          receivedQty: 10,
-          unitCost: firstP.costPrice || 25,
-          subtotal: (firstP.costPrice || 25) * 10,
-          total: (firstP.costPrice || 25) * 10,
-        },
-      ]);
-      setFormPaid((firstP.costPrice || 25) * 10 * 1.07);
-    } else {
-      setFormItems([
-        {
-          productName: "Sample Product",
-          sku: "SKU001",
-          quantity: 10,
-          receivedQty: 10,
-          unitCost: 100,
-          subtotal: 1000,
-          total: 1000,
-        },
-      ]);
-      setFormPaid(1000 * 1.07);
-    }
+    setFormItems([]); // Clean empty items list - no dummy items
     setShowModal(true);
+  };
+  // Open Receive Goods Modal
+  const handleOpenReceiveModal = (p: Purchase) => {
+    setReceivingPurchase(p);
+    const initialInputs: { [itemId: string]: { received: number; rejected: number; reason: string } } = {};
+    p.items?.forEach((it) => {
+      const remaining = Math.max(0, it.quantity - (it.receivedQty || 0));
+      initialInputs[it.id || ""] = {
+        received: remaining,
+        rejected: 0,
+        reason: "",
+      };
+    });
+    setReceiveInputs(initialInputs);
+    setReceiveNotes("");
+  };
+
+  const handleReceiveGoodsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!receivingPurchase || !receivingPurchase.items) return;
+
+    try {
+      setIsReceivingSubmitting(true);
+      const itemsPayload = receivingPurchase.items.map((it) => {
+        const inp = receiveInputs[it.id || ""] || { received: 0, rejected: 0, reason: "" };
+        return {
+          purchaseItemId: it.id || "",
+          receivedQty: Number(inp.received) || 0,
+          rejectedQty: Number(inp.rejected) || 0,
+          rejectReason: inp.reason || undefined,
+        };
+      });
+
+      const res = await receivePurchaseGoodsApi(receivingPurchase.id, {
+        items: itemsPayload,
+        receivedBy: user?.name || "Warehouse Receiver",
+        notes: receiveNotes || undefined,
+      });
+
+      if (res.success) {
+        setReceivingPurchase(null);
+        setFeedbackModal({
+          isOpen: true,
+          type: "add_success",
+          title: "Goods Receipt Completed!",
+          message: res.message,
+          itemName: res.data.grnNumber,
+        });
+        loadData();
+      }
+    } catch (err: any) {
+      setFeedbackModal({
+        isOpen: true,
+        type: "error",
+        title: "Goods Reception Failed",
+        message: err.message || "Failed to process receipt note",
+      });
+    } finally {
+      setIsReceivingSubmitting(false);
+    }
   };
 
   // Open Edit Modal
@@ -351,7 +401,7 @@ export default function PurchasesPage() {
   // Save Purchase
   const handleSavePurchase = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formSupplierName) {
+    if (!formSupplierName || formItems.length === 0) {
       setFeedbackModal({
         isOpen: true,
         type: "error",
@@ -885,7 +935,7 @@ export default function PurchasesPage() {
         {/* ========================================================================= */}
         {showModal && (
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-3xl w-full p-6 space-y-4 shadow-2xl relative max-h-[90vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
+            <div className="bg-white rounded-2xl max-w-4xl w-full p-6 space-y-4 shadow-2xl relative max-h-[92vh] overflow-y-auto animate-in fade-in zoom-in duration-150">
               <div className="flex items-center justify-between border-b border-gray-100 pb-3">
                 <div className="flex items-center space-x-2">
                   <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#FE9F43] flex items-center justify-center">
@@ -1026,8 +1076,8 @@ export default function PurchasesPage() {
                       <thead className="bg-gray-50 text-gray-700 border-b border-gray-200">
                         <tr>
                           <th className="py-2.5 px-3">Product Name</th>
-                          <th className="py-2.5 px-3 w-28">Quantity</th>
-                          <th className="py-2.5 px-3 w-28">Unit Cost ($)</th>
+                          <th className="py-2.5 px-3 w-24 text-center">Quantity</th>
+                          <th className="py-2.5 px-3 w-28 text-right">Unit Cost ($)</th>
                           <th className="py-2.5 px-3 w-28 text-right">Subtotal</th>
                           <th className="py-2.5 px-2 w-10 text-center"></th>
                         </tr>
@@ -1402,7 +1452,137 @@ export default function PurchasesPage() {
         {/* ========================================================================= */}
         {/* FEEDBACK MODALS (ADD/EDIT/DELETE/ERROR AS PER GEMINI.MD) */}
         {/* ========================================================================= */}
-        {feedbackModal.isOpen && (
+              {/* --- GOODS RECEIPT MODAL (GRN) --- */}
+      {receivingPurchase && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl w-full max-w-3xl shadow-2xl p-6 space-y-4 animate-in fade-in zoom-in-95 duration-150 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div className="flex items-center space-x-2">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <Inbox className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900">Goods Receipt & Physical Inspection</h3>
+                  <p className="text-xs text-gray-400">PO Ref: {receivingPurchase.reference} &bull; Supplier: {receivingPurchase.supplierName}</p>
+                </div>
+              </div>
+              <button onClick={() => setReceivingPurchase(null)} className="text-gray-400 hover:text-gray-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleReceiveGoodsSubmit} className="space-y-4 flex-1 overflow-y-auto">
+              <div className="border border-gray-200 rounded-xl overflow-hidden">
+                <table className="w-full text-left text-xs">
+                  <thead className="bg-gray-50 border-b border-gray-200 text-gray-700 font-bold uppercase">
+                    <tr>
+                      <th className="py-2.5 px-3">Product Name</th>
+                      <th className="py-2.5 px-3 text-center">Ordered</th>
+                      <th className="py-2.5 px-3 text-center">Already Rec.</th>
+                      <th className="py-2.5 px-3 text-center w-28">Receive Now</th>
+                      <th className="py-2.5 px-3 text-center w-24">Rejected</th>
+                      <th className="py-2.5 px-3">Reject Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100">
+                    {receivingPurchase.items?.map((it) => {
+                      const inp = receiveInputs[it.id || ""] || { received: 0, rejected: 0, reason: "" };
+                      const remaining = Math.max(0, it.quantity - (it.receivedQty || 0));
+
+                      return (
+                        <tr key={it.id} className="hover:bg-gray-50/50">
+                          <td className="py-2.5 px-3 font-semibold text-gray-900">
+                            {it.productName}
+                            {it.sku && <span className="text-gray-400 block text-[10px]">{it.sku}</span>}
+                          </td>
+                          <td className="py-2.5 px-3 text-center font-bold text-gray-700">{it.quantity}</td>
+                          <td className="py-2.5 px-3 text-center text-emerald-600 font-bold">{it.receivedQty || 0}</td>
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min={0}
+                              max={remaining}
+                              value={inp.received}
+                              onChange={(e) => {
+                                const val = Number(e.target.value) || 0;
+                                setReceiveInputs((prev) => ({
+                                  ...prev,
+                                  [it.id || ""]: { ...inp, received: val },
+                                }));
+                              }}
+                              className="w-20 px-2 py-1 text-center font-bold text-xs bg-emerald-50/50 border border-emerald-300 rounded-lg text-emerald-900 focus:outline-hidden focus:ring-1 focus:ring-emerald-500"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3 text-center">
+                            <input
+                              type="number"
+                              min={0}
+                              value={inp.rejected}
+                              onChange={(e) => {
+                                const val = Number(e.target.value) || 0;
+                                setReceiveInputs((prev) => ({
+                                  ...prev,
+                                  [it.id || ""]: { ...inp, rejected: val },
+                                }));
+                              }}
+                              className="w-16 px-2 py-1 text-center font-bold text-xs bg-rose-50/50 border border-rose-300 rounded-lg text-rose-900 focus:outline-hidden focus:ring-1 focus:ring-rose-500"
+                            />
+                          </td>
+                          <td className="py-2.5 px-3">
+                            <input
+                              type="text"
+                              placeholder="e.g. Broken box, torn"
+                              value={inp.reason}
+                              onChange={(e) => {
+                                setReceiveInputs((prev) => ({
+                                  ...prev,
+                                  [it.id || ""]: { ...inp, reason: e.target.value },
+                                }));
+                              }}
+                              className="w-full px-2 py-1 text-xs bg-gray-50 border border-gray-200 rounded-lg focus:outline-hidden focus:ring-1 focus:ring-gray-400"
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Receipt Notes / Driver Remarks</label>
+                <textarea
+                  rows={2}
+                  value={receiveNotes}
+                  onChange={(e) => setReceiveNotes(e.target.value)}
+                  placeholder="e.g. Delivered by Lalamove truck, license 1กข-9988. Package checked."
+                  className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs focus:outline-hidden focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-gray-100">
+                <button
+                  type="button"
+                  onClick={() => setReceivingPurchase(null)}
+                  className="px-4 py-2 border border-gray-200 text-gray-600 rounded-xl text-xs font-semibold hover:bg-gray-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isReceivingSubmitting}
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-xs cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                >
+                  <Inbox className="w-3.5 h-3.5" />
+                  <span>{isReceivingSubmitting ? "Ingesting..." : "Confirm Receipt & Ingest Stock"}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {feedbackModal.isOpen && (
           <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in duration-150">
             <div className="bg-white rounded-2xl max-w-sm w-full p-6 text-center space-y-4 shadow-2xl border border-gray-100">
               {feedbackModal.type === "add_success" && (

@@ -1021,7 +1021,7 @@ export interface Purchase {
   warehouseName?: string | null;
   storeName?: string | null;
   date: string;
-  status: "RECEIVED" | "PENDING" | "ORDERED" | "CANCELLED";
+  status: "RECEIVED" | "PENDING" | "ORDERED" | "CANCELLED" | "PARTIAL_RECEIVED";
   paymentStatus: "PAID" | "UNPAID" | "OVERDUE" | "PARTIAL";
   subtotal: number;
   tax: number;
@@ -1787,4 +1787,56 @@ export interface ProductSerialNumber {
   notes?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface GoodsReceiptNote {
+  id: string;
+  grnNumber: string;
+  type: "PO" | "WORK_ORDER";
+  purchaseId?: string | null;
+  workOrderId?: string | null;
+  purchaseRef?: string | null;
+  supplierName?: string | null;
+  warehouseName: string;
+  receivedDate: string;
+  receivedBy: string;
+  totalReceived: number;
+  totalRejected: number;
+  status: "COMPLETED" | "CANCELLED";
+  notes?: string | null;
+  items?: GrnItem[];
+  createdAt: string;
+  purchase?: {
+    id: string;
+    reference: string;
+    status: string;
+    total: number;
+  } | null;
+  workOrder?: {
+    id: string;
+    orderNo: string;
+    status: string;
+    targetQty: number;
+    producedQty: number;
+    finishedProduct?: {
+      id: string;
+      name: string;
+      sku: string;
+    };
+  } | null;
+}
+
+export interface GrnItem {
+  id: string;
+  grnId: string;
+  productId?: string | null;
+  productName: string;
+  sku?: string | null;
+  orderedQty: number;
+  receivedQty: number;
+  rejectedQty: number;
+  rejectReason?: string | null;
+  unitCost: number;
+  notes?: string | null;
+  createdAt: string;
 }

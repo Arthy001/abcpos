@@ -62,6 +62,7 @@ import {
   Undo2,
   History,
   Factory,
+  PackageCheck,
 } from "lucide-react";
 
 interface SidebarProps {
@@ -163,6 +164,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
       title: "Stock",
       items: [
         { name: "Manage Stock", href: "/stock/manage", icon: Boxes },
+        { name: "Goods Receipts", href: "/stock/receipts", icon: PackageCheck },
         { name: "Stock Adjustment", href: "/stock/adjustment", icon: FileSpreadsheet },
         { name: "Stock Transfer", href: "/stock/transfer", icon: ArrowRightLeft },
         { name: "Cycle Count", href: "/stock/cycle-count", icon: FileSpreadsheet },

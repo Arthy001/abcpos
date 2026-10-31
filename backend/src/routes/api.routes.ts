@@ -361,6 +361,7 @@ import { getDashboardStats } from "../controllers/dashboard.controller.js";
 import { getHeldOrders, createHeldOrder, resumeHeldOrder, deleteHeldOrder } from "../controllers/pos-hold.controller.js";
 import { getCycleCounts, getCycleCountById, createCycleCount, updateCycleCountItems, reconcileCycleCount, deleteCycleCount } from "../controllers/cycle-count.controller.js";
 import { getProductSerialNumbers, addProductSerialNumbers, lookupSerialNumber, assignSerialNumbersToSale } from "../controllers/serial.controller.js";
+import { getGoodsReceiptNotes, getGoodsReceiptNoteById, receivePurchaseGoods, receiveWorkOrderGoods } from "../controllers/grn.controller.js";
 import {
   getSystemNotifications,
   markNotificationAsRead,
@@ -574,6 +575,12 @@ router.get("/products/:id/serial-numbers", getProductSerialNumbers);
 router.post("/products/:id/serial-numbers", addProductSerialNumbers);
 router.get("/serial-numbers/lookup", lookupSerialNumber);
 router.post("/serial-numbers/sell", assignSerialNumbersToSale);
+
+// Goods Receipt Notes (GRN - การตรวจรับสินค้า)
+router.get("/grn", getGoodsReceiptNotes);
+router.get("/grn/:id", getGoodsReceiptNoteById);
+router.post("/purchases/:id/receive", receivePurchaseGoods);
+router.post("/manufacturing/work-orders/:id/receive", receiveWorkOrderGoods);
 
 // POS Shifts & Cash Drawer
 router.get("/pos-shifts/current", getCurrentShift);

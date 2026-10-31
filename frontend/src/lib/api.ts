@@ -101,6 +101,7 @@ import {
   TaxInvoice,
   AccountantExportData,
   SystemIncident,
+  GoodsReceiptNote,
 } from "@/types";
 
 export function getApiBaseUrl(): string {
@@ -4475,6 +4476,85 @@ export async function assignSerialNumbersToSaleApi(payload: {
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to assign serial numbers");
+  }
+  return res.json();
+}
+// ==========================================
+// 📥 GOODS RECEIPT NOTE (GRN)
+// ==========================================
+
+export async function fetchGoodsReceiptNotesApi(params?: {
+  purchaseId?: string;
+  workOrderId?: string;
+  type?: "PO" | "WORK_ORDER";
+  search?: string;
+}): Promise<GoodsReceiptNote[]> {
+  const query = new URLSearchParams();
+  if (params?.purchaseId) query.append("purchaseId", params.purchaseId);
+  if (params?.workOrderId) query.append("workOrderId", params.workOrderId);
+  if (params?.type) query.append("type", params.type);
+  if (params?.search) query.append("search", params.search);
+
+  const url = `${API_BASE_URL}/grn${query.toString() ? `?${query.toString()}` : ""}`;
+  const res = await fetch(url, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch goods receipt notes");
+  const json = await res.json();
+  return json.data || [];
+}
+
+export async function fetchGoodsReceiptNoteByIdApi(id: string): Promise<GoodsReceiptNote> {
+  const res = await fetch(`${API_BASE_URL}/grn/${id}`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch goods receipt note details");
+  const json = await res.json();
+  return json.data;
+}
+
+export async function receivePurchaseGoodsApi(
+  purchaseId: string,
+  payload: {
+    items: Array<{
+      purchaseItemId: string;
+      receivedQty: number;
+      rejectedQty?: number;
+      rejectReason?: string;
+      itemNotes?: string;
+    }>;
+    warehouseName?: string;
+    receivedBy?: string;
+    notes?: string;
+  }
+) {
+  const res = await fetch(`${API_BASE_URL}/purchases/${purchaseId}/receive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to receive goods");
+  }
+  return res.json();
+}
+
+export async function receiveWorkOrderGoodsApi(
+  workOrderId: string,
+  payload: {
+    receivedQty: number;
+    rejectedQty?: number;
+    rejectReason?: string;
+    warehouseName?: string;
+    receivedBy?: string;
+    notes?: string;
+  }
+) {
+  const res = await fetch(`${API_BASE_URL}/manufacturing/work-orders/${workOrderId}/receive`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to receive work order goods");
   }
   return res.json();
 }

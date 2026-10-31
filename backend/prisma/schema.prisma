@@ -969,6 +969,7 @@ model Purchase {
   due           Float          @default(0.0)
   notes         String?
   items         PurchaseItem[]
+  goodsReceipts GoodsReceiptNote[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -1645,6 +1646,7 @@ model WorkOrder {
   scraps            ProductionScrap[]
   forceStartReason  String?
   requisitions      MaterialRequisition[]
+  goodsReceipts     GoodsReceiptNote[]
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 }
@@ -2045,4 +2047,54 @@ model ProductSerialNumber {
   @@index([productId])
   @@index([status])
   @@index([serialNo])
+}
+
+// ==========================================
+// 📥 GOODS RECEIPT NOTE (GRN - การตรวจรับสินค้า)
+// ==========================================
+
+model GoodsReceiptNote {
+  id            String      @id @default(uuid())
+  grnNumber     String      @unique // e.g. "GRN-20261031-001" or "FGRN-20261031-001"
+  type          String      @default("PO") // "PO" or "WORK_ORDER"
+  purchaseId    String?
+  purchase      Purchase?   @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  workOrderId   String?
+  workOrder     WorkOrder?  @relation(fields: [workOrderId], references: [id], onDelete: SetNull)
+  purchaseRef   String?     // e.g. "PO-10293" or "WO-2026-001"
+  supplierName  String?
+  warehouseName String      @default("Lavish Warehouse")
+  receivedDate  DateTime    @default(now())
+  receivedBy    String      @default("Admin")
+  totalReceived Int       @default(0)
+  totalRejected Int       @default(0)
+  status        String      @default("COMPLETED") // COMPLETED, CANCELLED
+  notes         String?
+  items         GrnItem[]
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([purchaseId])
+  @@index([workOrderId])
+  @@index([grnNumber])
+  @@index([receivedDate])
+}
+
+model GrnItem {
+  id           String           @id @default(uuid())
+  grnId        String
+  grn          GoodsReceiptNote @relation(fields: [grnId], references: [id], onDelete: Cascade)
+  productId    String?
+  productName  String
+  sku          String?
+  orderedQty   Int              // ยอดที่สั่งจาก PO
+  receivedQty  Int              // ยอดที่รับเข้าสต็อกรอบนี้
+  rejectedQty  Int              @default(0) // ยอดชำรุด/ตีกลับ
+  rejectReason String?          // เหตุผลตีกลับ
+  unitCost     Float            @default(0.0)
+  notes        String?
+  createdAt    DateTime         @default(now())
+
+  @@index([grnId])
+  @@index([productId])
 }
