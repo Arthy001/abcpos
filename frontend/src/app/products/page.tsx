@@ -681,7 +681,7 @@ export default function ProductsPage() {
                       className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-[#D1D5DB]"
                     />
                   </th>
-                  <th className="py-3 px-3 font-bold text-[#111827] w-24">SKU</th>
+                  <th className="py-3 px-3 font-bold text-[#111827] whitespace-nowrap">SKU</th>
                   <th className="py-3 px-4 font-bold text-[#111827] min-w-[220px]">Product Name</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Category</th>
                   <th className="py-3 px-4 font-bold text-[#111827]">Brand</th>
@@ -729,7 +729,7 @@ export default function ProductsPage() {
                           />
                         </td>
 
-                        <td className="py-3.5 px-3 text-[#64748B] font-mono font-medium">{item.sku}</td>
+                        <td className="py-3.5 px-3 text-[#64748B] font-mono font-medium whitespace-nowrap">{item.sku}</td>
 
                         {/* Product Name with Thumbnail */}
                         <td className="py-3.5 px-4">

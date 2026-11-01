@@ -685,7 +685,7 @@ export default function LowStockPage() {
                   <th className="py-3.5 px-3 font-bold text-gray-900">Store</th>
                   <th className="py-3.5 px-4 font-bold text-gray-900">Product Name</th>
                   <th className="py-3.5 px-3 font-bold text-gray-900">Category</th>
-                  <th className="py-3.5 px-3 font-bold text-gray-900">SKU</th>
+                  <th className="py-3.5 px-3 font-bold text-gray-900 whitespace-nowrap">SKU</th>
                   <th className="py-3.5 px-3 font-bold text-gray-900">Current Qty</th>
                   <th className="py-3.5 px-3 font-bold text-gray-900">Min Alert Qty</th>
                   <th className="py-3.5 px-3 font-bold text-gray-900">Status</th>
@@ -763,7 +763,7 @@ export default function LowStockPage() {
                         <td className="py-3.5 px-3 text-gray-600">{item.category?.name || "-"}</td>
 
                         {/* SKU */}
-                        <td className="py-3.5 px-3 text-gray-500 font-mono font-medium">{item.sku}</td>
+                        <td className="py-3.5 px-3 text-gray-500 font-mono font-medium whitespace-nowrap">{item.sku}</td>
 
                         {/* Current Stock */}
                         <td className="py-3.5 px-3">

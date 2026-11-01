@@ -586,7 +586,7 @@ export default function ExpiredProductsPage() {
                       className="rounded accent-[#FE9F43] w-3.5 h-3.5 cursor-pointer border-gray-300"
                     />
                   </th>
-                  <th className="py-3.5 px-3 font-bold text-gray-900">SKU</th>
+                  <th className="py-3.5 px-3 font-bold text-gray-900 whitespace-nowrap">SKU</th>
                   <th className="py-3.5 px-4 font-bold text-gray-900">Product</th>
                   <th className="py-3.5 px-3 font-bold text-gray-900">Category</th>
                   <th className="py-3.5 px-3 font-bold text-gray-900">Stock Qty</th>
@@ -638,7 +638,7 @@ export default function ExpiredProductsPage() {
                           />
                         </td>
 
-                        <td className="py-3.5 px-3 text-gray-500 font-mono font-medium">{item.sku}</td>
+                        <td className="py-3.5 px-3 text-gray-500 font-mono font-medium whitespace-nowrap">{item.sku}</td>
 
                         {/* Product with Thumbnail */}
                         <td className="py-3.5 px-4">
