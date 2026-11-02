@@ -155,10 +155,10 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
               (e.target as HTMLImageElement).src = "/assets/images/logo.svg";
             }}
           />
-          <span className={`font-black text-base sm:text-lg tracking-tight leading-none ${
+          <span className={`font-medium text-base sm:text-lg tracking-wider leading-none ${
             !isDarkTopBar ? "text-[#0E1422]" : "text-white"
           }`}>
-            Prime <span className="text-[#FE9F43]">ERP</span>
+            PRIME <span className="font-semibold text-[#FE9F43]">ERP</span>
           </span>
         </Link>
 

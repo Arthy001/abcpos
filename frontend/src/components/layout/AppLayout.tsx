@@ -38,7 +38,8 @@ function getModuleFromPath(path: string): string | null {
     path.startsWith("/sales") ||
     path.startsWith("/pos") ||
     path.startsWith("/invoices") ||
-    path.startsWith("/quotations")
+    path.startsWith("/quotations") ||
+    path.startsWith("/b2b")
   ) {
     return "Sales & POS";
   }

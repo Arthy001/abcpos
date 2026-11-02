@@ -82,6 +82,7 @@ interface MenuItem {
   icon: any;
   hasSub?: boolean;
   subItems?: SubMenuItem[];
+  moduleCode?: string;
 }
 
 interface MenuGroup {
@@ -93,6 +94,8 @@ const GROUP_MODULE_MAP: Record<string, string> = {
   "Main": "Dashboard",
   "Inventory": "Products & Inventory",
   "Stock": "Stock Management",
+  "Point of Sale": "Sales & POS",
+  "Sales & B2B": "Sales & POS",
   "Sales": "Sales & POS",
   "B2B Wholesale": "Sales & POS",
   "Manufacturing": "Manufacturing (MRP)",
@@ -110,7 +113,6 @@ const GROUP_SYSTEM_MODULE_MAP: Record<string, string> = {
   "Finance & Accounts": "FINANCE_ACCOUNTS",
   "HRM": "HRM_PAYROLL",
   "Promo": "PROMO_LOYALTY",
-  "B2B Wholesale": "B2B_WHOLESALE",
   "Manufacturing": "MANUFACTURING_MRP",
 };
 
@@ -172,22 +174,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
       ],
     },
     {
-      title: "Sales",
+      title: "Point of Sale",
       items: [
-        {
-          name: "Sales",
-          href: "/sales",
-          icon: LayoutGrid,
-          hasSub: true,
-          subItems: [
-            { name: "Online Orders", href: "/sales/online-orders" },
-            { name: "POS Orders", href: "/sales/pos-orders" },
-            { name: "POS Shifts & Drawer", href: "/sales/shifts" },
-          ],
-        },
-        { name: "Invoices", href: "/invoices", icon: FileText },
-        { name: "Sales Return", href: "/sales/returns", icon: Undo2 },
-        { name: "Quotation", href: "/quotations", icon: FileCheck },
         {
           name: "POS",
           href: "/pos",
@@ -204,16 +192,21 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
             { name: "POS 8", href: "/pos?terminal=8" },
           ],
         },
+        { name: "POS Shifts & Drawer", href: "/sales/shifts", icon: Clock },
+        { name: "POS Orders", href: "/sales/pos-orders", icon: ShoppingCart },
+        { name: "Online Orders", href: "/sales/online-orders", icon: Globe },
       ],
     },
     {
-      title: "B2B Wholesale",
+      title: "Sales & B2B",
       items: [
-        { name: "Sales Orders", href: "/b2b/orders", icon: Truck },
-        { name: "Billing Notes", href: "/b2b/billing", icon: Receipt },
-        { name: "AR Aging", href: "/b2b/ar-aging", icon: Clock },
+        { name: "Sales Transactions", href: "/sales", icon: LayoutGrid },
         { name: "Quotations", href: "/quotations", icon: FileCheck },
-        { name: "B2B Customers", href: "/customers", icon: Users },
+        { name: "Sales Orders", href: "/b2b/orders", icon: Truck, moduleCode: "B2B_WHOLESALE" },
+        { name: "Invoices", href: "/invoices", icon: FileText },
+        { name: "Billing Notes", href: "/b2b/billing", icon: Receipt, moduleCode: "B2B_WHOLESALE" },
+        { name: "Sales Returns", href: "/sales/returns", icon: Undo2 },
+        { name: "AR Aging", href: "/b2b/ar-aging", icon: Clock, moduleCode: "B2B_WHOLESALE" },
       ],
     },
     {
@@ -603,6 +596,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
 
           const visibleItems = group.items.filter((item) => {
             if (!mounted) return true;
+            if (item.moduleCode && !isModuleEnabled(item.moduleCode)) return false;
             if (item.name === "Super Admin" && !isAdmin()) return false;
             if (item.name === "Create Product" && !canCreateProduct()) return false;
             if (item.name === "Roles & Permissions" && !isAdmin()) return false;

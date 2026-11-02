@@ -7,9 +7,9 @@ export const metadata: Metadata = {
   title: "Prime ERP - Modern Enterprise Management",
   description: "Prime ERP - Complete Supply Chain, Manufacturing, and Retail Management",
   icons: {
-    icon: "/assets/images/prime-logo.jpg",
-    shortcut: "/assets/images/prime-logo.jpg",
-    apple: "/assets/images/prime-logo.jpg",
+    icon: "/assets/images/primeicon.ico",
+    shortcut: "/assets/images/primeicon.ico",
+    apple: "/assets/images/primeicon.ico",
   },
 };
 

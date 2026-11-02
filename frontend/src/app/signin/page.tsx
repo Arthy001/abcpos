@@ -197,10 +197,10 @@ export default function SignInPage() {
               }}
             />
             <div className="flex flex-col">
-              <span className="font-black text-[#0E1422] text-xl sm:text-2xl tracking-tight leading-none">
-                Prime <span className="text-[#FE9F43]">ERP</span>
+              <span className="font-medium text-[#0E1422] text-xl sm:text-2xl tracking-wider leading-none">
+                PRIME <span className="font-semibold text-[#FE9F43]">ERP</span>
               </span>
-              <span className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase mt-1">
+              <span className="text-[10px] text-gray-400 font-normal tracking-[0.2em] uppercase mt-1">
                 Enterprise Solution
               </span>
             </div>
