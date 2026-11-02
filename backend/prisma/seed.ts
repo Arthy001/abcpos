@@ -35,7 +35,11 @@ async function main() {
     { name: "Plant Manager", description: "ผู้จัดการโรงงาน ดูแลการผลิต คลังสินค้า และสูตรการผลิต" },
     { name: "Production Supervisor", description: "หัวหน้าฝ่ายผลิต คุมเครื่องเป่าฟิล์มและเครื่องตัดซีล" },
     { name: "Warehouse Supervisor", description: "ผู้ดูแลคลังสินค้า การรับเข้า-เบิกจ่าย และตรวจนับสต็อก" },
-    { name: "Sales & Cashier", description: "เจ้าหน้าที่ฝ่ายขายและออกใบเสร็จรับเงิน/POS" },
+    { name: "Sales Manager", description: "ผู้จัดการฝ่ายขาย B2B ดูแลคำสั่งซื้อ ใบวางบิล และลูกหนี้" },
+    { name: "Cashier", description: "พนักงานขายหน้าร้าน POS และเปิดกะการขาย" },
+    { name: "Accountant", description: "สมุห์บัญชี ดูแลการเงิน ค่าใช้จ่าย ใบกำกับภาษี และงบการเงิน" },
+    { name: "Purchase Officer", description: "เจ้าหน้าที่จัดซื้อเม็ดพลาสติกและประสานงานซัพพลายเออร์" },
+    { name: "HR Manager", description: "ผู้จัดการฝ่ายบุคคล ดูแลการเข้างาน ลางาน และเงินเดือน" },
   ];
 
   for (const r of roles) {
@@ -144,33 +148,73 @@ async function main() {
       status: "ACTIVE",
     },
     {
-      name: "วิชัย เป่าฟิล์ม (Lead Extruder)",
+      name: "วิชัย เป่าฟิล์ม (Plant Manager)",
       phone: "+66 89 876 5432",
       email: "wichai@siampolypack.com",
-      role: "Production Supervisor",
+      role: "Plant Manager",
       warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
       storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
       avatar: "/assets/images/customer12.jpg",
       status: "ACTIVE",
     },
     {
-      name: "กานดา การค้า (Sales Manager)",
-      phone: "+66 86 555 1234",
-      email: "kanda@siampolypack.com",
-      role: "Sales & Cashier",
-      warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
-      storeName: "สาขา ตลาดไท ศูนย์รวมบรรจุภัณฑ์",
-      avatar: "/assets/images/customer14.jpg",
-      status: "ACTIVE",
-    },
-    {
-      name: "สมเกียรติ สต็อกแมน (Store Keeper)",
+      name: "สมเกียรติ สต็อกแมน (Warehouse Supervisor)",
       phone: "+66 84 333 9988",
       email: "somkiat@siampolypack.com",
       role: "Warehouse Supervisor",
       warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
       storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
       avatar: "/assets/images/customer15.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "กานดา การค้า (B2B Sales Executive)",
+      phone: "+66 86 555 1234",
+      email: "kanda@siampolypack.com",
+      role: "Sales Manager",
+      warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
+      storeName: "สาขา ตลาดไท ศูนย์รวมบรรจุภัณฑ์",
+      avatar: "/assets/images/customer14.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "มณีรัตน์ จัดหน้าร้าน (Cashier & POS)",
+      phone: "+66 85 111 2233",
+      email: "manirat@siampolypack.com",
+      role: "Cashier",
+      warehouseName: "คลังสินค้าสำเร็จรูป 1 (FG-01)",
+      storeName: "สาขา ตลาดสี่มุมเมือง",
+      avatar: "/assets/images/customer13.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "พิมพ์ใจ สมุห์บัญชี (Chief Accountant)",
+      phone: "+66 83 444 5566",
+      email: "pimjai@siampolypack.com",
+      role: "Accountant",
+      warehouseName: "All Warehouses",
+      storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+      avatar: "/assets/images/customer16.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "ชาญชัย จัดซื้อ (Purchasing Officer)",
+      phone: "+66 82 777 8899",
+      email: "chanchai@siampolypack.com",
+      role: "Purchase Officer",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+      avatar: "/assets/images/customer17.jpg",
+      status: "ACTIVE",
+    },
+    {
+      name: "วรรณา บริหารคน (HR Manager)",
+      phone: "+66 87 999 0011",
+      email: "wanna@siampolypack.com",
+      role: "HR Manager",
+      warehouseName: "All Warehouses",
+      storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+      avatar: "/assets/images/customer18.jpg",
       status: "ACTIVE",
     },
   ];
@@ -556,6 +600,7 @@ async function main() {
   await prisma.sale.deleteMany();
   await prisma.purchaseItem.deleteMany();
   await prisma.purchase.deleteMany();
+  await prisma.purchaseReturn.deleteMany();
   await prisma.stockMovement.deleteMany();
   await prisma.productStock.deleteMany();
   await prisma.stockTransfer.deleteMany();
@@ -1160,6 +1205,7 @@ async function main() {
         referenceNo: `INIT-${p.sku}`,
         notes: `ยอดยกมาเริ่มต้นสินค้า ${p.name}`,
         createdBy: "Admin",
+        createdAt: new Date("2026-01-01T08:00:00.000Z"),
       },
     });
 
@@ -1601,6 +1647,297 @@ async function main() {
   ];
   for (const emp of employeesData) {
     await prisma.employee.create({ data: emp });
+  }
+
+  // 15.4 Matching Purchase Orders for Returns Lifecycle
+  console.log("Creating POs corresponding to returns...");
+  const matchedPos = [
+    {
+      reference: "PO-202608-001",
+      supplierName: "บริษัท เอสซีจี เคมิคอลส์ จำกัด (มหาชน)",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      date: new Date("2026-08-05T09:00:00Z"),
+      productName: "เม็ดพลาสติก HDPE เป่าฟิล์ม SCG H6140B",
+      quantity: 5000,
+      unitCost: 42.0,
+      notes: "จัดซื้อเม็ดพลาสติก HDPE ประจำสัปดาห์ที่ 1 สิงหาคม 2569",
+      receiptBalanceAfter: 20000,
+    },
+    {
+      reference: "PO-202609-001",
+      supplierName: "บริษัท ไออาร์พีซี จำกัด (มหาชน)",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      date: new Date("2026-09-08T10:00:00Z"),
+      productName: "เม็ดพลาสติก PP ถุงร้อนใส IRPC 1100NK",
+      quantity: 4000,
+      unitCost: 43.5,
+      notes: "จัดซื้อเม็ดพลาสติก PP ถุงร้อนใส สำหรับผลิตถุงร้อนมาตรฐาน",
+      receiptBalanceAfter: 20000,
+    },
+    {
+      reference: "PO-202609-002",
+      supplierName: "บริษัท บีเอเอสเอฟ (ไทย) จำกัด",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      date: new Date("2026-09-18T14:00:00Z"),
+      productName: "สารกันลื่น Slip Agent (Erucamide เปิดปากถุงง่าย)",
+      quantity: 100,
+      unitCost: 2900.0,
+      notes: "จัดซื้อสารเติมแต่ง Slip Agent สำหรับสายการผลิตถุงพลาสติก",
+      receiptBalanceAfter: 600,
+    },
+    {
+      reference: "PO-202610-001",
+      supplierName: "บริษัท เอสซีจี เคมิคอลส์ จำกัด (มหาชน)",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      date: new Date("2026-10-18T10:00:00Z"),
+      productName: "เม็ดพลาสติก HDPE เป่าฟิล์ม SCG H6140B",
+      quantity: 5000,
+      unitCost: 42.0,
+      notes: "จัดซื้อเม็ดพลาสติก HDPE ล็อตเสริมสำหรับงานเร่งด่วนช่วงปลายปี",
+      receiptBalanceAfter: 24988,
+    },
+    {
+      reference: "PO-202610-002",
+      supplierName: "บริษัท พีทีที โกลบอล เคมิคอล จำกัด (มหาชน)",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      date: new Date("2026-10-15T11:00:00Z"),
+      productName: "เม็ดพลาสติก LDPE ฟิล์มใสเหนียว PTT LD2420D",
+      quantity: 4000,
+      unitCost: 45.0,
+      notes: "จัดซื้อเม็ดพลาสติก LDPE ฟิล์มใสเหนียว PTT LD2420D",
+      receiptBalanceAfter: 18000,
+    },
+    {
+      reference: "PO-202610-003",
+      supplierName: "บริษัท ไทยคัลเลอร์มาสเตอร์แบทช์ จำกัด",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      date: new Date("2026-10-22T09:30:00Z"),
+      productName: "เม็ดแม่สีขาว White Masterbatch (TiO2 70%)",
+      quantity: 200,
+      unitCost: 1900.0,
+      notes: "จัดซื้อเม็ดแม่สีขาว White Masterbatch (TiO2 70%)",
+      receiptBalanceAfter: 1200,
+    },
+  ];
+
+  for (const mpo of matchedPos) {
+    const prod = await prisma.product.findFirst({ where: { name: mpo.productName } });
+    const supp = await prisma.supplier.findFirst({ where: { name: mpo.supplierName } });
+    const wh = await prisma.warehouse.findFirst({ where: { name: mpo.warehouseName } });
+    if (!prod || !supp) continue;
+
+    const subtotal = mpo.quantity * mpo.unitCost;
+    const tax = Math.round(subtotal * 0.07);
+    const total = subtotal + tax;
+
+    await prisma.purchase.create({
+      data: {
+        reference: mpo.reference,
+        supplierId: supp.id,
+        supplierName: supp.name,
+        warehouseName: mpo.warehouseName,
+        storeName: "ศูนย์กระจายสินค้า สำนักงานใหญ่ พระราม 2",
+        date: mpo.date,
+        createdAt: mpo.date,
+        status: "RECEIVED",
+        paymentStatus: "PAID",
+        subtotal,
+        tax,
+        total,
+        paid: total,
+        due: 0.0,
+        notes: mpo.notes,
+        items: {
+          create: [
+            {
+              productId: prod.id,
+              productName: prod.name,
+              sku: prod.sku,
+              quantity: mpo.quantity,
+              receivedQty: mpo.quantity,
+              unitCost: mpo.unitCost,
+              subtotal,
+              total,
+              createdAt: mpo.date,
+            },
+          ],
+        },
+      },
+    });
+
+    await prisma.stockMovement.create({
+      data: {
+        productId: prod.id,
+        warehouseId: wh?.id || prod.warehouseId || "",
+        type: "PURCHASE_RECEIPT",
+        referenceNo: mpo.reference,
+        quantity: mpo.quantity,
+        balanceAfter: mpo.receiptBalanceAfter,
+        unitCost: mpo.unitCost,
+        notes: `รับสินค้าตามใบสั่งซื้อ ${mpo.reference} จาก ${supp.name}`,
+        createdBy: "สมศักดิ์ คลังสินค้า",
+        createdAt: mpo.date,
+      },
+    });
+  }
+
+  // 15.5 Purchase Returns
+  console.log("Creating Purchase Returns...");
+  const purchaseReturnsData = [
+    {
+      reference: "PR-202610-001",
+      purchaseReference: "PO-202610-001",
+      supplierName: "บริษัท เอสซีจี เคมิคอลส์ จำกัด (มหาชน)",
+      supplierImage: "/assets/images/supplier-01.png",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      productName: "เม็ดพลาสติก HDPE เป่าฟิล์ม SCG H6140B",
+      productImage: "/assets/images/product-01.jpg",
+      quantity: 20,
+      date: new Date("2026-10-24T10:30:00Z"),
+      status: "COMPLETED",
+      totalAmount: 21000.0,
+      paidAmount: 21000.0,
+      dueAmount: 0.0,
+      paymentStatus: "PAID",
+      notes: "กระสอบเม็ดพลาสติกฉีกขาดชำรุดระหว่างการขนส่ง ตรวจรับหน้าคลัง RM-01 พบสิ่งเจือปน ส่งคืนเปลี่ยนสินค้าเรียบร้อย",
+    },
+    {
+      reference: "PR-202610-002",
+      purchaseReference: "PO-202610-002",
+      supplierName: "บริษัท พีทีที โกลบอล เคมิคอล จำกัด (มหาชน)",
+      supplierImage: "/assets/images/supplier-02.png",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      productName: "เม็ดพลาสติก LDPE ฟิล์มใสเหนียว PTT LD2420D",
+      productImage: "/assets/images/product-02.jpg",
+      quantity: 15,
+      date: new Date("2026-10-18T14:15:00Z"),
+      status: "COMPLETED",
+      totalAmount: 16875.0,
+      paidAmount: 16875.0,
+      dueAmount: 0.0,
+      paymentStatus: "PAID",
+      notes: "ค่าดัชนีการไหลหลอม (Melt Flow Index) ต่ำกว่าเกณฑ์สเปกสำหรับเครื่องเป่าฟิล์มความเร็วสูง ส่งคืนผู้ผลิตเพื่อขอใบลดหนี้ (Credit Note)",
+    },
+    {
+      reference: "PR-202610-003",
+      purchaseReference: "PO-202610-003",
+      supplierName: "บริษัท ไทยคัลเลอร์มาสเตอร์แบทช์ จำกัด",
+      supplierImage: "/assets/images/supplier-03.png",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      productName: "เม็ดแม่สีขาว White Masterbatch (TiO2 70%)",
+      productImage: "/assets/images/product-03.jpg",
+      quantity: 8,
+      date: new Date("2026-10-28T09:00:00Z"),
+      status: "PENDING",
+      totalAmount: 15200.0,
+      paidAmount: 0.0,
+      dueAmount: 15200.0,
+      paymentStatus: "UNPAID",
+      notes: "เม็ดแม่สีขาวมีความชื้นสะสมเกินมาตรฐาน QC กักกันไว้ที่ลานตรวจรับ รอนัดหมายรถขนส่งจากซัพพลายเออร์มารับคืน",
+    },
+    {
+      reference: "PR-202609-001",
+      purchaseReference: "PO-202609-001",
+      supplierName: "บริษัท ไออาร์พีซี จำกัด (มหาชน)",
+      supplierImage: "/assets/images/supplier-04.png",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      productName: "เม็ดพลาสติก PP ถุงร้อนใส IRPC 1100NK",
+      productImage: "/assets/images/product-04.jpg",
+      quantity: 25,
+      date: new Date("2026-09-15T11:45:00Z"),
+      status: "COMPLETED",
+      totalAmount: 27500.0,
+      paidAmount: 27500.0,
+      dueAmount: 0.0,
+      paymentStatus: "PAID",
+      notes: "ส่งสินค้าผิดเกรด (ส่งเกรดฉีดแทนเกรดเป่าฟิล์ม) ส่งคืนและได้รับล็อตแก้ไขถูกต้องพร้อมเอกสาร COA ครบถ้วน",
+    },
+    {
+      reference: "PR-202609-002",
+      purchaseReference: "PO-202609-002",
+      supplierName: "บริษัท บีเอเอสเอฟ (ไทย) จำกัด",
+      supplierImage: "/assets/images/supplier-05.png",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      productName: "สารกันติด Slip & Anti-Block Masterbatch BASF",
+      productImage: "/assets/images/product-05.jpg",
+      quantity: 4,
+      date: new Date("2026-09-22T16:20:00Z"),
+      status: "CANCELLED",
+      totalAmount: 11600.0,
+      paidAmount: 0.0,
+      dueAmount: 11600.0,
+      paymentStatus: "UNPAID",
+      notes: "ขอยกเลิกการคืนสินค้า เนื่องจากฝ่ายควบคุมคุณภาพ (QA) ตรวจสอบล็อตสำรองแล้วอนุโลมให้ปรับสัดส่วนการผสมในกระบวนการผลิตได้",
+    },
+    {
+      reference: "PR-202608-001",
+      purchaseReference: "PO-202608-001",
+      supplierName: "บริษัท เอสซีจี เคมิคอลส์ จำกัด (มหาชน)",
+      supplierImage: "/assets/images/supplier-01.png",
+      warehouseName: "คลังวัตถุดิบเม็ดพลาสติก A (RM-01)",
+      productName: "เม็ดพลาสติก HDPE เป่าฟิล์ม SCG H6140B",
+      productImage: "/assets/images/product-01.jpg",
+      quantity: 12,
+      date: new Date("2026-08-11T13:10:00Z"),
+      status: "COMPLETED",
+      totalAmount: 12600.0,
+      paidAmount: 12600.0,
+      dueAmount: 0.0,
+      paymentStatus: "PAID",
+      notes: "ถุงบรรจุภัณฑ์โดนความชื้นจากฝนระหว่างขนส่ง คืนสินค้าเรียบร้อยและได้รับเงินคืนผ่านบัญชีบริษัท",
+    },
+  ];
+  for (const pr of purchaseReturnsData) {
+    const createdPr = await prisma.purchaseReturn.create({ data: pr });
+    if (createdPr.status === "COMPLETED") {
+      const prod = await prisma.product.findFirst({ where: { name: pr.productName } });
+      const wh = await prisma.warehouse.findFirst({ where: { name: pr.warehouseName } });
+      if (prod && wh) {
+        const currentWhStock = await prisma.productStock.findFirst({
+          where: { productId: prod.id, warehouseId: wh.id },
+        });
+        const newBalance = Math.max(0, (currentWhStock?.quantity || prod.stock) - pr.quantity);
+
+        await prisma.stockMovement.create({
+          data: {
+            productId: prod.id,
+            warehouseId: wh.id,
+            type: "SUPPLIER_RETURN",
+            referenceNo: createdPr.reference,
+            quantity: -pr.quantity,
+            balanceAfter: newBalance,
+            unitCost: prod.costPrice,
+            notes: `ส่งคืนสินค้าให้ซัพพลายเออร์ เลขที่ ${createdPr.reference} (${pr.notes || ""})`,
+            createdBy: "ชาญชัย จัดซื้อ",
+            createdAt: pr.date,
+          },
+        });
+
+        // Deduct ProductStock
+        await prisma.productStock.updateMany({
+          where: { productId: prod.id, warehouseId: wh.id },
+          data: { quantity: { decrement: pr.quantity } },
+        });
+
+        // Deduct Product total stock
+        await prisma.product.update({
+          where: { id: prod.id },
+          data: { stock: { decrement: pr.quantity } },
+        });
+
+        // Deduct active batch (FEFO)
+        const batch = await prisma.productExpiryBatch.findFirst({
+          where: { productId: prod.id, status: "ACTIVE", quantity: { gte: pr.quantity } },
+          orderBy: { expiredDate: "asc" },
+        });
+        if (batch) {
+          await prisma.productExpiryBatch.update({
+            where: { id: batch.id },
+            data: { quantity: { decrement: pr.quantity } },
+          });
+        }
+      }
+    }
   }
 
   // 16. Bank Accounts

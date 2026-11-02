@@ -510,27 +510,40 @@ export const getSupplierReport = async (req: Request, res: Response) => {
   try {
     const { supplier, search } = req.query;
 
-    const [suppliers, purchases] = await Promise.all([
+    const [suppliers, purchases, purchaseReturns] = await Promise.all([
       prisma.supplier.findMany({ orderBy: { name: "asc" } }),
       prisma.purchase.findMany(),
+      prisma.purchaseReturn.findMany(),
     ]);
 
     let items = suppliers.map((s) => {
       const suppPurchases = purchases.filter((p) => p.supplierId === s.id || p.supplierName === s.name);
+      const suppReturns = purchaseReturns.filter((pr) => pr.supplierName === s.name);
       const totalPurchases = suppPurchases.reduce((sum: number, p) => sum + p.total, 0);
+      const totalReturns = suppReturns.reduce((sum: number, pr) => sum + (pr.totalAmount || 0), 0);
+      const netPurchases = Math.max(0, totalPurchases - totalReturns);
       const totalPaid = suppPurchases.reduce((sum: number, p) => sum + (p.paid || 0), 0);
       const totalDue = suppPurchases.reduce((sum: number, p) => sum + (p.due || 0), 0);
 
       return {
         id: s.id,
+        reference: s.code || `SUP-${s.id.slice(0, 5).toUpperCase()}`,
         supplierId: s.code || s.id.slice(0, 8),
         supplierName: s.name,
+        supplierImage: (s as any).image || null,
         email: s.email || "-",
         phone: s.phone || "-",
         purchasesCount: suppPurchases.length,
+        totalItems: suppPurchases.length,
+        returnsCount: suppReturns.length,
         total: totalPurchases,
+        amount: totalPurchases,
+        returnsTotal: totalReturns,
+        netTotal: netPurchases,
         paid: totalPaid,
         due: totalDue,
+        paymentMethod: "Bank Transfer",
+        status: totalDue === 0 ? "RECEIVED" : totalPaid > 0 ? "PENDING" : "ORDERED",
       };
     });
 
@@ -1023,10 +1036,11 @@ export const getProfitLossReport = async (req: Request, res: Response) => {
     const year = Number(req.query.year) || 2026;
 
     // Fetch all non-cancelled real records
-    const [orders, sales, purchases, expenses, incomes, payrolls] = await Promise.all([
+    const [orders, sales, purchases, purchaseReturns, expenses, incomes, payrolls] = await Promise.all([
       prisma.order.findMany({ where: { paymentStatus: { not: "CANCELLED" } } }),
       prisma.sale.findMany({ where: { status: { not: "CANCELLED" } } }),
       prisma.purchase.findMany({ where: { status: { not: "CANCELLED" } } }),
+      prisma.purchaseReturn.findMany({ where: { status: { not: "CANCELLED" } } }),
       prisma.expense.findMany({ where: { status: { not: "Pending" } } }),
       prisma.income.findMany({ where: { status: { not: "Pending" } } }),
       prisma.payroll.findMany({ where: { status: "PAID" } }),
@@ -1061,9 +1075,11 @@ export const getProfitLossReport = async (req: Request, res: Response) => {
       sumForMonth(incomes, m, (i) => i.amount, (i) => i.date || i.createdAt)
     );
 
-    const cogsExp = months.map((m) =>
-      sumForMonth(purchases, m, (p) => p.total)
-    );
+    const cogsExp = months.map((m) => {
+      const pTotal = sumForMonth(purchases, m, (p) => p.total);
+      const prTotal = sumForMonth(purchaseReturns, m, (pr) => pr.totalAmount, (pr) => pr.date || pr.createdAt);
+      return Math.max(0, pTotal - prTotal);
+    });
 
     const operExp = months.map((m) =>
       sumForMonth(expenses, m, (e) => e.amount, (e) => e.date || e.createdAt)

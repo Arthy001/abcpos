@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -492,6 +492,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
     },
   ];
 
+  // Collect all defined navigation paths to ensure exact/best-match routing
+  const allNavHrefs = useMemo(() => {
+    const hrefs: string[] = [];
+    menuGroups.forEach((g) => {
+      g.items.forEach((it) => {
+        if (it.href && it.href !== "/") hrefs.push(it.href);
+        if (it.subItems) {
+          it.subItems.forEach((s) => {
+            if (s.href && s.href !== "/") hrefs.push(s.href);
+          });
+        }
+      });
+    });
+    return hrefs;
+  }, []);
+
   // Auto expand submenu ONLY for the active route when pathname changes
   useEffect(() => {
     const activeSubMenus: { [key: string]: boolean } = {};
@@ -606,14 +622,24 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
               <div className="space-y-0.5">
                 {visibleItems.map((item) => {
                 const Icon = item.icon;
-                const isItemActive =
-                  pathname === item.href ||
-                  (item.href !== "/" && pathname?.startsWith(item.href + "/")) ||
-                  (item.subItems &&
-                    item.subItems.some(
-                      (sub) => pathname === sub.href || (sub.href !== "/" && pathname?.startsWith(sub.href + "/"))
-                    )) ||
-                  (item.href === "/products" && pathname?.startsWith("/products/edit"));
+                const isExact = pathname === item.href;
+                const hasMatchingSubItem = Boolean(
+                  item.subItems &&
+                  item.subItems.some((sub) => pathname === sub.href)
+                );
+                // Check if a more specific sibling or other nav route matches this pathname
+                const hasMoreSpecificNavMatch = allNavHrefs.some(
+                  (navHref) =>
+                    navHref !== item.href &&
+                    navHref.length > item.href.length &&
+                    (pathname === navHref || pathname?.startsWith(navHref + "/"))
+                );
+                const isPrefixMatch =
+                  item.href !== "/" &&
+                  pathname?.startsWith(item.href + "/") &&
+                  !hasMoreSpecificNavMatch;
+
+                const isItemActive = isExact || hasMatchingSubItem || isPrefixMatch;
                 const isSubMenuOpen = !!openSubMenus[item.name];
 
                 if (item.hasSub && item.subItems && isOpen) {
@@ -649,9 +675,16 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
                       {isSubMenuOpen && (
                         <div className="pl-6 pr-1 space-y-1 pt-1">
                           {item.subItems.map((sub) => {
+                            const isSubExact = pathname === sub.href;
+                            const hasMoreSpecificSubNavMatch = allNavHrefs.some(
+                              (navHref) =>
+                                navHref !== sub.href &&
+                                navHref.length > sub.href.length &&
+                                (pathname === navHref || pathname?.startsWith(navHref + "/"))
+                            );
                             const isSubActive =
-                              pathname === sub.href ||
-                              (sub.href !== "/" && pathname?.startsWith(sub.href + "/"));
+                              isSubExact ||
+                              (sub.href !== "/" && pathname?.startsWith(sub.href + "/") && !hasMoreSpecificSubNavMatch);
                             return (
                               <Link
                                 key={sub.href}

@@ -2,9 +2,10 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Purchase, PurchaseItem, Supplier, Product, Warehouse, Store } from "@/types";
+import { Purchase, PurchaseItem, PurchaseReturn, Supplier, Product, Warehouse, Store } from "@/types";
 import {
   fetchPurchases,
+  fetchPurchaseReturns,
   createPurchaseApi,
   updatePurchaseApi,
   deletePurchaseApi,
@@ -46,6 +47,7 @@ import {
 export default function PurchasesPage() {
   const { user, isAdmin, canManageWarehouse } = useAuthStore();
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const [purchaseReturns, setPurchaseReturns] = useState<PurchaseReturn[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
@@ -112,7 +114,7 @@ export default function PurchasesPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [pData, sData, prData, wData, stData] = await Promise.all([
+      const [pData, sData, prData, wData, stData, returnsData] = await Promise.all([
         fetchPurchases({
           status: statusFilter,
           paymentStatus: paymentStatusFilter,
@@ -123,12 +125,14 @@ export default function PurchasesPage() {
         fetchProducts(),
         fetchWarehouses(),
         fetchStores(),
+        fetchPurchaseReturns().catch(() => []),
       ]);
       setPurchases(pData || []);
       setSuppliers(sData || []);
       setProducts(prData || []);
       setWarehouses(wData || []);
       setStores(stData || []);
+      setPurchaseReturns(returnsData || []);
 
       // Smart Default: Auto-select warehouseFilter if user has assigned warehouse and not Admin
       if (wData && user?.warehouseName && !isAdmin() && warehouseFilter === "all") {
@@ -769,7 +773,14 @@ export default function PurchasesPage() {
                         </td>
 
                         <td className="py-3.5 px-4">
-                          <div className="text-[#64748B] font-mono text-[11px] font-medium">{item.reference}</div>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[#64748B] font-mono text-[11px] font-medium">{item.reference}</span>
+                            {purchaseReturns.some((pr) => pr.purchaseReference === item.reference) && (
+                              <span className="inline-flex items-center px-1.5 py-0.2 rounded text-[9px] font-bold bg-rose-50 text-rose-600 border border-rose-200">
+                                ↩️ คืนสินค้า
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
                             <Building2 className="w-3 h-3 text-gray-400 shrink-0" />
                             <span className="truncate max-w-[120px]">{item.warehouseName || "Lavish Warehouse"}</span>
@@ -1387,6 +1398,26 @@ export default function PurchasesPage() {
                     <p className="text-xs text-blue-900 leading-relaxed">{viewPurchase.notes}</p>
                   </div>
                 )}
+
+                {purchaseReturns.filter((pr) => pr.purchaseReference === viewPurchase.reference).map((matchedReturn) => (
+                  <div key={matchedReturn.id} className="p-3 bg-rose-50 rounded-xl border border-rose-200 flex items-center justify-between text-xs">
+                    <div className="space-y-0.5">
+                      <div className="font-bold text-rose-800 flex items-center gap-1.5">
+                        <span>↩️ มีรายการส่งคืนสินค้า (Purchase Return)</span>
+                        <span className="font-mono text-[11px] px-1.5 py-0.5 bg-white rounded border border-rose-200">{matchedReturn.reference}</span>
+                      </div>
+                      <div className="text-rose-700 text-[11px]">
+                        สินค้า: {matchedReturn.productName} ({matchedReturn.quantity} ชิ้น) | ยอดคืน: ฿{matchedReturn.totalAmount.toLocaleString()} ({matchedReturn.status})
+                      </div>
+                      {matchedReturn.notes && (
+                        <div className="text-[10px] text-rose-600 italic">สาเหตุ: {matchedReturn.notes}</div>
+                      )}
+                    </div>
+                    <a href="/purchases/returns" className="text-rose-600 hover:text-rose-800 underline font-semibold text-[11px] shrink-0 ml-3">
+                      ดูใบส่งคืน
+                    </a>
+                  </div>
+                ))}
               </div>
 
               <div className="flex items-center justify-between pt-3 border-t border-gray-100">

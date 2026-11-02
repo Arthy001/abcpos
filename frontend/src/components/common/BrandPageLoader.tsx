@@ -8,7 +8,7 @@ interface BrandPageLoaderProps {
 }
 
 export const BrandPageLoader: React.FC<BrandPageLoaderProps> = ({
-  message = "Loading ABCPOS...",
+  message = "Loading Prime ERP...",
   fullScreen = true,
 }) => {
   return (
@@ -24,9 +24,9 @@ export const BrandPageLoader: React.FC<BrandPageLoaderProps> = ({
         {/* Logo Card Container */}
         <div className="relative bg-white/95 px-6 py-4 rounded-2xl shadow-xl border border-gray-100/80 flex items-center justify-center transition-transform hover:scale-105">
           <img
-            src="/assets/images/abcposlogo.png"
-            alt="ABCPOS Logo"
-            className="h-10 sm:h-12 w-auto object-contain animate-pulse"
+            src="/assets/images/prime-logo.jpg"
+            alt="Prime ERP Logo"
+            className="h-10 sm:h-12 w-auto object-contain animate-pulse rounded"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/assets/images/logo.svg";
             }}

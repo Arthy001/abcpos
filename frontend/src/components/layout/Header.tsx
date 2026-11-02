@@ -145,16 +145,21 @@ export const Header: React.FC<HeaderProps> = ({ sidebarOpen, onToggleSidebar }) 
     >
       {/* Left Section: A POS Logo, Circle Toggle Button (<< / >>), Search Bar */}
       <div className="flex items-center space-x-3 sm:space-x-4 flex-1">
-        {/* Brand Logo: ABCPOS */}
-        <Link href="/" className="flex items-center space-x-2 mr-1 sm:mr-2 flex-shrink-0 group">
+        {/* Brand Logo: Prime ERP */}
+        <Link href="/" className="flex items-center space-x-2.5 mr-1 sm:mr-2 flex-shrink-0 group">
           <img
-            src="/assets/images/abcposlogo.png"
-            alt="ABCPOS Logo"
-            className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform"
+            src="/assets/images/prime-logo.jpg"
+            alt="Prime ERP Logo"
+            className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform rounded"
             onError={(e) => {
               (e.target as HTMLImageElement).src = "/assets/images/logo.svg";
             }}
           />
+          <span className={`font-black text-base sm:text-lg tracking-tight leading-none ${
+            !isDarkTopBar ? "text-[#0E1422]" : "text-white"
+          }`}>
+            Prime <span className="text-[#FE9F43]">ERP</span>
+          </span>
         </Link>
 
         {/* Circular Toggle Button (Orange << / >>) - Not hamburger */}

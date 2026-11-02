@@ -127,6 +127,12 @@ export default function StockHistoryPage() {
 
   const getTypeBadge = (type?: string) => {
     switch (type) {
+      case "INITIAL_STOCK":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-300">
+            📦 ยอดยกมาเริ่มต้น (Initial Stock)
+          </span>
+        );
       case "INTERNAL_ISSUE":
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-50 text-purple-700 border border-purple-200">
@@ -151,6 +157,12 @@ export default function StockHistoryPage() {
             รับเข้าจัดซื้อ (Purchase)
           </span>
         );
+      case "SUPPLIER_RETURN":
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+            ↩️ คืนซัพพลายเออร์ (Purchase Return)
+          </span>
+        );
       default:
         return (
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium bg-gray-100 text-gray-700 border border-gray-200">
@@ -161,10 +173,12 @@ export default function StockHistoryPage() {
   };
 
   const movementTypeOptions = [
+    { value: "INITIAL_STOCK", label: "📦 ยอดยกมาเริ่มต้นสินค้า (INITIAL_STOCK)" },
+    { value: "PURCHASE_RECEIPT", label: "📥 รับสินค้าจากการจัดซื้อ (PURCHASE_RECEIPT)" },
+    { value: "SUPPLIER_RETURN", label: "↩️ คืนสินค้าผู้จำหน่าย (SUPPLIER_RETURN)" },
     { value: "INTERNAL_ISSUE", label: "🏭 เบิกวัตถุดิบเข้าสายผลิต (INTERNAL_ISSUE)" },
     { value: "ADJUSTMENT_PLUS", label: "📦 รับสินค้าสำเร็จรูปเข้าคลัง (ADJUSTMENT_PLUS)" },
     { value: "SALE_ISSUE", label: "🛒 ขายสินค้าออก (SALE_ISSUE)" },
-    { value: "PURCHASE_RECEIPT", label: "📥 รับสินค้าจากการจัดซื้อ (PURCHASE_RECEIPT)" },
   ];
 
   const categoryOptions = useMemo(() => {
@@ -368,7 +382,7 @@ export default function StockHistoryPage() {
                           <div className="font-mono text-[11px] text-gray-500">{item.sku}</div>
                         </td>
                         <td className="py-3 px-4 text-gray-600">
-                          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[11px]">
+                          <span className="px-2 py-0.5 rounded-md bg-gray-100 text-gray-700 text-[11px] whitespace-nowrap inline-block">
                             {item.category || "ทั่วไป"}
                           </span>
                         </td>

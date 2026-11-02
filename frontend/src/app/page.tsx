@@ -41,7 +41,7 @@ export default function Dashboard1Page() {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [timeRange, setTimeRange] = useState<string>("1Y");
-  const [recentTab, setRecentTab] = useState<"Sale" | "Purchase" | "Quotation" | "Expenses" | "Invoices">("Sale");
+  const [recentTab, setRecentTab] = useState<"Sale" | "Purchase" | "Return" | "Quotation" | "Expenses" | "Invoices">("Sale");
 
   const loadData = async () => {
     try {
@@ -812,7 +812,7 @@ export default function Dashboard1Page() {
 
               {/* Transaction Tabs */}
               <div className="flex border-b border-gray-200 space-x-6 text-xs mb-3 font-semibold">
-                {(["Sale", "Purchase", "Quotation", "Expenses", "Invoices"] as const).map((tab) => (
+                {(["Sale", "Purchase", "Return", "Quotation", "Expenses", "Invoices"] as const).map((tab) => (
                   <button
                     key={tab}
                     onClick={() => setRecentTab(tab)}

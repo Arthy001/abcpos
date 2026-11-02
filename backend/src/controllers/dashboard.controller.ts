@@ -364,6 +364,14 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         status: inv.status || "Paid",
         total: "$" + Number(inv.amount || 0).toLocaleString(),
       })),
+      Return: purchaseReturns.slice(0, 5).map((pr: any) => ({
+        id: pr.id,
+        date: new Date(pr.createdAt || Date.now()).toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" }),
+        customer: pr.supplierName || "Supplier",
+        code: `#${pr.reference}`,
+        status: pr.status || "Completed",
+        total: "฿" + Number(pr.totalAmount || 0).toLocaleString(),
+      })),
     };
 
     res.json({

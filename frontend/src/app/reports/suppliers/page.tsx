@@ -63,9 +63,9 @@ export default function SupplierReportPage() {
   );
 
   const handleExportCSV = () => {
-    const headers = ["Reference,ID,Supplier,Total Items,Amount,Payment Method,Status"];
+    const headers = ["Reference,ID,Supplier,Total Items,Gross Amount,Returns,Net Amount,Payment Method,Status"];
     const rows = displayList.map(
-      (item) => `"${item.reference}","${item.supplierId}","${item.supplierName}","฿{item.totalItems}","$฿{item.amount}","${item.paymentMethod}","${item.status}"`
+      (item) => `"${item.reference}","${item.supplierId}","${item.supplierName}","${item.totalItems}","${item.amount}","${item.returnsTotal || 0}","${item.netTotal ?? item.amount}","${item.paymentMethod}","${item.status}"`
     );
     const csvContent = "data:text/csv;charset=utf-8," + [headers, ...rows].join("\n");
     const encodedUri = encodeURI(csvContent);
@@ -292,7 +292,14 @@ export default function SupplierReportPage() {
                       <td className="py-3.5 px-4 text-[#64748B]">{item.totalItems}</td>
 
                       {/* Amount */}
-                      <td className="py-3.5 px-4 text-[#1E293B] font-semibold">฿{item.amount}</td>
+                      <td className="py-3.5 px-4">
+                        <div className="font-semibold text-[#1E293B]">฿{Number(item.amount || 0).toLocaleString()}</div>
+                        {Boolean(item.returnsTotal && item.returnsTotal > 0) && (
+                          <div className="text-[10px] text-rose-500 font-medium">
+                            คืน: -฿{Number(item.returnsTotal).toLocaleString()} (สุทธิ: ฿{Number(item.netTotal || 0).toLocaleString()})
+                          </div>
+                        )}
+                      </td>
 
                       {/* Payment Method */}
                       <td className="py-3.5 px-4 text-[#64748B]">{item.paymentMethod}</td>

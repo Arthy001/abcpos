@@ -40,6 +40,7 @@ const DEFAULT_MODULE_PERMISSIONS: PermissionRow[] = [
   { module: "Products & Inventory", all: true, view: true, create: true, edit: true, delete: true },
   { module: "Stock Management", all: true, view: true, create: true, edit: true, delete: true },
   { module: "Sales & POS", all: true, view: true, create: true, edit: true, delete: true },
+  { module: "Manufacturing (MRP)", all: true, view: true, create: true, edit: true, delete: true },
   { module: "Promo & Discounts", all: true, view: true, create: true, edit: true, delete: true },
   { module: "Purchases", all: true, view: true, create: true, edit: true, delete: true },
   { module: "Finance & Accounts", all: true, view: true, create: true, edit: true, delete: true },

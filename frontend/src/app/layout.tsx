@@ -4,8 +4,13 @@ import "./globals.css";
 import { NavigationLoader } from "@/components/common/NavigationLoader";
 
 export const metadata: Metadata = {
-  title: "A POS - Inventory & Retail Dashboard",
-  description: "Modern A POS and Inventory Management Web Application",
+  title: "Prime ERP - Modern Enterprise Management",
+  description: "Prime ERP - Complete Supply Chain, Manufacturing, and Retail Management",
+  icons: {
+    icon: "/assets/images/prime-logo.jpg",
+    shortcut: "/assets/images/prime-logo.jpg",
+    apple: "/assets/images/prime-logo.jpg",
+  },
 };
 
 export default function RootLayout({

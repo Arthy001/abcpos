@@ -23,6 +23,7 @@ interface DemoAccount {
   name: string;
   email: string;
   role: string;
+  department: string;
   warehouseName: string;
   storeName: string;
   avatar: string;
@@ -31,64 +32,92 @@ interface DemoAccount {
 
 const DEMO_ACCOUNTS: DemoAccount[] = [
   {
-    id: "3",
-    name: "Michael Dawson",
-    email: "michael@example.com",
-    role: "Store Keeper",
-    warehouseName: "Lavish Warehouse",
-    storeName: "ElectroMart Main",
-    avatar: "/assets/images/customer15.jpg",
-    color: "from-blue-500 to-cyan-500",
-  },
-  {
-    id: "4",
-    name: "Karen Flores",
-    email: "karen@example.com",
-    role: "Warehouse Supervisor",
-    warehouseName: "Traditional Warehouse",
-    storeName: "Apex Branch",
-    avatar: "/assets/images/customer14.jpg",
-    color: "from-purple-500 to-indigo-500",
-  },
-  {
-    id: "6",
-    name: "Karen Galvan",
-    email: "galvan@example.com",
-    role: "Purchase Officer",
-    warehouseName: "Lavish Warehouse",
-    storeName: "ElectroMart Main",
-    avatar: "/assets/images/customer16.jpg",
-    color: "from-amber-500 to-orange-500",
-  },
-  {
-    id: "2",
-    name: "Jenny Ellis",
-    email: "jenny@example.com",
-    role: "Manager",
-    warehouseName: "Traditional Warehouse",
-    storeName: "Apex Branch",
-    avatar: "/assets/images/customer12.jpg",
-    color: "from-rose-500 to-pink-500",
-  },
-  {
-    id: "5",
-    name: "Leon Baxter",
-    email: "leon@example.com",
-    role: "Cashier",
-    warehouseName: "Lavish Warehouse",
-    storeName: "ElectroMart Main",
-    avatar: "/assets/images/customer13.jpg",
-    color: "from-emerald-500 to-teal-500",
-  },
-  {
-    id: "1",
-    name: "Henry Bryant",
-    email: "henry@example.com",
+    id: "admin",
+    name: "สมชาย ชัยชนะ",
+    email: "admin@siampolypack.com",
     role: "Admin",
+    department: "Executive",
     warehouseName: "All Warehouses",
     storeName: "All Stores",
     avatar: "/assets/images/avatar-01.jpg",
     color: "from-slate-700 to-slate-900",
+  },
+  {
+    id: "plant-mgr",
+    name: "วิชัย เป่าฟิล์ม",
+    email: "wichai@siampolypack.com",
+    role: "Plant Manager",
+    department: "Manufacturing",
+    warehouseName: "คลังวัตถุดิบ (RM-01)",
+    storeName: "พระราม 2",
+    avatar: "/assets/images/customer12.jpg",
+    color: "from-amber-500 to-orange-600",
+  },
+  {
+    id: "warehouse-sup",
+    name: "สมเกียรติ สต็อกแมน",
+    email: "somkiat@siampolypack.com",
+    role: "Warehouse Supervisor",
+    department: "Warehouse",
+    warehouseName: "คลังสินค้าสำเร็จรูป (FG-01)",
+    storeName: "พระราม 2",
+    avatar: "/assets/images/customer15.jpg",
+    color: "from-blue-500 to-cyan-600",
+  },
+  {
+    id: "b2b-sales",
+    name: "กานดา การค้า",
+    email: "kanda@siampolypack.com",
+    role: "Sales Manager",
+    department: "B2B Wholesale",
+    warehouseName: "คลังสินค้าสำเร็จรูป (FG-01)",
+    storeName: "สาขา ตลาดไท",
+    avatar: "/assets/images/customer14.jpg",
+    color: "from-purple-500 to-indigo-600",
+  },
+  {
+    id: "cashier",
+    name: "มณีรัตน์ จัดหน้าร้าน",
+    email: "manirat@siampolypack.com",
+    role: "Cashier",
+    department: "Retail POS",
+    warehouseName: "คลังสินค้าสำเร็จรูป (FG-01)",
+    storeName: "สาขา สี่มุมเมือง",
+    avatar: "/assets/images/customer13.jpg",
+    color: "from-emerald-500 to-teal-600",
+  },
+  {
+    id: "accountant",
+    name: "พิมพ์ใจ สมุห์บัญชี",
+    email: "pimjai@siampolypack.com",
+    role: "Accountant",
+    department: "Finance & Accounts",
+    warehouseName: "All Warehouses",
+    storeName: "พระราม 2",
+    avatar: "/assets/images/customer16.jpg",
+    color: "from-rose-500 to-pink-600",
+  },
+  {
+    id: "purchasing",
+    name: "ชาญชัย จัดซื้อ",
+    email: "chanchai@siampolypack.com",
+    role: "Purchase Officer",
+    department: "Purchasing",
+    warehouseName: "คลังวัตถุดิบ (RM-01)",
+    storeName: "พระราม 2",
+    avatar: "/assets/images/customer17.jpg",
+    color: "from-yellow-500 to-amber-600",
+  },
+  {
+    id: "hrm",
+    name: "วรรณา บริหารคน",
+    email: "wanna@siampolypack.com",
+    role: "HR Manager",
+    department: "HRM & Payroll",
+    warehouseName: "All Warehouses",
+    storeName: "พระราม 2",
+    avatar: "/assets/images/customer18.jpg",
+    color: "from-teal-500 to-emerald-600",
   },
 ];
 
@@ -152,28 +181,36 @@ export default function SignInPage() {
   };
 
   return (
-    <div className="min-h-screen w-full flex bg-white font-sans text-gray-900 selection:bg-orange-100 selection:text-[#FE9F43]">
+    <div className="h-screen w-full flex bg-white font-sans text-gray-900 selection:bg-orange-100 selection:text-[#FE9F43] overflow-hidden">
       {/* Left Column: Sign In Form & Fast Demo Account Selector */}
-      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-10 lg:p-14 min-h-screen">
+      <div className="w-full lg:w-1/2 flex flex-col justify-between p-6 sm:p-8 lg:p-10 h-full overflow-y-auto">
         <div className="w-full max-w-lg mx-auto space-y-6 my-auto">
 
           {/* Official Brand Logo */}
-          <div className="flex items-center">
+          <div className="flex items-center space-x-3">
             <img
-              src="/assets/images/abcposlogo.png"
-              alt="ABCPOS Logo"
-              className="h-10 sm:h-11 w-auto object-contain"
+              src="/assets/images/prime-logo.jpg"
+              alt="Prime ERP Logo"
+              className="h-11 sm:h-12 w-auto object-contain rounded-lg shadow-2xs"
               onError={(e) => {
                 (e.target as HTMLImageElement).src = "/assets/images/logo.svg";
               }}
             />
+            <div className="flex flex-col">
+              <span className="font-black text-[#0E1422] text-xl sm:text-2xl tracking-tight leading-none">
+                Prime <span className="text-[#FE9F43]">ERP</span>
+              </span>
+              <span className="text-[10px] text-gray-400 font-semibold tracking-wider uppercase mt-1">
+                Enterprise Solution
+              </span>
+            </div>
           </div>
 
           {/* Heading */}
           <div className="space-y-1">
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Sign In</h1>
             <p className="text-xs sm:text-sm text-gray-500">
-              Select a demo user role or enter credentials to access ABCPOS.
+              Select a demo user role or enter credentials to access Prime ERP.
             </p>
           </div>
 
@@ -186,7 +223,7 @@ export default function SignInPage() {
               </label>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {DEMO_ACCOUNTS.map((acc) => {
                 const isSelected = selectedAccount.id === acc.id;
                 return (
@@ -198,35 +235,43 @@ export default function SignInPage() {
                       setEmailInput(acc.email);
                       setPassword("123456");
                     }}
-                    className={`p-2.5 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
+                    className={`p-2 rounded-xl border text-left transition-all relative flex flex-col justify-between cursor-pointer ${
                       isSelected
-                        ? "border-[#FE9F43] bg-orange-50/40 ring-2 ring-orange-200 shadow-xs"
+                        ? "border-[#FE9F43] bg-orange-50/50 ring-2 ring-orange-200 shadow-xs"
                         : "border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50/70"
                     }`}
                   >
-                    <div className="flex items-center space-x-2">
-                      <div className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-100">
-                        <img
-                          src={acc.avatar}
-                          alt={acc.name}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-bold text-gray-900 text-xs truncate leading-tight">
-                          {acc.name}
-                        </p>
-                        <span className="text-[10px] font-semibold text-[#FE9F43] block truncate">
-                          {acc.role}
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-[9px] font-bold tracking-wider uppercase px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                          {acc.department}
                         </span>
+                        {isSelected && (
+                          <CheckCircle2 className="w-3.5 h-3.5 text-[#FE9F43] shrink-0" />
+                        )}
+                      </div>
+
+                      <div className="flex items-center space-x-1.5">
+                        <div className="relative w-7 h-7 rounded-full overflow-hidden shrink-0 border border-gray-200 bg-gray-100">
+                          <img
+                            src={acc.avatar}
+                            alt={acc.name}
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-bold text-gray-900 text-[11px] truncate leading-tight">
+                            {acc.name}
+                          </p>
+                          <span className="text-[10px] font-medium text-[#FE9F43] block truncate">
+                            {acc.role}
+                          </span>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="mt-2 pt-1 border-t border-gray-100/80 flex items-center justify-between text-[10px] text-gray-500">
-                      <span className="truncate">{acc.warehouseName.replace(" Warehouse", "")}</span>
-                      {isSelected && (
-                        <CheckCircle2 className="w-3 h-3 text-[#FE9F43] shrink-0" />
-                      )}
+                    <div className="mt-1.5 pt-1 border-t border-gray-100 flex items-center justify-between text-[9px] text-gray-400">
+                      <span className="truncate">{acc.storeName || acc.warehouseName}</span>
                     </div>
                   </button>
                 );
@@ -271,7 +316,7 @@ export default function SignInPage() {
                 <label className="text-xs font-semibold text-gray-700">
                   Passcode / Password <span className="text-red-500">*</span>
                 </label>
-                <span className="text-[11px] text-gray-400 font-mono">Default: 12345678</span>
+                <span className="text-[11px] text-gray-400 font-mono">Default: 123456</span>
               </div>
               <div className="relative">
                 <input
@@ -335,18 +380,18 @@ export default function SignInPage() {
 
         {/* Footer Copyright */}
         <div className="text-center text-xs text-gray-400 pt-4">
-          Copyright © 2026 DreamsPOS. All Rights Reserved.
+          Copyright © 2026 Prime ERP. All Rights Reserved.
         </div>
       </div>
 
-      {/* Right Column: Hero Banner Image (matching DreamsPOS login banner) */}
-      <div className="hidden lg:block lg:w-1/2 relative bg-gray-100 overflow-hidden">
+      {/* Right Column: Hero Banner Image */}
+      <div className="hidden lg:block lg:w-1/2 relative h-full bg-gray-900 overflow-hidden">
         <img
           src="/assets/images/login-banner.jpg"
-          alt="DreamsPOS Cashier"
-          className="w-full h-full object-cover"
+          alt="Prime ERP"
+          className="w-full h-full object-cover object-center"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none"></div>
       </div>
     </div>
   );

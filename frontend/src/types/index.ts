@@ -375,6 +375,9 @@ export interface SupplierReportItem {
   paymentMethod: string;
   status: "RECEIVED" | "PENDING" | "ORDERED";
   date?: string;
+  returnsCount?: number;
+  returnsTotal?: number;
+  netTotal?: number;
 }
 
 export interface SupplierDueReportItem {
@@ -793,6 +796,7 @@ export interface DashboardStats {
   recentTransactions?: {
     Sale: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
     Purchase: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+    Return?: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
     Quotation: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
     Expenses: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
     Invoices: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;

@@ -1,4 +1,4 @@
-﻿import { create } from "zustand";
+import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export interface AuthUser {
@@ -124,6 +124,39 @@ const DEFAULT_ROLE_FALLBACKS: Record<
     "Products & Inventory": { view: true, create: false, edit: false, delete: false },
     "Purchases": { view: true, create: true, edit: true, delete: true },
     "Peoples (Customers/Suppliers)": { view: true, create: true, edit: true, delete: false },
+    "Reports & Analytics": { view: true, create: false, edit: false, delete: false },
+  },
+  "plant manager": {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Manufacturing (MRP)": { view: true, create: true, edit: true, delete: true },
+    "Stock Management": { view: true, create: true, edit: true, delete: false },
+    "Products & Inventory": { view: true, create: true, edit: true, delete: false },
+    "Reports & Analytics": { view: true, create: false, edit: false, delete: false },
+  },
+  "production supervisor": {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Manufacturing (MRP)": { view: true, create: true, edit: true, delete: false },
+    "Stock Management": { view: true, create: true, edit: true, delete: false },
+    "Products & Inventory": { view: true, create: false, edit: false, delete: false },
+  },
+  "sales manager": {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Sales & POS": { view: true, create: true, edit: true, delete: false },
+    "Products & Inventory": { view: true, create: false, edit: false, delete: false },
+    "Peoples (Customers/Suppliers)": { view: true, create: true, edit: true, delete: false },
+    "Reports & Analytics": { view: true, create: true, edit: false, delete: false },
+  },
+  accountant: {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "Finance & Accounts": { view: true, create: true, edit: true, delete: true },
+    "Sales & POS": { view: true, create: false, edit: false, delete: false },
+    "Purchases": { view: true, create: false, edit: false, delete: false },
+    "Reports & Analytics": { view: true, create: true, edit: false, delete: false },
+  },
+  "hr manager": {
+    "Dashboard": { view: true, create: false, edit: false, delete: false },
+    "HRM & Attendance": { view: true, create: true, edit: true, delete: true },
+    "Peoples (Customers/Suppliers)": { view: true, create: false, edit: false, delete: false },
     "Reports & Analytics": { view: true, create: false, edit: false, delete: false },
   },
 };
