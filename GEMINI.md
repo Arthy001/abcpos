@@ -4,9 +4,12 @@ These rules are strictly enforced across all conversations, new chats, and subag
 
 ---
 
-## 1. Git Commit Policy (CRITICAL)
-- **ห้ามทำการ `git commit` ด้วยตัวเองเด็ดขาด** ไม่ว่ากรณีใดๆ
+## 1. Git Commit & Deploy Policy (CRITICAL)
+- **ห้ามทำการ `git commit` หรือ `git push` ด้วยตัวเองเด็ดขาด** ไม่ว่ากรณีใดๆ
 - ต้องรอจนกว่าผู้ใช้งานจะพิมพ์คำสั่ง "commit" หรือสั่งให้ commit อย่างชัดเจนเท่านั้น จึงจะสามารถรันคำสั่ง `git commit` ได้
+- **ห้ามทำการ Deploy ขึ้น Production / Server / Cloud ด้วยตัวเองเด็ดขาด**:
+  - ห้ามสั่ง `wrangler deploy`, คัดลอกไฟล์ขึ้น Server (`scp`), สั่ง Restart Service (`pm2 restart`, `docker compose up`) บน Remote Server โดยพลการ
+  - ต้องรอจนกว่าผู้ใช้งานจะมีคำสั่งให้ "deploy" หรือยืนยันคำสั่งอย่างชัดเจนเท่านั้น
 
 ---
 

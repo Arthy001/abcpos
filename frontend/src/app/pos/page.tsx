@@ -1064,12 +1064,17 @@ export default function POSPage() {
       <header className="h-16 bg-white border-b border-gray-200 flex items-center justify-between px-3 sm:px-5 sticky top-0 z-30 shadow-2xs shrink-0">
         {/* Brand Logo & Live Time Badge & Shift Status */}
         <div className="flex items-center space-x-2 sm:space-x-3">
-          <Link href="/" className="flex items-center space-x-2 group">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#FE9F43] to-[#FF8008] flex items-center justify-center text-white font-black text-sm shadow-xs group-hover:scale-105 transition-transform">
-              A
-            </div>
+          <Link href="/" className="flex items-center space-x-2.5 group">
+            <img
+              src="/assets/images/prime-logo.jpg"
+              alt="Prime POS Logo"
+              className="h-8 sm:h-9 w-auto object-contain group-hover:scale-105 transition-transform rounded"
+              onError={(e) => {
+                (e.target as HTMLImageElement).src = "/assets/images/logo.svg";
+              }}
+            />
             <span className="font-extrabold text-slate-900 text-lg tracking-tight">
-              ABC <span className="text-[#FE9F43]">POS</span>
+              PRIME <span className="text-[#FE9F43]">POS</span>
             </span>
           </Link>
 

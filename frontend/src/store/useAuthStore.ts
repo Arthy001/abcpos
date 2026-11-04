@@ -36,10 +36,10 @@ export interface PermissionItem {
   delete?: boolean;
 }
 
-interface AuthState {
-  user: AuthUser;
+export interface AuthState {
+  user: AuthUser | null;
   rolePermissions: Record<string, PermissionItem[]>;
-  setUser: (user: AuthUser) => void;
+  setUser: (user: AuthUser | null) => void;
   logout: () => void;
   isAdmin: () => boolean;
   canManageWarehouse: (warehouseName: string) => boolean;
@@ -164,20 +164,24 @@ const DEFAULT_ROLE_FALLBACKS: Record<
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      user: DEFAULT_USER,
+      user: null,
       rolePermissions: {},
 
-      setUser: (user: AuthUser) => set({ user }),
+      setUser: (user: AuthUser | null) => set({ user }),
 
       logout: () => {
         try {
           fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
         } catch (_) {}
-        set({ user: DEFAULT_USER });
+        set({ user: null });
+        if (typeof window !== "undefined") {
+          window.location.href = "/signin";
+        }
       },
 
       isAdmin: () => {
         const { user } = get();
+        if (!user) return false;
         return (
           user.role?.toLowerCase() === "admin" ||
           user.role?.toLowerCase() === "super admin" ||
@@ -187,6 +191,7 @@ export const useAuthStore = create<AuthState>()(
 
       canManageWarehouse: (targetWarehouse: string) => {
         const { user, isAdmin } = get();
+        if (!user) return false;
         if (isAdmin()) return true;
         if (!user.warehouseName || user.warehouseName.includes("All")) return true;
         if (user.warehouseName.toLowerCase().trim() === targetWarehouse.toLowerCase().trim()) return true;
@@ -254,6 +259,7 @@ export const useAuthStore = create<AuthState>()(
 
       hasModulePermission: (moduleName: string, action: "view" | "create" | "edit" | "delete") => {
         const { user, isAdmin, rolePermissions } = get();
+        if (!user) return false;
         if (isAdmin()) return true;
         if (!user?.role) return false;
 

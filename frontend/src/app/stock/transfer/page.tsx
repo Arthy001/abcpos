@@ -188,7 +188,7 @@ export default function StockTransferPage() {
         isOpen: true,
         type: "error",
         title: "Permission Denied (สิทธิ์การจัดการคลัง)",
-        message: `You are assigned to "${user.warehouseName}". You do not have permission to edit transfers originating from "${t.fromWarehouse}".`,
+        message: `You are assigned to "${user?.warehouseName || "N/A"}". You do not have permission to edit transfers originating from "${t.fromWarehouse}".`,
       });
       return;
     }
@@ -230,7 +230,7 @@ export default function StockTransferPage() {
         isOpen: true,
         type: "error",
         title: "Permission Denied (สิทธิ์การจัดการคลัง)",
-        message: `You are assigned to "${user.warehouseName}". You can only initiate transfers from your assigned warehouse.`,
+        message: `You are assigned to "${user?.warehouseName || "N/A"}". You can only initiate transfers from your assigned warehouse.`,
       });
       return;
     }

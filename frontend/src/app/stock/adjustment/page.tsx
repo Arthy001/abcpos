@@ -193,7 +193,7 @@ export default function StockAdjustmentPage() {
         isOpen: true,
         type: "error",
         title: "Permission Denied (สิทธิ์การจัดการคลัง)",
-        message: `You are assigned to "${user.warehouseName}". You do not have permission to edit adjustments in "${adj.warehouse}".`,
+        message: `You are assigned to "${user?.warehouseName || "N/A"}". You do not have permission to edit adjustments in "${adj.warehouse}".`,
       });
       return;
     }
@@ -227,7 +227,7 @@ export default function StockAdjustmentPage() {
         isOpen: true,
         type: "error",
         title: "Permission Denied (สิทธิ์การจัดการคลัง)",
-        message: `You are assigned to "${user.warehouseName}". You cannot submit adjustments for "${formWarehouse}".`,
+        message: `You are assigned to "${user?.warehouseName || "N/A"}". You cannot submit adjustments for "${formWarehouse}".`,
       });
       return;
     }

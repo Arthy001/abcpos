@@ -188,7 +188,7 @@ export default function ManageStockPage() {
         isOpen: true,
         type: "error",
         title: "Permission Denied (สิทธิ์การจัดการคลัง)",
-        message: `You are assigned to "${user.warehouseName}". You do not have permission to adjust inventory in "${prodWarehouseName}". Please switch to your assigned warehouse.`,
+        message: `You are assigned to "${user?.warehouseName || "N/A"}". You do not have permission to adjust inventory in "${prodWarehouseName}". Please switch to your assigned warehouse.`,
       });
       return;
     }
@@ -246,7 +246,7 @@ export default function ManageStockPage() {
         isOpen: true,
         type: "error",
         title: "Permission Denied (สิทธิ์การจัดการคลัง)",
-        message: `You are assigned to "${user.warehouseName}". You do not have permission to delete items from "${prodWarehouseName}".`,
+        message: `You are assigned to "${user?.warehouseName || "N/A"}". You do not have permission to delete items from "${prodWarehouseName}".`,
       });
       return;
     }
