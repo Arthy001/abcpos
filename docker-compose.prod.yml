@@ -1,0 +1,44 @@
+services:
+  abcpos-db:
+    image: postgres:16-alpine
+    container_name: abcpos-db
+    restart: always
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-abcpos_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ChangeMeSecurePassword123}
+      POSTGRES_DB: ${POSTGRES_DB:-abcpos_prod}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - abcpos-net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-abcpos_user} -d ${POSTGRES_DB:-abcpos_prod}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  abcpos-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: abcpos-api
+    restart: always
+    depends_on:
+      abcpos-db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 5000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-abcpos_user}:${POSTGRES_PASSWORD:-ChangeMeSecurePassword123}@abcpos-db:5432/${POSTGRES_DB:-abcpos_prod}?schema=public
+    ports:
+      # แมปเข้า 127.0.0.1 เท่านั้น (ไม่เปิดสู่ Public Internet โดยตรง เพื่อความปลอดภัย)
+      - "127.0.0.1:5000:5000"
+    networks:
+      - abcpos-net
+
+networks:
+  abcpos-net:
+    driver: bridge
+
+volumes:
+  pgdata:

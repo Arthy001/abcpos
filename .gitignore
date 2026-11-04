@@ -21,6 +21,15 @@ backend/dist/
 .env.production.local
 backend/.env
 
+# SSH Keys & Secrets (Never commit keys)
+*.key
+*.pub
+*.pem
+id_rsa*
+*.id_rsa
+.secrets/
+secrets/
+
 # SQLite Database (optional - uncomment if you prefer fresh local db)
 # backend/prisma/dev.db
 # backend/prisma/dev.db-journal

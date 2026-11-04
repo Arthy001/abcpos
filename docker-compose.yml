@@ -1,0 +1,16 @@
+services:
+  abcpos-db:
+    image: postgres:16-alpine
+    container_name: abcpos-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgrespassword
+      POSTGRES_DB: abcpos_db
+    ports:
+      - "5437:5432"
+    volumes:
+      - abcpos_pgdata:/var/lib/postgresql/data
+
+volumes:
+  abcpos_pgdata:
