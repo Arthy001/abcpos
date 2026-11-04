@@ -73,6 +73,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [isXSmall, setIsXSmall] = useState(false);
   const [mounted, setMounted] = useState(false);
   const { toggleCustomizer, layoutMode, layoutWidth } = useThemeStore();
   const { user, isAdmin, hasModulePermission, fetchRolePermissions } = useAuthStore();
@@ -85,7 +86,9 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     // Check window size on initial load and resize
     const checkScreenSize = () => {
       const mobile = window.innerWidth < 1024;
+      const xSmall = window.innerWidth < 480;
       setIsMobile(mobile);
+      setIsXSmall(xSmall);
       if (mobile) {
         setSidebarOpen(false);
       }
@@ -124,6 +127,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       {!isWithoutHeader && (
         <Header
           sidebarOpen={isMobile ? sidebarOpen : !isMini}
+          isXSmall={isXSmall}
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
         />
       )}
