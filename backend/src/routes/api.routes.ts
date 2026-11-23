@@ -1,5 +1,21 @@
 import { Router } from "express";
 import {
+  getPipelines,
+  createPipeline,
+  getDeals,
+  getDealById,
+  createDeal,
+  updateDeal,
+  updateDealStage,
+  deleteDeal,
+  convertDealToProject,
+  getProjects,
+  updateMilestone,
+  getServiceTickets,
+  createServiceTicket,
+  updateServiceTicket,
+} from "../controllers/crm.controller.js";
+import {
   getSystemIncidents,
   getSystemIncidentByCode,
   markIncidentResolved,
@@ -923,5 +939,26 @@ router.get("/accounting/tax-invoices", getTaxInvoices);
 router.post("/accounting/tax-invoices", createTaxInvoice);
 router.put("/accounting/tax-invoices/:id", updateTaxInvoice);
 router.delete("/accounting/tax-invoices/:id", deleteTaxInvoice);
+
+// ==========================================
+// 🚀 CRM, FIELD SERVICE & PROJECT MANAGEMENT
+// ==========================================
+router.get("/crm/pipelines", getPipelines);
+router.post("/crm/pipelines", createPipeline);
+
+router.get("/crm/deals", getDeals);
+router.get("/crm/deals/:id", getDealById);
+router.post("/crm/deals", createDeal);
+router.put("/crm/deals/:id", updateDeal);
+router.patch("/crm/deals/:id/stage", updateDealStage);
+router.delete("/crm/deals/:id", deleteDeal);
+router.post("/crm/deals/:id/convert-to-project", convertDealToProject);
+
+router.get("/crm/projects", getProjects);
+router.patch("/crm/milestones/:milestoneId", updateMilestone);
+
+router.get("/crm/service-tickets", getServiceTickets);
+router.post("/crm/service-tickets", createServiceTicket);
+router.put("/crm/service-tickets/:id", updateServiceTicket);
 
 export default router;

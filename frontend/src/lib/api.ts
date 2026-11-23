@@ -4559,3 +4559,155 @@ export async function receiveWorkOrderGoodsApi(
   }
   return res.json();
 }
+
+// ==========================================
+// CRM & Field Service / Project APIs
+// ==========================================
+
+export async function fetchCrmPipelines() {
+  const res = await fetch(`${API_BASE_URL}/crm/pipelines`);
+  if (!res.ok) throw new Error("Failed to fetch CRM pipelines");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function fetchCrmDeals(params?: { pipelineId?: string; stageId?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.pipelineId) query.set("pipelineId", params.pipelineId);
+  if (params?.stageId) query.set("stageId", params.stageId);
+  if (params?.search) query.set("search", params.search);
+
+  const queryString = query.toString();
+  const url = `${API_BASE_URL}/crm/deals${queryString ? `?${queryString}` : ""}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch CRM deals");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function createCrmDeal(payload: any) {
+  const res = await fetch(`${API_BASE_URL}/crm/deals`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create deal");
+  }
+  return res.json();
+}
+
+export async function updateCrmDeal(id: string, payload: any) {
+  const res = await fetch(`${API_BASE_URL}/crm/deals/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update deal");
+  }
+  return res.json();
+}
+
+export async function updateCrmDealStage(id: string, stageId: string) {
+  const res = await fetch(`${API_BASE_URL}/crm/deals/${id}/stage`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ stageId }),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to move deal");
+  }
+  return res.json();
+}
+
+export async function deleteCrmDeal(id: string) {
+  const res = await fetch(`${API_BASE_URL}/crm/deals/${id}`, {
+    method: "DELETE",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to delete deal");
+  }
+  return res.json();
+}
+
+export async function convertDealToProject(id: string) {
+  const res = await fetch(`${API_BASE_URL}/crm/deals/${id}/convert-to-project`, {
+    method: "POST",
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to convert deal to project");
+  }
+  return res.json();
+}
+
+export async function fetchCrmProjects(params?: { status?: string; search?: string }) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.search) query.set("search", params.search);
+
+  const queryString = query.toString();
+  const url = `${API_BASE_URL}/crm/projects${queryString ? `?${queryString}` : ""}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch CRM projects");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function updateCrmMilestone(milestoneId: string, payload: any) {
+  const res = await fetch(`${API_BASE_URL}/crm/milestones/${milestoneId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update milestone");
+  }
+  return res.json();
+}
+
+export async function fetchCrmServiceTickets(params?: { status?: string; serviceType?: string }) {
+  const query = new URLSearchParams();
+  if (params?.status) query.set("status", params.status);
+  if (params?.serviceType) query.set("serviceType", params.serviceType);
+
+  const queryString = query.toString();
+  const url = `${API_BASE_URL}/crm/service-tickets${queryString ? `?${queryString}` : ""}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error("Failed to fetch CRM service tickets");
+  const data = await res.json();
+  return data.data;
+}
+
+export async function createCrmServiceTicket(payload: any) {
+  const res = await fetch(`${API_BASE_URL}/crm/service-tickets`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create service ticket");
+  }
+  return res.json();
+}
+
+export async function updateCrmServiceTicket(id: string, payload: any) {
+  const res = await fetch(`${API_BASE_URL}/crm/service-tickets/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to update service ticket");
+  }
+  return res.json();
+}
+

@@ -1884,3 +1884,100 @@ export interface GrnItem {
   notes?: string | null;
   createdAt: string;
 }
+
+// ==========================================
+// CRM & Field Service / Project Management
+// ==========================================
+
+export interface CrmStage {
+  id: string;
+  pipelineId: string;
+  name: string;
+  color: string;
+  order: number;
+  isWon: boolean;
+  isLost: boolean;
+  deals?: CrmDeal[];
+}
+
+export interface CrmPipeline {
+  id: string;
+  name: string;
+  code: string;
+  description?: string | null;
+  isDefault: boolean;
+  stages: CrmStage[];
+}
+
+export interface CrmDeal {
+  id: string;
+  title: string;
+  dealCode: string;
+  pipelineId: string;
+  pipeline?: CrmPipeline;
+  stageId: string;
+  stage?: CrmStage;
+  customerId?: string | null;
+  customer?: Customer | null;
+  contactName: string;
+  contactPhone: string;
+  contactEmail?: string | null;
+  siteAddress?: string | null;
+  gpsLocation?: string | null;
+  estimatedValue: number;
+  probability: number;
+  expectedClose?: string | null;
+  customData?: string | null;
+  notes?: string | null;
+  assignedTo?: string | null;
+  project?: CrmProject | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CrmMilestone {
+  id: string;
+  projectId: string;
+  title: string;
+  order: number;
+  status: "PENDING" | "IN_PROGRESS" | "COMPLETED";
+  dueDate?: string | null;
+  completedAt?: string | null;
+}
+
+export interface CrmProject {
+  id: string;
+  projectCode: string;
+  name: string;
+  dealId?: string | null;
+  deal?: CrmDeal | null;
+  customerId: string;
+  customer?: Customer;
+  status: "PLANNING" | "IN_PROGRESS" | "ON_HOLD" | "COMPLETED" | "CANCELLED";
+  startDate?: string | null;
+  targetEndDate?: string | null;
+  actualEndDate?: string | null;
+  projectDetails?: string | null;
+  milestones?: CrmMilestone[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CrmServiceTicket {
+  id: string;
+  ticketNo: string;
+  projectId?: string | null;
+  project?: CrmProject | null;
+  customerId: string;
+  customer?: Customer;
+  title: string;
+  serviceType: "PREVENTIVE_MAINTENANCE" | "INSTALLATION" | "EMERGENCY_REPAIR" | "GENERAL";
+  status: "OPEN" | "SCHEDULED" | "IN_PROGRESS" | "RESOLVED" | "CANCELLED";
+  priority: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
+  scheduledDate?: string | null;
+  technician?: string | null;
+  checklistData?: string | null;
+  resolution?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}

@@ -695,6 +695,9 @@ model Customer {
   orders            Order[]
   salesOrders       SalesOrder[]
   billingNotes      BillingNote[]
+  crmDeals          CrmDeal[]
+  crmProjects       CrmProject[]
+  crmServiceTickets CrmServiceTicket[]
   createdAt         DateTime     @default(now())
   updatedAt         DateTime     @updatedAt
 }
@@ -2100,4 +2103,135 @@ model GrnItem {
 
   @@index([grnId])
   @@index([productId])
+}
+
+// -------------------------------------------------------------
+// CRM & Field Service / Project Management Models
+// -------------------------------------------------------------
+
+model CrmPipeline {
+  id          String     @id @default(uuid())
+  name        String
+  code        String     @unique
+  description String?
+  isDefault   Boolean    @default(false)
+  stages      CrmStage[]
+  deals       CrmDeal[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model CrmStage {
+  id          String      @id @default(uuid())
+  pipelineId  String
+  pipeline    CrmPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  name        String
+  color       String      @default("#3b82f6")
+  order       Int         @default(0)
+  isWon       Boolean     @default(false)
+  isLost      Boolean     @default(false)
+  deals       CrmDeal[]
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  @@index([pipelineId])
+}
+
+model CrmDeal {
+  id              String      @id @default(uuid())
+  title           String
+  dealCode        String      @unique
+  pipelineId      String
+  pipeline        CrmPipeline @relation(fields: [pipelineId], references: [id])
+  stageId         String
+  stage           CrmStage    @relation(fields: [stageId], references: [id])
+  
+  customerId      String?
+  customer        Customer?   @relation(fields: [customerId], references: [id])
+  
+  contactName     String
+  contactPhone    String
+  contactEmail    String?
+  siteAddress     String?
+  gpsLocation     String?
+  
+  estimatedValue  Float       @default(0.0)
+  probability     Int         @default(50)
+  expectedClose   DateTime?
+  
+  // Custom Attributes (JSON string: supports Solar, EV Charger, CCTV, etc.)
+  customData      String?
+  
+  notes           String?
+  assignedTo      String?
+  project         CrmProject?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  @@index([pipelineId])
+  @@index([stageId])
+  @@index([customerId])
+}
+
+model CrmProject {
+  id              String             @id @default(uuid())
+  projectCode     String             @unique
+  name            String
+  dealId          String?            @unique
+  deal            CrmDeal?           @relation(fields: [dealId], references: [id])
+  customerId      String
+  customer        Customer           @relation(fields: [customerId], references: [id])
+  
+  status          String             @default("IN_PROGRESS") // PLANNING, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED
+  startDate       DateTime?
+  targetEndDate   DateTime?
+  actualEndDate   DateTime?
+  
+  projectDetails  String?            // JSON string for technical details / BOM
+  
+  milestones      CrmMilestone[]
+  serviceTickets  CrmServiceTicket[]
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  @@index([customerId])
+}
+
+model CrmMilestone {
+  id          String     @id @default(uuid())
+  projectId   String
+  project     CrmProject @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  title       String
+  order       Int        @default(0)
+  status      String     @default("PENDING") // PENDING, IN_PROGRESS, COMPLETED
+  dueDate     DateTime?
+  completedAt DateTime?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([projectId])
+}
+
+model CrmServiceTicket {
+  id            String      @id @default(uuid())
+  ticketNo      String      @unique
+  projectId     String?
+  project       CrmProject? @relation(fields: [projectId], references: [id])
+  customerId    String
+  customer      Customer    @relation(fields: [customerId], references: [id])
+  
+  title         String
+  serviceType   String      // PREVENTIVE_MAINTENANCE, INSTALLATION, EMERGENCY_REPAIR, GENERAL
+  status        String      @default("OPEN") // OPEN, SCHEDULED, IN_PROGRESS, RESOLVED, CANCELLED
+  priority      String      @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
+  
+  scheduledDate DateTime?
+  technician    String?
+  checklistData String?     // JSON String
+  resolution    String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([projectId])
+  @@index([customerId])
 }

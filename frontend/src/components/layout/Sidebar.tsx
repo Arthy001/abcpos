@@ -18,6 +18,8 @@ import {
   Scale,
   Sliders,
   ShieldCheck,
+  FolderKanban,
+  Wrench,
   Barcode,
   QrCode,
   Boxes,
@@ -276,6 +278,15 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, isMobile = false, onCl
         { name: "Withholding Tax", href: "/finance/withholding-tax", icon: Receipt },
         { name: "Tax Invoices", href: "/finance/tax-invoices", icon: FileCheck },
         { name: "Accountant Hub", href: "/finance/accountant-hub", icon: FileSpreadsheet },
+      ],
+    },
+    {
+      title: "CRM & Field Service",
+      items: [
+        { name: "Deals & Pipeline", href: "/crm/deals", icon: Briefcase },
+        { name: "Projects & Install", href: "/crm/projects", icon: FolderKanban },
+        { name: "Service & Maintenance", href: "/crm/services", icon: Wrench },
+        { name: "Customers", href: "/customers", icon: Users },
       ],
     },
     {

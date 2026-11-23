@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { seedCrmData } from "./seed-crm.js";
 
 const prisma = new PrismaClient();
 
@@ -1972,6 +1973,9 @@ async function main() {
   for (const b of bankAccounts) {
     await prisma.bankAccount.create({ data: b });
   }
+
+  // 12. CRM & Field Service Seed Data
+  await seedCrmData();
 
   console.log("✅ Successfully seeded 28 plastic products & 7-Month historical transactions!");
 }
