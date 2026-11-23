@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useMemo } from "react";
 import { AppLayout } from "@/components/layout/AppLayout";
-import { Quotation, Customer, Product } from "@/types";
+import { Quotation, Customer, Product, CompanySettings } from "@/types";
 import {
   fetchQuotations,
   createQuotationApi,
@@ -11,7 +11,13 @@ import {
   convertQuotationToSaleApi,
   fetchCustomers,
   fetchProducts,
+  fetchCompanySettings,
 } from "@/lib/api";
+import {
+  ExecutiveModernTemplate,
+  MinimalistSwissTemplate,
+  ThaiOfficialFormalTemplate,
+} from "@/components/quotations/QuotationTemplates";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   PlusCircle,
@@ -39,6 +45,7 @@ export default function QuotationsPage() {
   const [quotations, setQuotations] = useState<Quotation[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [companySettings, setCompanySettings] = useState<CompanySettings | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Search & Filters
@@ -84,6 +91,7 @@ export default function QuotationsPage() {
 
   // View Slip State
   const [viewQuotation, setViewQuotation] = useState<Quotation | null>(null);
+  const [selectedTemplateStyle, setSelectedTemplateStyle] = useState<"modern" | "swiss" | "thai">("modern");
 
   // Delete State
   const [deletingQuotation, setDeletingQuotation] = useState<Quotation | null>(null);
@@ -96,17 +104,19 @@ export default function QuotationsPage() {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [qData, cData, pData] = await Promise.all([
+      const [qData, cData, pData, companyData] = await Promise.all([
         fetchQuotations({
           status: statusFilter,
           search,
         }),
         fetchCustomers(),
         fetchProducts(),
+        fetchCompanySettings().catch(() => null),
       ]);
       setQuotations(qData || []);
       setCustomers(cData || []);
       setProducts(pData || []);
+      if (companyData) setCompanySettings(companyData);
     } catch (err: any) {
       setFeedbackModal({
         isOpen: true,
@@ -851,83 +861,132 @@ export default function QuotationsPage() {
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW QUOTATION SLIP MODAL */}
+        {/* VIEW QUOTATION MODAL - CORPORATE A4 FORM (3 STYLES) */}
         {/* ========================================================================= */}
-        {viewQuotation && (
-          <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
-            <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150">
-              <div className="flex items-center justify-between border-b border-gray-100 pb-3">
-                <div className="flex items-center space-x-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-orange-50 text-[#FE9F43] flex items-center justify-center">
-                    <Receipt className="w-4 h-4" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-gray-900">Price Quotation Slip</h3>
-                    <p className="text-xs text-gray-400 font-mono">Ref: {viewQuotation.reference}</p>
-                  </div>
-                </div>
-                <button
-                  onClick={() => setViewQuotation(null)}
-                  className="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 cursor-pointer"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
+        {viewQuotation && (() => {
+          const matchedCustomer = customers.find((c) => c.name === viewQuotation.customerName) || null;
 
-              <div className="space-y-3 text-xs">
-                <div className="grid grid-cols-2 gap-3 p-3 bg-gray-50 rounded-xl border border-gray-100">
-                  <div>
-                    <span className="text-gray-400 font-medium">Customer</span>
-                    <p className="font-bold text-gray-800">{viewQuotation.customerName}</p>
-                  </div>
-                  <div>
-                    <span className="text-gray-400 font-medium">Status</span>
+          return (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:m-0 print:bg-white print:static print:inset-auto print:overflow-visible print:block print:z-auto">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-4 sm:p-6 space-y-4 shadow-2xl relative my-auto animate-in fade-in zoom-in duration-150 max-h-[96vh] flex flex-col print:bg-transparent print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none print:max-h-none print:block print:rounded-none">
+                {/* Header Actions & Style Switcher Bar (Non-printable) */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-3 border-b border-slate-800 text-white shrink-0 print:hidden">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-[#FE9F43] flex items-center justify-center shadow-xs">
+                      <FileText className="w-5 h-5" />
+                    </div>
                     <div>
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-800">
-                        {viewQuotation.status}
-                      </span>
+                      <h3 className="text-base font-bold text-white flex items-center gap-2">
+                        <span>ใบเสนอราคา (Price Quotation)</span>
+                        <span className="px-2 py-0.5 rounded-full text-[10px] font-mono bg-slate-800 text-slate-300 border border-slate-700">
+                          {viewQuotation.reference}
+                        </span>
+                      </h3>
+                      <p className="text-xs text-slate-400">เลือกสไตล์แบบฟอร์มเอกสาร A4 ด้านล่างเพื่อดูตัวอย่างและสั่งพิมพ์</p>
                     </div>
                   </div>
-                </div>
 
-                <div className="p-3 bg-gray-50 rounded-xl border border-gray-100 space-y-1">
-                  <span className="text-gray-400">Quoted Item:</span>
-                  <p className="font-bold text-gray-900 text-sm">
-                    {viewQuotation.productName} × {viewQuotation.quantity} @ ${viewQuotation.unitPrice.toFixed(2)}
-                  </p>
-                  {viewQuotation.notes && (
-                    <p className="text-gray-500 text-xs italic mt-1">Notes: "{viewQuotation.notes}"</p>
-                  )}
-                </div>
+                  {/* 3 Styles Segmented Control */}
+                  <div className="flex items-center bg-slate-800/90 p-1.5 rounded-2xl border border-slate-700/80">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateStyle("modern")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedTemplateStyle === "modern"
+                          ? "bg-[#FE9F43] text-white shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      1. Executive Modern ⭐
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateStyle("swiss")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedTemplateStyle === "swiss"
+                          ? "bg-white text-slate-900 shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      2. Minimalist Swiss
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedTemplateStyle("thai")}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        selectedTemplateStyle === "thai"
+                          ? "bg-blue-600 text-white shadow-xs"
+                          : "text-slate-400 hover:text-white"
+                      }`}
+                    >
+                      3. Thai Official
+                    </button>
+                  </div>
 
-                <div className="p-3 bg-orange-50/50 rounded-xl border border-orange-100 space-y-1.5">
-                  <div className="flex justify-between text-sm font-bold">
-                    <span className="text-gray-900">Total Quotation:</span>
-                    <span className="text-[#FE9F43]">฿{viewQuotation.total.toFixed(2)}</span>
+                  {/* Action Buttons: Print & Close */}
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => window.print()}
+                      className="px-4 py-2 bg-gradient-to-r from-[#FE9F43] to-[#E88B32] hover:from-[#E88B32] hover:to-[#D17624] text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-sm cursor-pointer transition-all active:scale-95"
+                    >
+                      <Printer className="w-4 h-4" />
+                      <span>พิมพ์ A4 (Print / PDF)</span>
+                    </button>
+                    <button
+                      onClick={() => setViewQuotation(null)}
+                      className="p-2 rounded-xl text-slate-400 hover:bg-slate-800 hover:text-white cursor-pointer transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
                   </div>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-3.5 py-2 bg-gray-50 hover:bg-gray-100 text-gray-700 text-xs font-semibold rounded-xl flex items-center space-x-1.5 border border-gray-200 cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print Quotation</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setViewQuotation(null)}
-                  className="px-5 py-2 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
-                >
-                  Close
-                </button>
+                {/* ================= A4 DOCUMENT CANVAS PREVIEW ================= */}
+                <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950/50 rounded-2xl flex justify-center print:bg-white print:p-0 print:m-0 print:overflow-visible print:block print:rounded-none">
+                  {/* Paper Sheet (Exact A4 Ratio) */}
+                  <div className="w-full max-w-[850px] bg-white text-black shadow-2xl rounded-sm overflow-hidden border border-slate-200 print:shadow-none print:border-none print:rounded-none print:max-w-none print:w-full print:p-0 print:m-0 print:overflow-visible">
+                    {selectedTemplateStyle === "modern" && (
+                      <ExecutiveModernTemplate
+                        quotation={viewQuotation}
+                        company={companySettings}
+                        customer={matchedCustomer}
+                      />
+                    )}
+                    {selectedTemplateStyle === "swiss" && (
+                      <MinimalistSwissTemplate
+                        quotation={viewQuotation}
+                        company={companySettings}
+                        customer={matchedCustomer}
+                      />
+                    )}
+                    {selectedTemplateStyle === "thai" && (
+                      <ThaiOfficialFormalTemplate
+                        quotation={viewQuotation}
+                        company={companySettings}
+                        customer={matchedCustomer}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400 shrink-0 print:hidden">
+                  <div className="flex items-center space-x-4">
+                    <span>* สามารถเปลี่ยนสไตล์ได้ทันที โดยข้อมูลสินค้าและบริษัทจะอัปเดตตรงกันทุกแบบ</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setViewQuotation(null)}
+                    className="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer"
+                  >
+                    ปิดหน้าต่าง (Close)
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ========================================================================= */}
         {/* CONVERT QUOTATION TO ORDER CONFIRMATION MODAL */}

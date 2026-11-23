@@ -794,12 +794,12 @@ export interface DashboardStats {
   }[];
   heatmapCounts?: Record<string, number>;
   recentTransactions?: {
-    Sale: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
-    Purchase: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
-    Return?: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
-    Quotation: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
-    Expenses: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
-    Invoices: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string }>;
+    Sale: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string; rawAmount?: number }>;
+    Purchase: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string; rawAmount?: number }>;
+    Return?: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string; rawAmount?: number }>;
+    Quotation: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string; rawAmount?: number }>;
+    Expenses: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string; rawAmount?: number }>;
+    Invoices: Array<{ id: string; date: string; customer: string; code: string; status: string; total: string; rawAmount?: number }>;
   };
   recentOrders: Order[];
   lowStockProducts: Product[];
@@ -936,6 +936,9 @@ export interface CompanySettings {
   city: string;
   postalCode: string;
   taxId?: string | null;
+  branchType?: string | null;
+  branchName?: string | null;
+  branchCode?: string | null;
 }
 
 export interface PrefixSettings {

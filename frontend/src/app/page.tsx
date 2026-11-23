@@ -871,7 +871,9 @@ export default function Dashboard1Page() {
                               ● {tx.status}
                             </span>
                           </td>
-                          <td className="py-2.5 text-right font-bold text-gray-900">{tx.total}</td>
+                          <td className="py-2.5 text-right font-bold text-gray-900">
+                            {typeof tx.rawAmount === "number" ? formatMoney(tx.rawAmount) : tx.total}
+                          </td>
                         </tr>
                       ))}
                     </tbody>

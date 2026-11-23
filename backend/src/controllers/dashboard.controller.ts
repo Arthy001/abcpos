@@ -322,7 +322,16 @@ export const getDashboardStats = async (req: Request, res: Response) => {
       });
     }
 
-    // 18. Real Recent Transactions for all 5 tabs
+    // 18. Real Recent Transactions for all 6 tabs dynamically formatted with Localization Currency
+    const locSettings = await prisma.localizationSettings.findFirst();
+    const currencySymbol = locSettings?.currencySymbol || "฿";
+    const currencyPosition = locSettings?.currencyPosition || "Before Amount";
+
+    const formatCurrency = (amount: number) => {
+      const formatted = Number(amount || 0).toLocaleString();
+      return currencyPosition === "After Amount" ? `${formatted} ${currencySymbol}` : `${currencySymbol}${formatted}`;
+    };
+
     const realTransactions = {
       Sale: sales.slice(0, 5).map((s) => ({
         id: s.id,
@@ -330,7 +339,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         customer: s.customerName || "Customer",
         code: `#${s.reference}`,
         status: s.status || "Completed",
-        total: "$" + Number(s.grandTotal || 0).toLocaleString(),
+        rawAmount: Number(s.grandTotal || 0),
+        total: formatCurrency(Number(s.grandTotal || 0)),
       })),
       Purchase: purchases.slice(0, 5).map((p) => ({
         id: p.id,
@@ -338,7 +348,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         customer: p.supplierName || "Supplier",
         code: `#${p.reference}`,
         status: p.status || "Completed",
-        total: "$" + Number(p.total || 0).toLocaleString(),
+        rawAmount: Number(p.total || 0),
+        total: formatCurrency(Number(p.total || 0)),
       })),
       Quotation: quotations.map((q: any) => ({
         id: q.id,
@@ -346,7 +357,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         customer: q.customerName || "Customer",
         code: `#${q.reference}`,
         status: q.status || "Pending",
-        total: "$" + Number(q.total || 0).toLocaleString(),
+        rawAmount: Number(q.total || 0),
+        total: formatCurrency(Number(q.total || 0)),
       })),
       Expenses: expenses.slice(0, 5).map((e: any) => ({
         id: e.id,
@@ -354,7 +366,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         customer: e.expenseName || "General Expense",
         code: `#${e.reference}`,
         status: e.status || "Approved",
-        total: "$" + Number(e.amount || 0).toLocaleString(),
+        rawAmount: Number(e.amount || 0),
+        total: formatCurrency(Number(e.amount || 0)),
       })),
       Invoices: invoices.map((inv: any) => ({
         id: inv.id,
@@ -362,7 +375,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         customer: inv.customerName || "Customer",
         code: `#${inv.invoiceNo}`,
         status: inv.status || "Paid",
-        total: "$" + Number(inv.amount || 0).toLocaleString(),
+        rawAmount: Number(inv.amount || 0),
+        total: formatCurrency(Number(inv.amount || 0)),
       })),
       Return: purchaseReturns.slice(0, 5).map((pr: any) => ({
         id: pr.id,
@@ -370,7 +384,8 @@ export const getDashboardStats = async (req: Request, res: Response) => {
         customer: pr.supplierName || "Supplier",
         code: `#${pr.reference}`,
         status: pr.status || "Completed",
-        total: "฿" + Number(pr.totalAmount || 0).toLocaleString(),
+        rawAmount: Number(pr.totalAmount || 0),
+        total: formatCurrency(Number(pr.totalAmount || 0)),
       })),
     };
 

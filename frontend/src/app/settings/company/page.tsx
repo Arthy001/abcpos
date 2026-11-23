@@ -25,6 +25,9 @@ export default function CompanySettingsPage() {
     fax: "+66 2 123 4568",
     website: "https://abcpos.com",
     taxId: "010556209999",
+    branchType: "HEAD_OFFICE",
+    branchName: "สำนักงานใหญ่",
+    branchCode: "00000",
     address: "88/9 Sukhumvit Road, Khlong Toei",
     country: "Thailand",
     state: "Bangkok",
@@ -50,6 +53,9 @@ export default function CompanySettingsPage() {
           fax: data.fax || "",
           website: data.website || "",
           taxId: data.taxId || "",
+          branchType: data.branchType || "HEAD_OFFICE",
+          branchName: data.branchName || "สำนักงานใหญ่",
+          branchCode: data.branchCode || "00000",
           address: data.address || "",
           country: data.country || "Thailand",
           state: data.state || "Bangkok",
@@ -174,6 +180,55 @@ export default function CompanySettingsPage() {
                       value={formData.taxId || ""}
                       onChange={(e) => handleChange("taxId", e.target.value)}
                       placeholder="e.g. 010556209999"
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  {/* Branch Type */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#1E293B]">Branch Type (สำนักงานใหญ่/สาขา) <span className="text-rose-500">*</span></label>
+                    <div className="relative">
+                      <select
+                        value={formData.branchType || "HEAD_OFFICE"}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          handleChange("branchType", val);
+                          if (val === "HEAD_OFFICE") {
+                            handleChange("branchCode", "00000");
+                            handleChange("branchName", "สำนักงานใหญ่");
+                          }
+                        }}
+                        className="w-full appearance-none bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43] cursor-pointer"
+                      >
+                        <option value="HEAD_OFFICE">สำนักงานใหญ่ (Head Office)</option>
+                        <option value="BRANCH">สาขา (Branch)</option>
+                      </select>
+                      <ChevronDown className="w-3.5 h-3.5 text-[#94A3B8] absolute right-3 top-3 pointer-events-none" />
+                    </div>
+                  </div>
+
+                  {/* Branch Code */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#1E293B]">Branch Code (รหัสสาขา 5 หลัก) <span className="text-rose-500">*</span></label>
+                    <input
+                      type="text"
+                      required
+                      value={formData.branchCode || ""}
+                      onChange={(e) => handleChange("branchCode", e.target.value)}
+                      placeholder="e.g. 00000"
+                      maxLength={5}
+                      className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
+                    />
+                  </div>
+
+                  {/* Branch Name / Description */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-medium text-[#1E293B]">Branch Name (ชื่อสาขา)</label>
+                    <input
+                      type="text"
+                      value={formData.branchName || ""}
+                      onChange={(e) => handleChange("branchName", e.target.value)}
+                      placeholder="e.g. สำนักงานใหญ่ หรือ สาขาเซ็นทรัลเวิลด์"
                       className="w-full bg-white border border-[#E2E8F0] rounded-lg px-3.5 py-2 text-xs text-[#374151] focus:outline-none focus:ring-1 focus:ring-[#FE9F43]"
                     />
                   </div>
