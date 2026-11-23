@@ -35,8 +35,24 @@ body {
   background: #a5a5a5;
 }
 
+/* Custom dark scrollbar for document preview canvas */
+.dark-custom-scrollbar::-webkit-scrollbar {
+  width: 7px;
+}
+.dark-custom-scrollbar::-webkit-scrollbar-track {
+  background: #0f172a;
+  border-radius: 6px;
+}
+.dark-custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 6px;
+}
+.dark-custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 /* ========================================================================= */
-/* PRINT MEDIA RULES FOR CORPORATE A4 DOCUMENTS */
+/* GENERAL PRINT MEDIA RULES */
 /* ========================================================================= */
 @media print {
   @page {
@@ -50,21 +66,14 @@ body {
     color: #000000 !important;
     margin: 0 !important;
     padding: 0 !important;
-    width: 100% !important;
-    height: auto !important;
   }
 
-  /* Reset box shadows, borders and rounded corners when printing */
-  .shadow-2xl, .shadow-xl, .shadow-lg, .shadow-md, .shadow-sm, .shadow-xs, .shadow-2xs {
-    box-shadow: none !important;
-  }
-
-  .rounded-3xl, .rounded-2xl, .rounded-xl, .rounded-lg, .rounded-md, .rounded-sm {
-    border-radius: 0px !important;
-  }
-
-  /* Hide app navigation, sidebars, headers, floating widgets */
-  header, nav, aside, footer {
+  /* Hide navigation, header, sidebar and footer when printing standard pages */
+  header,
+  nav,
+  aside,
+  footer,
+  .print\:hidden {
     display: none !important;
   }
 

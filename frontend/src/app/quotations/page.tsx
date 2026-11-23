@@ -18,6 +18,7 @@ import {
   MinimalistSwissTemplate,
   ThaiOfficialFormalTemplate,
 } from "@/components/quotations/QuotationTemplates";
+import { printElement } from "@/lib/printElement";
 import { SearchableSelect } from "@/components/common/SearchableSelect";
 import {
   PlusCircle,
@@ -377,7 +378,7 @@ export default function QuotationsPage() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 w-full font-sans pb-10">
+      <div id="main-quotations-page" className="space-y-4 w-full font-sans pb-10">
         {/* Top Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div>
@@ -867,10 +868,10 @@ export default function QuotationsPage() {
           const matchedCustomer = customers.find((c) => c.name === viewQuotation.customerName) || null;
 
           return (
-            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4 overflow-y-auto print:p-0 print:m-0 print:bg-white print:static print:inset-auto print:overflow-visible print:block print:z-auto">
-              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-4 sm:p-6 space-y-4 shadow-2xl relative my-auto animate-in fade-in zoom-in duration-150 max-h-[96vh] flex flex-col print:bg-transparent print:border-none print:shadow-none print:p-0 print:m-0 print:max-w-none print:max-h-none print:block print:rounded-none">
-                {/* Header Actions & Style Switcher Bar (Non-printable) */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-3 border-b border-slate-800 text-white shrink-0 print:hidden">
+            <div id="quotation-print-modal" className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+              <div className="bg-slate-900 border border-slate-800 rounded-3xl max-w-5xl w-full p-4 sm:p-6 space-y-4 shadow-2xl relative animate-in fade-in zoom-in duration-150 h-[92vh] max-h-[92vh] flex flex-col">
+                {/* Header Actions & Style Switcher Bar */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-3 border-b border-slate-800 text-white shrink-0">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 rounded-2xl bg-orange-500/10 border border-orange-500/20 text-[#FE9F43] flex items-center justify-center shadow-xs">
                       <FileText className="w-5 h-5" />
@@ -927,7 +928,9 @@ export default function QuotationsPage() {
                   <div className="flex items-center space-x-2">
                     <button
                       type="button"
-                      onClick={() => window.print()}
+                      onClick={() => {
+                        printElement("quotation-print-area", `Quotation_${viewQuotation.reference}`);
+                      }}
                       className="px-4 py-2 bg-gradient-to-r from-[#FE9F43] to-[#E88B32] hover:from-[#E88B32] hover:to-[#D17624] text-white text-xs font-bold rounded-xl flex items-center space-x-2 shadow-sm cursor-pointer transition-all active:scale-95"
                     >
                       <Printer className="w-4 h-4" />
@@ -942,10 +945,10 @@ export default function QuotationsPage() {
                   </div>
                 </div>
 
-                {/* ================= A4 DOCUMENT CANVAS PREVIEW ================= */}
-                <div className="flex-1 overflow-y-auto p-4 sm:p-8 bg-slate-950/50 rounded-2xl flex justify-center print:bg-white print:p-0 print:m-0 print:overflow-visible print:block print:rounded-none">
+                {/* ================= A4 DOCUMENT CANVAS PREVIEW (SMOOTH SCROLLABLE) ================= */}
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain dark-custom-scrollbar p-4 sm:p-8 bg-slate-950/60 rounded-2xl flex justify-center items-start [scrollbar-width:thin] [scrollbar-color:#64748b_#0f172a]">
                   {/* Paper Sheet (Exact A4 Ratio) */}
-                  <div className="w-full max-w-[850px] bg-white text-black shadow-2xl rounded-sm overflow-hidden border border-slate-200 print:shadow-none print:border-none print:rounded-none print:max-w-none print:w-full print:p-0 print:m-0 print:overflow-visible">
+                  <div id="quotation-print-area" className="w-full max-w-[850px] bg-white text-black shadow-2xl rounded-sm overflow-hidden border border-slate-200 shrink-0">
                     {selectedTemplateStyle === "modern" && (
                       <ExecutiveModernTemplate
                         quotation={viewQuotation}
@@ -971,7 +974,7 @@ export default function QuotationsPage() {
                 </div>
 
                 {/* Footer Controls */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400 shrink-0 print:hidden">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-800 text-xs text-slate-400 shrink-0">
                   <div className="flex items-center space-x-4">
                     <span>* สามารถเปลี่ยนสไตล์ได้ทันที โดยข้อมูลสินค้าและบริษัทจะอัปเดตตรงกันทุกแบบ</span>
                   </div>

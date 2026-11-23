@@ -46,7 +46,7 @@ export const ExecutiveModernTemplate: React.FC<QuotationTemplateProps> = ({
                   }}
                 />
               ) : (
-                <div className="h-10 px-3 bg-[#0F172A] text-white rounded-lg flex items-center font-black tracking-wider text-sm">
+                <div className="h-10 px-3 border-2 border-slate-800 text-slate-900 rounded-lg flex items-center font-black tracking-wider text-sm bg-white">
                   <span className="text-[#FE9F43] mr-1">ABC</span> POS
                 </div>
               )}
@@ -82,9 +82,9 @@ export const ExecutiveModernTemplate: React.FC<QuotationTemplateProps> = ({
 
           {/* Right: Quotation Badge & Reference Details */}
           <div className="text-right shrink-0 space-y-2">
-            <div className="inline-block px-4 py-1.5 bg-[#0F172A] text-white rounded-lg shadow-xs">
+            <div className="inline-block px-4 py-1.5 border-2 border-slate-800 text-slate-900 bg-white rounded-lg">
               <span className="text-xs font-black tracking-widest uppercase">ใบเสนอราคา</span>
-              <span className="text-[10px] text-orange-300 font-mono block tracking-wider">PRICE QUOTATION</span>
+              <span className="text-[10px] text-slate-500 font-mono block tracking-wider">PRICE QUOTATION</span>
             </div>
 
             <div className="space-y-1 font-mono text-[11px] text-gray-600 pt-1">
@@ -167,14 +167,14 @@ export const ExecutiveModernTemplate: React.FC<QuotationTemplateProps> = ({
         </div>
 
         {/* Product Items Table */}
-        <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+        <div className="border border-slate-300 rounded-xl overflow-hidden">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-[#0F172A] text-white text-[11px] font-semibold tracking-wider">
-                <th className="py-2.5 px-3 text-center w-12">ลำดับ</th>
-                <th className="py-2.5 px-3">รายการสินค้า / บริการ (Item Description)</th>
-                <th className="py-2.5 px-3 text-center w-20">จำนวน</th>
-                <th className="py-2.5 px-3 text-right w-28">ราคา/หน่วย (฿)</th>
+              <tr className="bg-slate-50 text-slate-900 border-b-2 border-slate-800 text-[11px] font-bold tracking-wider">
+                <th className="py-2.5 px-3 text-center w-12 border-r border-slate-200">ลำดับ</th>
+                <th className="py-2.5 px-3 border-r border-slate-200">รายการสินค้า / บริการ (Item Description)</th>
+                <th className="py-2.5 px-3 text-center w-20 border-r border-slate-200">จำนวน</th>
+                <th className="py-2.5 px-3 text-right w-28 border-r border-slate-200">ราคา/หน่วย (฿)</th>
                 <th className="py-2.5 px-3 text-right w-32">จำนวนเงิน (฿)</th>
               </tr>
             </thead>
